@@ -232,7 +232,7 @@
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Entra ID, c'est AD DS hébergé dans le cloud. »</span><span class="right"><b>Faux.</b> Structure, protocoles et gestion sont différents. C'est un service d'identité, pas un contrôleur de domaine.</span></div>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Je déploie un DC sur une VM Azure, donc j'utilise Entra ID. »</span><span class="right"><b>Faux.</b> C'est toujours ton AD DS. Entra ID n'intervient pas.</span></div>
-  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une appli qui doit faire des requêtes LDAP peut viser Entra ID. »</span><span class="right"><b>Non.</b> Entra ID ne parle pas LDAP. Si l'énoncé exige LDAP ou Kerberos dans Azure sans gérer de DC, pense à <b>Microsoft Entra Domain Services</b> (service géré, hors de cette unité, il reviendra plus tard).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une appli qui doit faire des requêtes LDAP peut viser Entra ID. »</span><span class="right"><b>Non.</b> Entra ID ne parle pas LDAP. Si l'énoncé exige LDAP ou Kerberos dans Azure sans gérer de DC, pense à <a href="entra-domain-services.html"><b>Microsoft Entra Domain Services</b></a> (service géré, voir unité 3).</span></div>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« OAuth sert à authentifier l'utilisateur. »</span><span class="right"><b>Nuance.</b> Dans le cours : SAML / WS-Fed / OIDC = <b>authentification</b>, OAuth = <b>autorisation</b>.</span></div>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Je stocke la base NTDS sur C: avec le cache en lecture/écriture. »</span><span class="right"><b>Faux.</b> Disque de données séparé, cache d'hôte <b>Aucune</b>.</span></div>
 
@@ -330,7 +330,7 @@
     </table>
   </div>
 
-  <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ». · <a href="../index.html">← Retour au sommaire</a></footer>
+  <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ». · <a href="../index.html">← Retour au sommaire</a> · <a href="entra-domain-services.html">Unité 3 : Entra Domain Services →</a></footer>
 </main>
 
 <script>

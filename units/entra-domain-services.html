@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Entra Domain Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:820px){.opt3{grid-template-columns:1fr}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 .best{border:2px solid var(--ok)}
+.flow{font-size:14px;background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.flow b{white-space:nowrap}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;margin:2px 4px 2px 0}
+.pill.bad{background:var(--onprem-soft);color:var(--onprem)} .pill.good{background:var(--ok-soft);color:var(--ok)}
+.chk{list-style:none;padding:0;margin:8px 0 0}
+.chk li{padding:6px 0 6px 28px;position:relative;border-bottom:1px solid var(--line)}
+.chk li:last-child{border-bottom:0}
+.chk li::before{position:absolute;left:0;top:6px}
+.chk.ok li::before{content:"✅"} .chk.no li::before{content:"⛔"}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <button class="theme-btn" id="theme" type="button">Thème</button>
+</div></header>
+
+<main class="wrap">
+  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unité 3</p>
+  <h1>Microsoft Entra Domain Services</h1>
+  <p class="lede">Tu déménages dans Azure de vieilles applis qui ont besoin d'un domaine (Kerberos, LDAP, GPO). Comment les authentifier sans gérer de contrôleurs de domaine ?</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 4 min</span>
+    <span class="chip">🎯 Très fréquent à l'examen : « quelle option choisir ? »</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> <b>Entra Domain Services</b> est un <b>domaine géré par Microsoft</b> qui offre jonction de domaine, GPO, <b>Kerberos, NTLM et LDAP</b> à ton locataire Entra, <b>sans aucun DC à gérer</b>. C'est ce qui manquait à Entra ID (voir <a href="entra-vs-adds.html">unité 1</a> : Entra ID ne parle ni LDAP ni Kerberos).</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la cour louée 🚛</h2>
+  <p style="margin:0 0 12px;color:var(--muted)">Ta compagnie loue une cour dans un autre terminal (Azure). Il faut quelqu'un pour vérifier les chauffeurs à l'entrée. Tu as 3 façons de faire :</p>
+  <div class="opt3">
+    <div class="card">
+      <span class="num">Option 1 · VPN site à site</span>
+      <h3>📞 On appelle le gardien du siège</h3>
+      <p style="margin:0;font-size:15px">À chaque chauffeur, on appelle le gardien du terminal principal sur une ligne privée.</p>
+      <div class="flow">Le trafic d'<b>authentification</b> traverse le VPN.</div>
+      <div><span class="pill bad">coût VPN</span><span class="pill bad">dépend de la ligne</span></div>
+    </div>
+    <div class="card">
+      <span class="num">Option 2 · DC réplica sur VM</span>
+      <h3>👮 Un 2ᵉ gardien sur place</h3>
+      <p style="margin:0;font-size:15px">On engage un gardien dans la cour louée, et il reçoit chaque jour la copie de la liste du siège.</p>
+      <div class="flow">Le trafic de <b>réplication</b> traverse le VPN, l'<b>authentification</b> reste dans le cloud.</div>
+      <div><span class="pill bad">VMs à gérer</span><span class="pill bad">patchs, supervision</span></div>
+    </div>
+    <div class="card best">
+      <span class="num">Option 3 · Entra Domain Services ✅</span>
+      <h3>🏢 Une agence de sécurité</h3>
+      <p style="margin:0;font-size:15px">Une agence fournit le gardien et s'occupe de tout : formation, remplacement, mises à jour. En contrepartie, tu prends <b>son règlement standard</b>, sans le personnaliser.</p>
+      <div class="flow">Rien à gérer : <b>pas de DC</b>, <b>pas de réplication</b> à administrer.</div>
+      <div><span class="pill good">service géré</span><span class="pill bad">règlement limité</span></div>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <h2>Comment ça s'emboîte</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 250" role="img" aria-label="AD DS local synchronisé par Entra Connect vers Entra ID, qui alimente Entra Domain Services activé sur un réseau virtuel où tournent les VM et applis">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <g transform="translate(14,70)"><rect width="190" height="90" rx="12" class="svg-onprem" stroke-width="1.4"/><text x="95" y="34" text-anchor="middle" class="svg-text">🏢 AD DS local</text><text x="95" y="56" text-anchor="middle" class="svg-small">facultatif</text><text x="95" y="74" text-anchor="middle" class="svg-small">(peut être absent)</text></g>
+      <path d="M204 115 H262" class="svg-line-c" stroke-width="1.6" marker-end="url(#a3)"/>
+      <text x="233" y="104" text-anchor="middle" class="svg-small">Entra</text><text x="233" y="138" text-anchor="middle" class="svg-small">Connect</text>
+      <g transform="translate(266,70)"><rect width="190" height="90" rx="12" class="svg-cloud" stroke-width="1.4"/><text x="95" y="34" text-anchor="middle" class="svg-text">☁️ Entra ID</text><text x="95" y="56" text-anchor="middle" class="svg-small">locataire · P1 ou P2</text><text x="95" y="74" text-anchor="middle" class="svg-small">mêmes identifiants</text></g>
+      <path d="M456 115 H514" class="svg-line-c" stroke-width="1.6" marker-end="url(#a3)"/>
+      <g transform="translate(518,40)"><rect width="200" height="150" rx="12" fill="var(--cloud)" stroke="none"/>
+        <text x="100" y="30" text-anchor="middle" style="fill:var(--surface);font:700 14px Inter,system-ui,sans-serif">🛡️ Entra Domain Services</text>
+        <text x="100" y="56" text-anchor="middle" style="fill:var(--surface);font:12px Inter,system-ui,sans-serif">jonction de domaine</text>
+        <text x="100" y="76" text-anchor="middle" style="fill:var(--surface);font:12px Inter,system-ui,sans-serif">GPO (1 intégrée)</text>
+        <text x="100" y="96" text-anchor="middle" style="fill:var(--surface);font:12px Inter,system-ui,sans-serif">Kerberos · NTLM · LDAP</text>
+        <text x="100" y="124" text-anchor="middle" style="fill:var(--surface);font:600 12px Inter,system-ui,sans-serif">activé sur un VNet</text>
+      </g>
+      <path d="M718 115 H776" class="svg-line-c" stroke-width="1.6" marker-end="url(#a3)"/>
+      <g transform="translate(780,50)"><rect width="166" height="130" rx="12" class="svg-node" stroke-width="1.2"/><text x="83" y="30" text-anchor="middle" class="svg-text">🖥️ VMs Azure</text><text x="83" y="56" text-anchor="middle" class="svg-small">applis LOB</text><text x="83" y="76" text-anchor="middle" class="svg-small">SQL Server</text><text x="83" y="96" text-anchor="middle" class="svg-small">SharePoint Server</text></g>
+      <text x="14" y="222" class="svg-small">💰 Facturé à l'heure selon la taille de l'annuaire · activé depuis le portail Azure · aucun DC ni VPN obligatoire</text>
+    </svg>
+  </div>
+
+  <!-- AVANTAGES / LIMITES -->
+  <h2>Avantages et limites</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>✅ Ce que tu n'as plus à faire</h3>
+      <ul class="chk ok">
+        <li>Gérer, patcher et superviser des <b>contrôleurs de domaine</b></li>
+        <li>Déployer et gérer la <b>réplication AD</b></li>
+        <li>Avoir des groupes <b>Admins du domaine / Admins de l'entreprise</b></li>
+        <li>Garder un <b>VPN</b> vers le local pour authentifier</li>
+      </ul>
+      <p style="font-size:14px;color:var(--muted);margin:10px 0 0">Fonctionne <b>avec</b> un AD DS local (via Entra Connect) <b>ou en cloud seul</b>, sans aucun AD local.</p>
+    </div>
+    <div class="card side o">
+      <h3>⛔ Le « règlement standard » de l'agence</h3>
+      <ul class="chk no">
+        <li>Seul l'objet <b>ordinateur de base</b> est pris en charge</li>
+        <li><b>Pas d'extension du schéma</b></li>
+        <li>OU <b>plates</b>, <b>pas d'OU imbriquées</b></li>
+        <li><b>1 GPO intégrée</b> (comptes ordinateur et utilisateur)</li>
+        <li>Impossible de <b>cibler des OU</b> avec la GPO, ni de filtrer par <b>WMI</b> ou par <b>groupe de sécurité</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TRAPS -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une appli LDAP/Kerberos migre dans Azure, donc il faut forcément des DC sur VM ou un VPN. »</span><span class="right"><b>Non.</b> <b>Entra Domain Services</b> fournit LDAP, NTLM et Kerberos <b>sans DC ni VPN</b>. Si l'énoncé dit « réduire l'effort d'administration », c'est cette réponse.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Entra Domain Services exige un AD DS local. »</span><span class="right"><b>Faux.</b> Il peut fonctionner <b>en cloud seul</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Option VPN et option DC réplica : même trafic sur le VPN. »</span><span class="right"><b>Non.</b> Avec le VPN seul, c'est l'<b>authentification</b> qui traverse le VPN. Avec des DC réplicas, c'est la <b>réplication</b> qui le traverse, et l'authentification reste dans le cloud.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je dois étendre le schéma pour mon appli, alors j'utilise Entra Domain Services. »</span><span class="right"><b>Non.</b> Le schéma n'est pas extensible. Il faut garder de <b>vrais DC AD DS</b> (sur VM).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je crée des OU imbriquées et des GPO ciblées par OU. »</span><span class="right"><b>Impossible.</b> Les OU sont plates et il y a 1 GPO intégrée, non ciblable, sans filtre WMI ni filtre de groupe.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Activer le domaine géré sur un VNet</h3>
+    <p style="margin:0;font-size:15px">Une seule ressource <code>azurerm_active_directory_domain_service</code> remplace toute une flotte de DC. Elle a besoin d'un <b>sous-réseau dédié</b>. Attention, c'est <b>facturé à l'heure</b> : en labo, fais <code>apply</code> puis <code>destroy</code> rapidement.</p>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_active_directory_domain_service"</span> <span class="c-s">"aadds"</span> {
+  name                = <span class="c-s">"contoso-aadds"</span>
+  resource_group_name = azurerm_resource_group.idt.name
+  location            = azurerm_resource_group.idt.location
+  domain_name         = <span class="c-s">"aadds.contoso.com"</span>
+  sku                 = <span class="c-s">"Standard"</span>  <span class="c-c"># prix selon la taille de l'annuaire</span>
+
+  initial_replica_set {
+    subnet_id = azurerm_subnet.aadds.id  <span class="c-c"># le VNet où on « active » le service</span>
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Entra DS</td><td>Microsoft Entra Domain Services</td><td>Domaine AD géré par Microsoft (ex-Azure AD DS)</td></tr>
+        <tr><td>LOB</td><td>Line Of Business</td><td>Application métier interne (paie, ERP maison…)</td></tr>
+        <tr><td>NTLM</td><td>NT LAN Manager</td><td>Ancien protocole d'authentification Windows (avant Kerberos)</td></tr>
+        <tr><td>VPN S2S</td><td>Site-to-Site VPN</td><td>Tunnel chiffré permanent entre ton réseau local et Azure</td></tr>
+        <tr><td>IaaS</td><td>Infrastructure as a Service</td><td>Tu loues des VM et tu gères l'OS</td></tr>
+        <tr><td>DC réplica</td><td>Replica domain controller</td><td>DC supplémentaire qui reçoit une copie de l'annuaire</td></tr>
+        <tr><td>Schéma</td><td>Schema</td><td>Le « formulaire » qui définit les types d'objets et leurs champs</td></tr>
+        <tr><td>WMI</td><td>Windows Management Instrumentation</td><td>Interroge l'état d'une machine (filtre GPO : « seulement les PC Windows 11 »)</td></tr>
+        <tr><td>Entra Connect</td><td>—</td><td>Synchronise les comptes de l'AD DS local vers Entra ID</td></tr>
+        <tr><td>P1 / P2</td><td>Entra ID Premium P1 / P2</td><td>Niveaux de licence payants d'Entra ID</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer><a href="entra-vs-adds.html">← Unités 1-2 : Entra ID vs AD DS</a> · <a href="../index.html">Sommaire</a><br>Résumé personnel d'après l'unité Microsoft Learn « Examiner les services de domaine Microsoft Entra ».</footer>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Tu migres une appli LDAP dans Azure et veux minimiser l'administration. Que choisis-tu ?",o:["VPN site à site","DC réplicas sur VM","Entra Domain Services"],a:2,e:"Service géré : pas de DC, pas de réplication à gérer."},
+  {q:"Avec des DC réplicas sur VM Azure, qu'est-ce qui traverse le VPN ?",o:["L'authentification","La réplication"],a:1,e:"L'authentification reste dans le cloud ; seule la réplication passe par le VPN."},
+  {q:"Ton appli doit étendre le schéma AD. Entra Domain Services convient-il ?",o:["Oui","Non"],a:1,e:"Non : schéma non extensible. Il faut de vrais DC AD DS."},
+  {q:"Entra Domain Services sans AD DS local, c'est possible ?",o:["Oui, en cloud seul","Non, il faut Entra Connect"],a:0,e:"Oui : il peut être utilisé en cloud uniquement."},
+  {q:"Combien de GPO intégrées dans Entra Domain Services ?",o:["Aucune","Une","Illimitées, ciblables par OU"],a:1,e:"Une GPO intégrée (ordinateurs et utilisateurs), non ciblable par OU."},
+  {q:"Comment Entra Domain Services est-il facturé ?",o:["Par utilisateur et par mois","À l'heure, selon la taille de l'annuaire"],a:1,e:"Facturation horaire selon la taille de l'annuaire."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+</script>
+</body>
+</html>

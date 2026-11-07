@@ -30,6 +30,41 @@
     <div><b>À retenir en une phrase :</b> Entra ID n'est <b>pas</b> « AD DS dans le cloud ». AD DS est un <b>annuaire hiérarchique</b> pour un réseau local (Kerberos, LDAP, OU, GPO). Entra ID est un <b>service d'identité</b> plat et multilocataire pour les applications Internet (HTTPS, SAML, OpenID Connect, OAuth).</div>
   </div>
 
+  <!-- ANALOGIES -->
+  <h2>Pour s'en souvenir : la version camionnage 🚛</h2>
+  <div class="grid2">
+    <div class="card side o">
+      <h3>🏭 AD DS = la cour du terminal de ta compagnie</h3>
+      <ul>
+        <li>Une <b>barrière avec un gardien</b> qui connaît tout le monde : ça marche seulement <b>sur place</b>, dans le réseau de l'entreprise.</li>
+        <li>Le gardien te remet un <b>billet d'entrée</b> que tu montres à chaque quai : c'est <b>Kerberos</b> (des « tickets »).</li>
+        <li>Le <b>plan de la cour</b> découpé en zones (réparation, chargement, bureaux) : ce sont les <b>OU</b>.</li>
+        <li>Le <b>règlement affiché par zone</b> (vitesse 10 km/h, gilet obligatoire) : ce sont les <b>GPO</b>.</li>
+        <li>Les <b>camions immatriculés au nom de la compagnie</b> : ce sont les <b>objets ordinateur</b> joints au domaine.</li>
+        <li>L'<b>annuaire téléphonique interne</b> pour trouver le bon bureau : c'est <b>DNS</b> qui trouve les contrôleurs de domaine.</li>
+      </ul>
+    </div>
+    <div class="card side c">
+      <h3>🛂 Entra ID = ton permis + ta carte EXPRESS/FAST</h3>
+      <ul>
+        <li>Reconnus <b>partout sur la route</b>, chez n'importe quel client, sans passer par la cour de la compagnie : c'est fait pour <b>Internet (HTTPS 443)</b>.</li>
+        <li>Le <b>permis</b> prouve <b>qui tu es</b> : c'est l'<b>authentification</b> (OpenID Connect, SAML).</li>
+        <li>Le <b>bon de livraison</b> t'autorise à décharger au quai 7, et seulement là : c'est l'<b>autorisation</b> (<b>OAuth</b>).</li>
+        <li>La douane américaine <b>accepte ta carte FAST canadienne</b> sans refaire l'enquête : c'est la <b>fédération</b> (des tiers font confiance à Entra ID).</li>
+        <li>Pas de zones ni de règlement de cour : tous les chauffeurs sont <b>sur une seule liste</b>. Structure <b>plate</b>, ni OU ni GPO.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🧠 Et la VM Azure qui fait tourner AD DS ?</h3>
+    <p style="margin:4px 0 0">C'est comme <b>louer une cour dans un autre terminal</b> pour y garer ta flotte : c'est toujours <b>ta</b> cour, avec <b>ton</b> gardien et <b>ton</b> règlement. Tu n'es pas passé à la carte FAST pour autant. → Entra ID n'est pas utilisé.</p>
+    <p style="margin:8px 0 0">Et on ne range pas la marchandise <b>dans la cabine</b> (le lecteur <b>C:</b>) : elle va dans la <b>remorque</b> (un <b>disque de données</b>). Pas d'entrepôt intermédiaire non plus : <b>cache d'hôte = Aucune</b>, l'écriture va directement sur le disque pour ne pas abîmer la base AD.</p>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🏢 Exemple concret : ton futur employeur</h3>
+    <p style="margin:4px 0 0">Le matin, tu ouvres ta session sur un PC <b>au bureau</b> : <b>AD DS</b> vérifie ton mot de passe avec <b>Kerberos</b>, et une <b>GPO</b> installe le fond d'écran de l'entreprise. À midi, depuis ton téléphone, tu ouvres <b>Outlook web</b> ou le <b>portail Azure</b> : c'est <b>Entra ID</b> qui te connecte en <b>HTTPS</b>. Les deux sont souvent synchronisés (avec Entra Connect, on le verra plus tard), ce qui te permet d'utiliser le même mot de passe partout. Ce sont pourtant deux services différents.</p>
+  </div>
+
   <!-- DIAGRAMME -->
   <h2>Le schéma</h2>
   <div class="grid2">

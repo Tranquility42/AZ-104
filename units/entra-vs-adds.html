@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Entra ID vs AD DS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <button class="theme-btn" id="theme" type="button">Thème</button>
+</div></header>
+
+<main class="wrap">
+  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unité 1</p>
+  <h1>Microsoft Entra ID vs AD DS</h1>
+  <p class="lede">Deux annuaires Microsoft qui se ressemblent de nom, mais pas de nature : l'un vit dans tes serveurs et parle Kerberos, l'autre vit dans le cloud et parle HTTPS.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 4 min</span>
+    <span class="chip">🎯 Domaine examen : Identités et gouvernance (20-25 %)</span>
+    <span class="chip">📚 Source : Microsoft Learn</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir en une phrase :</b> Entra ID n'est <b>pas</b> « AD DS dans le cloud ». AD DS est un <b>annuaire hiérarchique</b> pour un réseau local (Kerberos, LDAP, OU, GPO). Entra ID est un <b>service d'identité</b> plat et multilocataire pour les applications Internet (HTTPS, SAML, OpenID Connect, OAuth).</div>
+  </div>
+
+  <!-- DIAGRAMME -->
+  <h2>Le schéma</h2>
+  <div class="grid2">
+    <div class="card diagram">
+      <svg viewBox="0 0 480 400" role="img" aria-label="AD DS : arbre hiérarchique domaine, unités d'organisation, objets, avec Kerberos, LDAP et DNS">
+        <rect x="6" y="6" width="468" height="388" rx="16" class="svg-onprem" stroke-width="1.5"/>
+        <text x="24" y="36" class="svg-title-o">AD DS · sur site (Windows Server)</text>
+        <text x="24" y="56" class="svg-small">Structure hiérarchique X.500</text>
+        <!-- tree -->
+        <rect x="170" y="74" width="140" height="38" rx="9" class="svg-node" stroke-width="1.2"/>
+        <text x="240" y="98" text-anchor="middle" class="svg-text">🏢 contoso.local</text>
+        <path d="M240 112 V130 M120 130 H360 M120 130 V146 M360 130 V146" class="svg-line-o" stroke-width="1.5"/>
+        <rect x="50" y="146" width="140" height="36" rx="9" class="svg-node" stroke-width="1.2"/>
+        <text x="120" y="169" text-anchor="middle" class="svg-text">📁 OU Ventes</text>
+        <rect x="290" y="146" width="140" height="36" rx="9" class="svg-node" stroke-width="1.2"/>
+        <text x="360" y="169" text-anchor="middle" class="svg-text">📁 OU TI</text>
+        <path d="M120 182 V200 M360 182 V200" class="svg-line-o" stroke-width="1.5"/>
+        <rect x="50" y="200" width="140" height="36" rx="9" class="svg-node" stroke-width="1.2"/>
+        <text x="120" y="223" text-anchor="middle" class="svg-text">👤 Utilisateurs</text>
+        <rect x="290" y="200" width="140" height="36" rx="9" class="svg-node" stroke-width="1.2"/>
+        <text x="360" y="223" text-anchor="middle" class="svg-text">💻 Objets ordinateur</text>
+        <!-- GPO -->
+        <rect x="190" y="152" width="100" height="24" rx="12" fill="none" class="svg-line-o" stroke-dasharray="4 3"/>
+        <text x="240" y="168" text-anchor="middle" class="svg-small">⚙️ GPO liée</text>
+        <!-- protocols -->
+        <g transform="translate(24,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🔑 Kerberos</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">authentification</text>
+        </g>
+        <g transform="translate(172,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🔎 LDAP</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">interroger / gérer</text>
+        </g>
+        <g transform="translate(320,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🧭 DNS</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">trouver les DC</text>
+        </g>
+        <text x="24" y="346" class="svg-small">🤝 Approbations (trusts) entre domaines</text>
+        <text x="24" y="368" class="svg-small">   → gestion déléguée</text>
+      </svg>
+    </div>
+
+    <div class="card diagram">
+      <svg viewBox="0 0 480 400" role="img" aria-label="Entra ID : locataire avec utilisateurs et groupes à plat, applications via HTTPS, protocoles SAML, OIDC, OAuth, API REST">
+        <rect x="6" y="6" width="468" height="388" rx="16" class="svg-cloud" stroke-width="1.5"/>
+        <text x="24" y="36" class="svg-title-c">Entra ID · cloud (SaaS)</text>
+        <text x="24" y="56" class="svg-small">Structure plate · multilocataire</text>
+        <!-- tenant -->
+        <rect x="24" y="74" width="200" height="162" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="124" y="98" text-anchor="middle" class="svg-text">☁️ Locataire contoso</text>
+        <rect x="40" y="112" width="168" height="30" rx="8" class="svg-cloud" stroke-width="1"/>
+        <text x="124" y="132" text-anchor="middle" class="svg-text">👤 Utilisateurs</text>
+        <rect x="40" y="150" width="168" height="30" rx="8" class="svg-cloud" stroke-width="1"/>
+        <text x="124" y="170" text-anchor="middle" class="svg-text">👥 Groupes</text>
+        <text x="124" y="206" text-anchor="middle" class="svg-small">Pas d'OU · pas de GPO</text>
+        <text x="124" y="224" text-anchor="middle" class="svg-small">tout au même niveau</text>
+        <!-- apps -->
+        <path d="M224 155 H270" class="svg-line-c" stroke-width="1.5" marker-end="url(#ar)"/>
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+        <text x="247" y="146" text-anchor="middle" class="svg-small">443</text>
+        <rect x="274" y="74" width="182" height="162" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="365" y="98" text-anchor="middle" class="svg-text">🌐 Applications web</text>
+        <text x="365" y="126" text-anchor="middle" class="svg-small">Microsoft 365, SaaS,</text>
+        <text x="365" y="144" text-anchor="middle" class="svg-small">tes propres apps</text>
+        <text x="365" y="176" text-anchor="middle" class="svg-small">🤝 Fédération</text>
+        <text x="365" y="194" text-anchor="middle" class="svg-small">(ex. Facebook, Google)</text>
+        <!-- protocols -->
+        <g transform="translate(24,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🔑 SAML · OIDC</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">WS-Fed · authentification</text>
+        </g>
+        <g transform="translate(172,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🎟️ OAuth</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">autorisation</text>
+        </g>
+        <g transform="translate(320,262)">
+          <rect width="136" height="54" rx="10" class="svg-node" stroke-width="1.2"/>
+          <text x="68" y="23" text-anchor="middle" class="svg-text">🔌 API REST</text>
+          <text x="68" y="42" text-anchor="middle" class="svg-small">HTTP / HTTPS</text>
+        </g>
+        <text x="24" y="346" class="svg-small">🚫 Pas de Kerberos · pas de LDAP</text>
+        <text x="24" y="368" class="svg-small">   → uniquement HTTP (80) / HTTPS (443)</text>
+      </svg>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--onprem)"></i>AD DS (sur site)</span>
+    <span><i class="dot" style="background:var(--cloud)"></i>Entra ID (cloud)</span>
+  </div>
+
+  <!-- TABLEAU -->
+  <h2>Le tableau comparatif</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Critère</th><th class="o">AD DS</th><th class="c">Entra ID</th></tr></thead>
+      <tbody>
+        <tr><td>Nature</td><td>Véritable service d'annuaire</td><td>Avant tout une solution d'identité</td></tr>
+        <tr><td>Structure</td><td>Hiérarchique (X.500)</td><td>Plate, multilocataire</td></tr>
+        <tr><td>Organisation</td><td>Unités d'organisation (OU) + GPO</td><td>Ni OU ni GPO</td></tr>
+        <tr><td>Interroger / gérer</td><td><code>LDAP</code></td><td>API REST sur HTTP/HTTPS</td></tr>
+        <tr><td>Authentification</td><td><code>Kerberos</code> (principalement)</td><td><code>SAML</code>, <code>WS-Federation</code>, <code>OpenID Connect</code></td></tr>
+        <tr><td>Autorisation</td><td>—</td><td><code>OAuth</code></td></tr>
+        <tr><td>Trouver les ressources</td><td>DNS (localise les contrôleurs de domaine)</td><td>Points de terminaison Internet</td></tr>
+        <tr><td>Ports / réseau</td><td>Réseau local d'entreprise</td><td>HTTP 80 / HTTPS 443</td></tr>
+        <tr><td>Objets ordinateur</td><td>Oui (machines jointes au domaine)</td><td>Non mentionné dans l'unité</td></tr>
+        <tr><td>Délégation / confiance</td><td>Approbations entre domaines</td><td>Fédération avec des tiers (ex. Facebook)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DETAIL -->
+  <h2>Les deux fiches</h2>
+  <div class="grid2">
+    <div class="card side o">
+      <h3>🏢 AD DS <span class="tag">sur site</span></h3>
+      <p style="margin:4px 0 0;color:var(--muted);font-size:14px">Un composant de la suite Windows Active Directory, à côté de :</p>
+      <ul>
+        <li><b>AD CS</b> : services de certificats</li>
+        <li><b>AD LDS</b> : annuaire léger</li>
+        <li><b>AD FS</b> : fédération</li>
+        <li><b>AD RMS</b> : gestion des droits</li>
+      </ul>
+    </div>
+    <div class="card side c">
+      <h3>☁️ Entra ID <span class="tag">cloud</span></h3>
+      <ul>
+        <li>Conçu pour les <b>applications Internet</b></li>
+        <li><b>Multilocataire</b> : chaque organisation a son locataire</li>
+        <li>Utilisateurs et groupes <b>à plat</b></li>
+        <li><b>Services de fédération inclus</b> : des tiers lui font confiance</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- NOTE VM -->
+  <h2>Cas particulier : AD DS sur une VM Azure</h2>
+  <div class="note">
+    <b>⚠️ Ça n'a rien à voir avec Entra ID.</b> Mettre un contrôleur de domaine sur une VM Azure, c'est juste déplacer ton AD DS local dans Azure pour gagner en scalabilité et disponibilité. Entra ID n'est absolument pas utilisé.
+    <div class="steps">
+      <div class="step"><span class="n">1</span>Ajouter <b>un ou plusieurs disques de données</b> Azure</div>
+      <div class="step"><span class="n">2</span><b>Jamais le lecteur C:</b> pour la base AD DS, les journaux et <code>SYSVOL</code></div>
+      <div class="step"><span class="n">3</span>Préférence de cache d'hôte des disques : <b>Aucune</b></div>
+    </div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <h2>Cartes mémo <span style="font-size:14px;font-weight:400;color:var(--muted)">· clique pour retourner</span></h2>
+  <div class="flash" id="flash">
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Quel protocole d'authentification utilise principalement AD DS ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>Kerberos</b></span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Comment interroge-t-on Entra ID ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a">Par l'<b>API REST</b> sur HTTP/HTTPS. Jamais en LDAP.</span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Entra ID a-t-il des OU et des GPO ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>Non.</b> Utilisateurs et groupes sont dans une structure plate.</span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Quel protocole Entra ID utilise-t-il pour l'autorisation ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>OAuth</b> (SAML, WS-Fed et OIDC servent à l'authentification).</span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">À quoi sert DNS dans AD DS ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a">À <b>localiser les ressources</b>, comme les contrôleurs de domaine.</span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">DC sur VM Azure : cache d'hôte des disques de données ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>Aucune</b> (None), et rien sur le lecteur C:.</span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Sur quelle norme repose la hiérarchie d'AD DS ?</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>X.500</b></span></div></div></button>
+    <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Nomme les 4 autres services de la suite Active Directory.</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>AD CS</b>, <b>AD LDS</b>, <b>AD FS</b>, <b>AD RMS</b></span></div></div></button>
+  </div>
+
+  <!-- TRAPS -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Entra ID, c'est AD DS hébergé dans le cloud. »</span><span class="right"><b>Faux.</b> Structure, protocoles et gestion sont différents. C'est un service d'identité, pas un contrôleur de domaine.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je déploie un DC sur une VM Azure, donc j'utilise Entra ID. »</span><span class="right"><b>Faux.</b> C'est toujours ton AD DS. Entra ID n'intervient pas.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une appli qui doit faire des requêtes LDAP peut viser Entra ID. »</span><span class="right"><b>Non.</b> Entra ID ne parle pas LDAP. Si l'énoncé exige LDAP ou Kerberos dans Azure sans gérer de DC, pense à <b>Microsoft Entra Domain Services</b> (service géré, hors de cette unité, il reviendra plus tard).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« OAuth sert à authentifier l'utilisateur. »</span><span class="right"><b>Nuance.</b> Dans le cours : SAML / WS-Fed / OIDC = <b>authentification</b>, OAuth = <b>autorisation</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je stocke la base NTDS sur C: avec le cache en lecture/écriture. »</span><span class="right"><b>Faux.</b> Disque de données séparé, cache d'hôte <b>Aucune</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 La même idée, en code</h3>
+    <p style="margin:0;font-size:15px">Les identités Entra se gèrent avec le provider <code>azuread</code>, les ressources Azure avec <code>azurerm</code>. Remarque : aucune ressource « OU » n'existe côté <code>azuread</code>, la structure est plate.</p>
+<pre><span class="c-c"># Identité Entra ID : provider azuread</span>
+<span class="c-k">resource</span> <span class="c-s">"azuread_user"</span> <span class="c-s">"mah"</span> {
+  user_principal_name = <span class="c-s">"mah@contoso.onmicrosoft.com"</span>
+  display_name        = <span class="c-s">"Mah"</span>
+  password            = var.initial_password
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azuread_group"</span> <span class="c-s">"ops"</span> {
+  display_name     = <span class="c-s">"ops"</span>
+  security_enabled = true
+  members          = [azuread_user.mah.object_id]
+}
+
+<span class="c-c"># DC AD DS sur VM : disque de données, cache = None</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_virtual_machine_data_disk_attachment"</span> <span class="c-s">"ntds"</span> {
+  managed_disk_id    = azurerm_managed_disk.ntds.id
+  virtual_machine_id = azurerm_windows_virtual_machine.dc.id
+  lun                = 0
+  caching            = <span class="c-s">"None"</span>  <span class="c-c"># ← le piège de la note</span>
+}</pre>
+  </div>
+
+  <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ». · <a href="../index.html">← Retour au sommaire</a></footer>
+</main>
+
+<script>
+// thème
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+// cartes
+document.querySelectorAll('.fc').forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('flip');});});
+// quiz
+var Q=[
+  {q:"Une application web doit authentifier les employés avec OpenID Connect. Quel service ?",o:["AD DS","Entra ID"],a:1,e:"OIDC passe par HTTPS : c'est Entra ID."},
+  {q:"Tu dois appliquer une stratégie de groupe (GPO) à une OU. Quel service ?",o:["AD DS","Entra ID"],a:0,e:"OU et GPO n'existent que dans AD DS."},
+  {q:"Entra ID peut-il être interrogé en LDAP ?",o:["Oui","Non"],a:1,e:"Non : il utilise l'API REST sur HTTP/HTTPS."},
+  {q:"Quel protocole sert à l'autorisation dans Entra ID ?",o:["Kerberos","SAML","OAuth"],a:2,e:"OAuth = autorisation. SAML/OIDC/WS-Fed = authentification."},
+  {q:"DC sur VM Azure : préférence de cache d'hôte du disque de données ?",o:["Lecture seule","Lecture/écriture","Aucune"],a:2,e:"Aucune, et la base AD DS ne va jamais sur C:."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+</script>
+</body>
+</html>

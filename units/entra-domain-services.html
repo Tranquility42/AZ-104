@@ -32,7 +32,7 @@
 </div></header>
 
 <main class="wrap">
-  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unité 3</p>
+  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unités 3-4</p>
   <h1>Microsoft Entra Domain Services</h1>
   <p class="lede">Tu déménages dans Azure de vieilles applis qui ont besoin d'un domaine (Kerberos, LDAP, GPO). Comment les authentifier sans gérer de contrôleurs de domaine ?</p>
   <div class="meta">
@@ -150,6 +150,39 @@
 }</pre>
   </div>
 
+  <!-- LICENCES P1 / P2 -->
+  <h2 id="licences">Unité 4 · Licences P1 vs P2 <span style="font-size:14px;font-weight:400;color:var(--muted)">· l'essentiel</span></h2>
+  <div class="keyidea" style="margin-top:0">
+    <div class="ico">🧠</div>
+    <div><b>Moyen mnémotechnique :</b> <b>P2 = P comme « Protection » et « Privilèges »</b>, soit <b>Identity Protection</b> et <b>PIM</b>. Tout le reste de la liste est déjà dans <b>P1</b>. À l'examen, la question type est « quelle licence <b>minimum</b> pour… ? ».</div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card side c">
+      <h3>🟦 P1 : la barrière intelligente</h3>
+      <ul>
+        <li><b>Accès conditionnel</b> (appareil, groupe, emplacement)</li>
+        <li><b>MFA complète</b>, y compris pour les applis locales (VPN, RADIUS)</li>
+        <li><b>SSPR avec réécriture</b> vers l'AD local</li>
+        <li><b>Groupes en libre-service</b> (demande, puis approbation du propriétaire)</li>
+        <li>Rapports de sécurité avancés (machine learning)</li>
+        <li>Licences <b>MIM</b> (identité hybride), <b>Entra Connect Health</b>, Cloud App Discovery</li>
+        <li><b>SLA 99,9 %</b></li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🟧 P2 = P1 + le détective et le coffre à clés</h3>
+      <ul>
+        <li><b>Entra ID Protection</b>, le détective : il note le <b>risque</b> de chaque utilisateur et de chaque connexion. Tu crées des stratégies de risque utilisateur et de risque de connexion.</li>
+        <li><b>PIM</b> (Privileged Identity Management), le coffre à clés : les clés du camion-citerne sont <b>prêtées pour un quart seulement</b>, avec la <b>signature du superviseur</b>. Les admins peuvent être <b>temporaires</b> (juste à temps), avec un workflow d'approbation.</li>
+      </ul>
+      <p style="font-size:14px;color:var(--muted);margin:10px 0 0">💳 Licence <b>par utilisateur</b>. Disponible seule ou dans <b>EMS</b> (Enterprise Mobility + Security, qui inclut aussi Intune et Azure Information Protection). <b>Essai gratuit</b> : P2.</p>
+    </div>
+  </div>
+  <div class="trap" style="margin-top:14px"><span class="x">🪤</span><span class="wrong">« Il faut P2 pour l'accès conditionnel. »</span><span class="right"><b>Non, P1 suffit.</b> Par contre, l'accès conditionnel <b>basé sur le risque</b> (Identity Protection) demande P2.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Rendre un admin temporaire avec approbation, c'est possible en P1. »</span><span class="right"><b>Non.</b> C'est <b>PIM</b>, donc <b>P2</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La réinitialisation de mot de passe en libre-service qui écrit dans l'AD local est gratuite. »</span><span class="right"><b>Non.</b> L'<b>écriture différée</b> (writeback) demande <b>P1</b>.</span></div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">➕ Hors de l'unité mais fréquent : les <b>groupes dynamiques</b> (appartenance automatique selon un attribut, par exemple service = « Transport ») demandent aussi <b>P1</b>.</p>
+
   <!-- LEXIQUE -->
   <h2>Lexique</h2>
   <div class="tablewrap">
@@ -165,6 +198,13 @@
         <tr><td>Schéma</td><td>Schema</td><td>Le « formulaire » qui définit les types d'objets et leurs champs</td></tr>
         <tr><td>WMI</td><td>Windows Management Instrumentation</td><td>Interroge l'état d'une machine (filtre GPO : « seulement les PC Windows 11 »)</td></tr>
         <tr><td>Entra Connect</td><td>—</td><td>Synchronise les comptes de l'AD DS local vers Entra ID</td></tr>
+        <tr><td>MFA</td><td>Multi-Factor Authentication</td><td>Authentification multifacteur : mot de passe + téléphone, etc.</td></tr>
+        <tr><td>SSPR</td><td>Self-Service Password Reset</td><td>Réinitialisation de mot de passe en libre-service</td></tr>
+        <tr><td>PIM</td><td>Privileged Identity Management</td><td>Droits d'admin prêtés « juste à temps », avec approbation (P2)</td></tr>
+        <tr><td>MIM</td><td>Microsoft Identity Manager</td><td>Relie plusieurs annuaires locaux (AD, LDAP, Oracle) à Entra</td></tr>
+        <tr><td>EMS</td><td>Enterprise Mobility + Security</td><td>Forfait : Entra P1/P2 + Intune + Azure Information Protection</td></tr>
+        <tr><td>SLA</td><td>Service Level Agreement</td><td>Garantie de disponibilité (ici 99,9 %)</td></tr>
+        <tr><td>RADIUS</td><td>—</td><td>Protocole d'authentification réseau (VPN, Wi-Fi)</td></tr>
         <tr><td>P1 / P2</td><td>Entra ID Premium P1 / P2</td><td>Niveaux de licence payants d'Entra ID</td></tr>
       </tbody>
     </table>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Entra ID vs AD DS</title>
+<title>Entra ID et AD DS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
@@ -16,7 +16,7 @@
 </div></header>
 
 <main class="wrap">
-  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unité 1</p>
+  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unités 1-2</p>
   <h1>Microsoft Entra ID vs AD DS</h1>
   <p class="lede">Deux annuaires Microsoft qui se ressemblent de nom, mais pas de nature : l'un vit dans tes serveurs et parle Kerberos, l'autre vit dans le cloud et parle HTTPS.</p>
   <div class="meta">
@@ -267,6 +267,37 @@
 }</pre>
   </div>
 
+  <!-- UNITE 2 -->
+  <h2 id="unite-2">Unité 2 · Entra ID pour les applis cloud <span style="font-size:14px;font-weight:400;color:var(--muted)">· l'essentiel</span></h2>
+  <div class="keyidea" style="margin-top:0">
+    <div class="ico">🚛</div>
+    <div><b>Analogie :</b> plutôt que de tenir une liste de chauffeurs pour la carte carburant, une autre pour le dispatch et une autre pour l'ELD, la compagnie garde <b>un seul dossier RH</b>. Tu t'identifies une fois le matin et toutes les applis te reconnaissent.</div>
+  </div>
+  <div class="steps" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="step"><span class="n" style="background:var(--cloud)">1</span><b>Un seul locataire</b> pour Microsoft 365, Azure, Dynamics 365 et Intune, au lieu d'un locataire créé par chaque service.</div>
+    <div class="step"><span class="n" style="background:var(--cloud)">2</span><b>SSO</b> : une connexion pour tout, y compris des applis tierces (Facebook, Google, Yahoo). Pour les devs, Entra peut s'appuyer sur d'autres IdP ou sur un AD DS local.</div>
+    <div class="step"><span class="n" style="background:var(--cloud)">3</span><b>Web App App Service</b> : on active l'auth Entra dans le panneau <b>Authentification</b>, <b>sans code</b>. On désigne le locataire, et seuls ses comptes entrent.</div>
+    <div class="step"><span class="n" style="background:var(--cloud)">4</span>Réglages d'auth <b>différents par emplacement de déploiement</b> (slot staging vs production).</div>
+  </div>
+  <div class="trap" style="margin-top:14px"><span class="x">🪤</span><span class="wrong">« Il faut modifier le code pour protéger une Web App avec Entra ID. »</span><span class="right"><b>Faux.</b> Ça se fait dans le panneau Authentification du portail, et les réglages peuvent différer par slot.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Locataire = abonnement Azure. »</span><span class="right"><b>Non</b> (classique à l'examen). Le locataire, ce sont les identités. Un locataire peut avoir <b>plusieurs abonnements</b>, mais un abonnement fait confiance à <b>un seul</b> locataire.</span></div>
+  <div class="tf" style="margin-top:14px">
+    <h3>🟪 Terraform</h3>
+    <p style="margin:0;font-size:15px">Le panneau Authentification correspond au bloc <code>auth_settings_v2</code>. Un slot (<code>azurerm_linux_web_app_slot</code>) a son propre bloc, d'où des réglages par slot.</p>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_linux_web_app"</span> <span class="c-s">"app"</span> {
+  <span class="c-c"># …</span>
+  auth_settings_v2 {
+    auth_enabled           = true
+    require_authentication = true
+    active_directory_v2 {
+      client_id            = azuread_application.app.client_id
+      tenant_auth_endpoint = <span class="c-s">"https://login.microsoftonline.com/${var.tenant_id}/v2.0"</span>
+    }
+    login {}
+  }
+}</pre>
+  </div>
+
   <!-- LEXIQUE -->
   <h2>Lexique des acronymes</h2>
   <div class="tablewrap">
@@ -289,6 +320,11 @@
         <tr><td>OIDC</td><td>OpenID Connect</td><td>Authentification moderne, construite sur OAuth</td></tr>
         <tr><td>OAuth</td><td>Open Authorization</td><td>Autorisation : ce que tu as le droit de faire</td></tr>
         <tr><td>REST</td><td>Representational State Transfer</td><td>Style d'API web (requêtes HTTP GET, POST…)</td></tr>
+        <tr><td>Locataire</td><td>Tenant</td><td>L'instance Entra ID d'une organisation : son annuaire</td></tr>
+        <tr><td>SSO</td><td>Single Sign-On</td><td>Authentification unique : une connexion pour plusieurs applis</td></tr>
+        <tr><td>IdP</td><td>Identity Provider</td><td>Fournisseur d'identité (Entra, Google…)</td></tr>
+        <tr><td>Intune</td><td>—</td><td>Gestion des appareils (téléphones, PC) de l'entreprise</td></tr>
+        <tr><td>Slot</td><td>Deployment slot</td><td>Emplacement de déploiement : copie de l'appli (staging) permutable avec la prod</td></tr>
         <tr><td>SYSVOL</td><td>System Volume</td><td>Dossier partagé du DC qui contient les scripts et GPO</td></tr>
       </tbody>
     </table>

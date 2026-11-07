@@ -38,8 +38,8 @@
       <ul>
         <li>Une <b>barrière avec un gardien</b> qui connaît tout le monde : ça marche seulement <b>sur place</b>, dans le réseau de l'entreprise.</li>
         <li>Le gardien te remet un <b>billet d'entrée</b> que tu montres à chaque quai : c'est <b>Kerberos</b> (des « tickets »).</li>
-        <li>Le <b>plan de la cour</b> découpé en zones (réparation, chargement, bureaux) : ce sont les <b>OU</b>.</li>
-        <li>Le <b>règlement affiché par zone</b> (vitesse 10 km/h, gilet obligatoire) : ce sont les <b>GPO</b>.</li>
+        <li>Le <b>plan de la cour</b> découpé en zones (réparation, chargement, bureaux) : ce sont les <b>OU</b> (<i>unités d'organisation</i>).</li>
+        <li>Le <b>règlement affiché par zone</b> (vitesse 10 km/h, gilet obligatoire) : ce sont les <b>GPO</b> (<i>objets de stratégie de groupe</i>).</li>
         <li>Les <b>camions immatriculés au nom de la compagnie</b> : ce sont les <b>objets ordinateur</b> joints au domaine.</li>
         <li>L'<b>annuaire téléphonique interne</b> pour trouver le bon bureau : c'est <b>DNS</b> qui trouve les contrôleurs de domaine.</li>
       </ul>
@@ -265,6 +265,33 @@
   lun                = 0
   caching            = <span class="c-s">"None"</span>  <span class="c-c"># ← le piège de la note</span>
 }</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique des acronymes</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Sigle</th><th>Anglais</th><th>En français / en clair</th></tr></thead>
+      <tbody>
+        <tr><td>AD DS</td><td>Active Directory Domain Services</td><td>Services de domaine Active Directory : l'annuaire sur site</td></tr>
+        <tr><td>OU</td><td>Organizational Unit</td><td>Unité d'organisation : un « dossier » pour ranger utilisateurs, groupes, ordinateurs</td></tr>
+        <tr><td>GPO</td><td>Group Policy Object</td><td>Objet de stratégie de groupe : des règles appliquées à une OU</td></tr>
+        <tr><td>DC</td><td>Domain Controller</td><td>Contrôleur de domaine : le serveur qui fait tourner AD DS</td></tr>
+        <tr><td>LDAP</td><td>Lightweight Directory Access Protocol</td><td>Protocole pour interroger un annuaire</td></tr>
+        <tr><td>DNS</td><td>Domain Name System</td><td>Traduit un nom en adresse IP, trouve les DC</td></tr>
+        <tr><td>X.500</td><td>—</td><td>Norme d'annuaire hiérarchique (arbre)</td></tr>
+        <tr><td>AD CS</td><td>AD Certificate Services</td><td>Services de certificats</td></tr>
+        <tr><td>AD LDS</td><td>AD Lightweight Directory Services</td><td>Annuaire léger, sans domaine</td></tr>
+        <tr><td>AD FS</td><td>AD Federation Services</td><td>Services de fédération (connexion unique entre organisations)</td></tr>
+        <tr><td>AD RMS</td><td>AD Rights Management Services</td><td>Protection des documents (qui peut lire, imprimer…)</td></tr>
+        <tr><td>SAML</td><td>Security Assertion Markup Language</td><td>Authentification web, basée sur XML</td></tr>
+        <tr><td>WS-Fed</td><td>WS-Federation</td><td>Authentification web (ancien standard Microsoft)</td></tr>
+        <tr><td>OIDC</td><td>OpenID Connect</td><td>Authentification moderne, construite sur OAuth</td></tr>
+        <tr><td>OAuth</td><td>Open Authorization</td><td>Autorisation : ce que tu as le droit de faire</td></tr>
+        <tr><td>REST</td><td>Representational State Transfer</td><td>Style d'API web (requêtes HTTP GET, POST…)</td></tr>
+        <tr><td>SYSVOL</td><td>System Volume</td><td>Dossier partagé du DC qui contient les scripts et GPO</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ». · <a href="../index.html">← Retour au sommaire</a></footer>

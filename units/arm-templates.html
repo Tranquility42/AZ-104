@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Modèles ARM</title>
+<title>Modèles ARM JSON</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
@@ -36,17 +36,17 @@
 
 <main class="wrap">
   <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Prérequis › Modèles ARM</p>
-  <h1>Les modèles ARM : structure et déploiement</h1>
+  <h1>Les modèles ARM : structure, paramètres et déploiement</h1>
   <p class="lede">Un fichier JSON qui décrit <b>ce que tu veux</b> dans Azure. Resource Manager se charge du <b>comment</b>.</p>
   <div class="meta">
-    <span class="chip">⏱ Lecture : 6 min</span>
+    <span class="chip">⏱ Lecture : 10 min · module complet</span>
     <span class="chip">🎯 Domaine examen : Déployer et gérer les ressources</span>
     <span class="chip">🟪 Lien direct avec Terraform</span>
   </div>
 
   <div class="keyidea">
     <div class="ico">💡</div>
-    <div><b>À retenir :</b> un modèle ARM est un fichier <b>JSON déclaratif</b>. Il a <b>3 sections obligatoires</b> : <code>$schema</code>, <code>contentVersion</code> et <code>resources</code>. Il est <b>idempotent</b>, validé avant le déploiement, et ses ressources sont créées en parallèle quand c'est possible. On le déploie avec <code>az deployment group create</code>.</div>
+    <div><b>À retenir :</b> un modèle ARM est un fichier <b>JSON déclaratif</b>. Il a <b>3 sections obligatoires</b> : <code>$schema</code>, <code>contentVersion</code> et <code>resources</code>. Il est <b>idempotent</b>, validé avant le déploiement, et ses ressources sont créées en parallèle quand c'est possible. On le déploie avec <code>az deployment group create</code>. Les <b>paramètres</b> le rendent réutilisable, et les <b>sorties</b> renvoient des infos après le déploiement.</div>
   </div>
 
   <!-- ANALOGIE -->
@@ -145,6 +145,106 @@ az deployment group create \
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:12px">Trois façons de déployer : <b>modèle local</b> (cette unité), <b>modèle lié</b> (un modèle principal appelle des sous-modèles, stockés et protégés par un <b>jeton SAS</b>), ou depuis un <b>pipeline CI/CD</b>.</p>
 
+  <!-- PARAMETRES & SORTIES -->
+  <h2 id="parametres">Paramètres et sorties : rendre le modèle flexible</h2>
+  <p style="margin:0 0 12px;color:var(--muted)">Un modèle avec un nom et un SKU écrits en dur ne déploie qu'<b>un seul</b> compte, toujours pareil. Avec des <b>paramètres</b>, le même modèle sert en dev, en test et en prod.</p>
+  <div class="anat">
+<div class="json">"parameters": {
+  "storageSKU": {
+    <span class="req">"type"</span>: "string",
+    "defaultValue": "Standard_LRS",
+    "allowedValues": [
+      "Standard_LRS", "Standard_GRS",
+      "Standard_ZRS", "Premium_LRS"
+    ],
+    "metadata": { "description": "Type de stockage" }
+  },
+  "storageName": {
+    <span class="req">"type"</span>: "string",
+    "minLength": 3,
+    "maxLength": 24
+  }
+}
+<span class="c">// utilisation dans la ressource :</span>
+"name": "[parameters('storageName')]",
+"sku": { "name": "[parameters('storageSKU')]" }</div>
+    <div class="keys">
+      <div class="key"><div><code>type</code><br><span class="r y">obligatoire</span></div><div><code>string</code>, <code>int</code>, <code>bool</code>, <code>object</code>, <code>array</code>, <code>secureString</code>, <code>secureObject</code></div></div>
+      <div class="key"><div><code>defaultValue</code></div><div>Valeur utilisée si on ne fournit rien. <b>Sans elle, le paramètre est obligatoire.</b></div></div>
+      <div class="key"><div><code>allowedValues</code></div><div>La liste fermée des valeurs acceptées. Une autre valeur (ex. <code>Basic</code>) fait <b>échouer la validation</b> avant tout déploiement.</div></div>
+      <div class="key"><div><code>minLength</code> / <code>maxLength</code></div><div>Longueur d'une <b>chaîne ou d'un tableau</b></div></div>
+      <div class="key"><div><code>minValue</code> / <code>maxValue</code></div><div>Bornes d'un <b>entier</b></div></div>
+      <div class="key"><div><code>metadata</code></div><div><code>description</code> affichée dans le portail</div></div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card side c">
+      <h3>✅ Bonnes pratiques</h3>
+      <ul>
+        <li>Paramètre pour ce qui <b>change selon l'environnement</b> : SKU, taille, capacité, noms</li>
+        <li>Une <b>description</b> et une <b>valeur par défaut</b> dès que possible</li>
+        <li>Mots de passe et secrets en <b><code>secureString</code></b>, objets sensibles en <b><code>secureObject</code></b>. On ne peut pas les relire après le déploiement</li>
+        <li><b>Jamais</b> de valeur par défaut pour un utilisateur ou un mot de passe, et rien d'écrit en dur</li>
+        <li>Maximum <b>256 paramètres</b> par modèle</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📤 Les sorties (<code>outputs</code>)</h3>
+<div class="cmd">"outputs": {
+  "storageEndpoint": {
+    "type": "object",
+    "value": "[reference(parameters('storageName'))
+              .primaryEndpoints]"
+  }
+}</div>
+      <p style="font-size:14px;margin:8px 0 0">Seuls <code>type</code> et <code>value</code> servent en pratique. <code>condition</code> (n'afficher que si vrai) et <code>copy</code> (plusieurs valeurs) sont facultatifs. <b><code>reference()</code></b> lit l'<b>état réel</b> de la ressource après sa création, ici ses URL blob, file, queue et table.</p>
+    </div>
+  </div>
+  <h3 style="margin:20px 0 6px">Passer les valeurs au déploiement</h3>
+  <div class="vs">
+<div class="cmd"># Azure CLI
+az deployment group create \
+  --name addSkuParameter \
+  --template-file azuredeploy.json \
+  --parameters storageSKU=Standard_GRS storageName=stmah2026</div>
+<div class="cmd"># Azure PowerShell : chaque paramètre du
+# modèle devient un paramètre de la commande
+New-AzResourceGroupDeployment `
+  -Name addSkuParameter `
+  -TemplateFile azuredeploy.json `
+  -storageName stmah2026 -storageSKU Standard_GRS</div>
+  </div>
+  <div class="keyidea">
+    <div class="ico">🎲</div>
+    <div><b>Astuce de ton labo (hors de l'unité) :</b> pour ne plus tomber sur <code>StorageAccountAlreadyTaken</code>, donne au nom une valeur par défaut calculée : <code>"[concat('stlearn', uniqueString(resourceGroup().id))]"</code>. <code>uniqueString</code> fabrique un code de 13 caractères à partir de l'identifiant du groupe de ressources. Il est unique dans Azure et <b>toujours le même</b> pour ce groupe, donc le déploiement reste idempotent.</div>
+  </div>
+
+  <!-- EXERCICES -->
+  <h2 id="exercices">Les exercices en un coup d'œil</h2>
+  <p style="margin:0 0 12px;color:var(--muted)">Chaque déploiement porte un nom et apparaît dans l'<b>historique du groupe de ressources</b> (portail → groupe → Déploiements). Les ressources déjà là ne sont pas recréées, seules les <b>différences</b> sont appliquées.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>Déploiement</th><th class="c">Ce qui change dans le modèle</th><th>Résultat</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>blanktemplate</code></td><td>Modèle vide (toutes les sections, aucune ressource)</td><td>✅ réussi, 0 ressource</td></tr>
+        <tr><td>2</td><td><code>addstorage</code></td><td>+ un compte de stockage, nom écrit en dur</td><td>✅ compte créé</td></tr>
+        <tr><td>3</td><td><code>addnameparameter</code></td><td>Le nom devient le paramètre <code>storageName</code> (3-24 caractères)</td><td>✅ un nom déjà utilisé met à jour au lieu de créer</td></tr>
+        <tr><td>4</td><td><code>addSkuParameter</code></td><td>+ paramètre <code>storageSKU</code> avec <code>allowedValues</code></td><td>✅ <code>Standard_GRS</code> · ❌ <code>Basic</code> refusé à la validation</td></tr>
+        <tr><td>5</td><td><code>addOutputs</code></td><td>+ sortie <code>storageEndpoint</code> via <code>reference()</code></td><td>✅ les URL s'affichent dans le terminal et le portail</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px">
+    <b>🧯 Les erreurs que tu as vraiment rencontrées</b>
+    <ul style="margin:8px 0 0;padding-left:18px">
+      <li><code>StorageAccountAlreadyTaken</code> : le nom d'un compte de stockage est <b>unique dans tout Azure</b>, et <code>learntemplatestorage123</code> est pris par d'autres élèves.</li>
+      <li><b>Nom invalide</b> : 3 à 24 caractères, <b>minuscules et chiffres seulement</b>. Learn mentionne les tirets, mais Azure les refuse pour les comptes de stockage.</li>
+      <li><code>ReadOnlyDisabledSubscription</code> : l'abonnement était annulé, donc en lecture seule. On l'a réglé en le réactivant. Pour nettoyer, on supprime le <b>groupe de ressources</b>, jamais l'abonnement.</li>
+      <li>Dans Cloud Shell, <code>code</code> ouvre un tunnel VS Code au lieu d'un éditeur. Utilise plutôt <code>nano</code> ou VS Code en local.</li>
+    </ul>
+    <p style="margin:8px 0 0;font-size:14px">💡 Dans VS Code, <b>Alt+Maj+F</b> formate le JSON. Les modèles ARM acceptent les commentaires <code>//</code> et <code>/* */</code>.</p>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong"><code>az group deployment create --resource-group …</code></span><span class="right"><b>Ancienne commande, déconseillée.</b> La bonne est <code>az deployment <b>group</b> create</code> : d'abord « deployment », puis l'étendue.</span></div>
@@ -152,6 +252,10 @@ az deployment group create \
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Redéployer le même modèle va créer des ressources en double. »</span><span class="right"><b>Faux.</b> C'est <b>idempotent</b> : même état final.</span></div>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Un modèle ARM liste les commandes à exécuter dans l'ordre. »</span><span class="right"><b>Non.</b> C'est <b>déclaratif</b> : il décrit le résultat, et Resource Manager décide de l'ordre (et parallélise).</span></div>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Le type d'un compte de stockage, c'est <code>storageAccounts</code>. »</span><span class="right"><b>Incomplet.</b> Il faut <code>Microsoft.Storage/storageAccounts</code> (fournisseur/type).</span></div>
+
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets le mot de passe admin en <code>string</code> avec une valeur par défaut. »</span><span class="right"><b>Non.</b> <code>secureString</code>, <b>sans</b> valeur par défaut.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« <code>minLength</code> limite la valeur d'un entier. »</span><span class="right"><b>Non.</b> <code>minLength</code>/<code>maxLength</code> s'appliquent aux <b>chaînes et tableaux</b>, <code>minValue</code>/<code>maxValue</code> aux <b>entiers</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une valeur hors de <code>allowedValues</code> crée quand même la ressource avec un avertissement. »</span><span class="right"><b>Non.</b> Le déploiement échoue dès la <b>validation</b>, et rien n'est créé.</span></div>
 
   <!-- QUIZ -->
   <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
@@ -206,12 +310,15 @@ az deployment group create \
         <tr><td>Étendue</td><td>Scope</td><td>Où on déploie : groupe de ressources, abonnement…</td></tr>
         <tr><td>SAS</td><td>Shared Access Signature</td><td>Jeton d'accès temporaire à un fichier de stockage</td></tr>
         <tr><td>CI/CD</td><td>Continuous Integration / Delivery</td><td>Tester et déployer automatiquement à chaque modification</td></tr>
+        <tr><td>SKU</td><td>Stock Keeping Unit</td><td>Le « modèle » ou niveau de service d'une ressource (ex. Standard_LRS)</td></tr>
+        <tr><td>GRS / ZRS</td><td>Geo- / Zone-Redundant Storage</td><td>Copies dans une 2ᵉ région / dans 3 zones de la même région</td></tr>
+        <tr><td>secureString</td><td>—</td><td>Type de paramètre pour les secrets, masqué et non relisible</td></tr>
         <tr><td>LRS</td><td>Locally Redundant Storage</td><td>3 copies des données dans un seul centre de données</td></tr>
       </tbody>
     </table>
   </div>
 
-  <footer><a href="../index.html">← Sommaire</a><br>Résumé personnel d'après l'unité Microsoft Learn « Explorer la structure du modèle Azure Resource Manager ».</footer>
+  <footer><a href="../index.html">← Sommaire</a><br>Résumé personnel d'après le module Microsoft Learn « Déployer l'infrastructure Azure en utilisant des modèles ARM JSON » (7 unités).</footer>
 </main>
 
 <script>
@@ -230,7 +337,11 @@ var Q=[
   {q:"Tu redéploies le même modèle sans changement. Que se passe-t-il ?",o:["Les ressources sont dupliquées","Rien ne change : même état final","Le déploiement échoue"],a:1,e:"Idempotence."},
   {q:"Dans quelle section mets-tu une valeur fournie au moment du déploiement (ex. la région) ?",o:["variables","parameters","outputs"],a:1,e:"parameters = cases remplies au déploiement ; variables = calculs internes."},
   {q:"Pourquoi un modèle est-il souvent plus rapide qu'un script ?",o:["Il est écrit en JSON","Resource Manager crée les ressources en parallèle quand c'est possible","Il ignore la validation"],a:1,e:"Orchestration : un seul appel, création parallèle."},
-  {q:"Comment protéger un modèle lié stocké dans un compte de stockage ?",o:["Avec un jeton SAS","Avec une GPO","Avec Kerberos"],a:0,e:"Le modèle lié peut être sécurisé par un jeton SAS."}
+  {q:"Comment protéger un modèle lié stocké dans un compte de stockage ?",o:["Avec un jeton SAS","Avec une GPO","Avec Kerberos"],a:0,e:"Le modèle lié peut être sécurisé par un jeton SAS."},
+  {q:"Quel type de paramètre pour un mot de passe administrateur ?",o:["string","secureString","object"],a:1,e:"secureString : non lisible après le déploiement. Et jamais de valeur par défaut."},
+  {q:"Tu déploies avec storageSKU=Basic alors que allowedValues ne le contient pas. Résultat ?",o:["Compte créé en Standard_LRS","Échec à la validation"],a:1,e:"La validation refuse la valeur, et rien n'est déployé."},
+  {q:"Quelle fonction lit l'état réel d'une ressource déployée (ex. ses URL) ?",o:["parameters()","reference()","resourceGroup()"],a:1,e:"reference() renvoie l'état d'exécution, par exemple primaryEndpoints."},
+  {q:"Un paramètre n'a pas de defaultValue. Que se passe-t-il si tu ne le fournis pas ?",o:["Il vaut null","Il est obligatoire : on te le demande ou le déploiement échoue"],a:1,e:"Sans defaultValue, le paramètre est obligatoire."}
 ];
 var box=document.getElementById('quiz'),score=0,done=0;
 Q.forEach(function(item,i){

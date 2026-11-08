@@ -34,8 +34,8 @@ h3{font-size:17px;margin:0 0 6px}
 .meta{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:720px){.grid2{grid-template-columns:1fr}}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:720px){.grid2{grid-template-columns:minmax(0,1fr)}}
 
 /* key idea */
 .keyidea{display:flex;gap:14px;align-items:flex-start;background:var(--cloud-soft);border:1px solid color-mix(in srgb,var(--cloud) 30%,transparent);border-radius:var(--radius);padding:16px 18px;margin-top:24px}

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Réseaux virtuels Azure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+.opt3 ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.ips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.ips{grid-template-columns:repeat(2,minmax(0,1fr))}.ip.free{grid-column:1/-1}}
+.ip{border-radius:12px;padding:10px;text-align:center;border:1.5px solid var(--onprem);background:var(--onprem-soft);font-size:13px}
+.ip code{display:block;font-size:14px;font-weight:700;margin-bottom:4px;background:none}
+.ip.free{border-color:var(--ok);background:var(--ok-soft)}
+.calc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.calc input{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);width:180px;max-width:100%}
+.calc output{font-size:15px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Réseaux virtuels</span></nav>
+  <h1>Configurer des réseaux virtuels</h1>
+  <p class="lede">Le réseau privé de tes ressources dans Azure : son plan d'adresses, ses sous-réseaux, ses adresses IP privées et publiques. Les notions ajoutées pour l'examen sont marquées <b>➕ examen</b>.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 9 min · module complet</span>
+    <span class="chip">🎯 Base de toute la partie Réseaux (≈ 15-20 % de l'examen)</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> un <b>VNet</b> est un réseau <b>isolé</b>, dans <b>une seule région</b>, avec un <b>espace d'adresses</b> en CIDR (ex. <code>10.1.0.0/16</code>). On le découpe en <b>sous-réseaux</b> qui ne se chevauchent pas. Azure <b>réserve 5 adresses</b> par sous-réseau. Les VNet que tu veux relier entre eux ou à ton réseau local <b>ne doivent pas se chevaucher</b>.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la cour du terminal 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🏗️ Le terrain</h3>
+      <ul>
+        <li><b>VNet</b> = la <b>cour clôturée</b> du terminal : personne n'entre sans y être invité</li>
+        <li><b>Espace d'adresses</b> = le <b>plan cadastral</b> du terrain (toutes les places numérotées)</li>
+        <li><b>Sous-réseau</b> = une <b>zone</b> de la cour : quais de chargement, stationnement des remorques, atelier</li>
+        <li><b>5 adresses réservées</b> = l'entrée, la guérite, deux bureaux de répartition et la sortie. Tu ne peux pas y garer de camion</li>
+        <li><b>NSG</b> = la <b>barrière</b> à l'entrée d'une zone (une barrière par zone au maximum)</li>
+        <li><b>Appairage (peering)</b> = un <b>chemin privé</b> entre deux cours, sans passer par la route publique</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📍 Les adresses</h3>
+      <ul>
+        <li><b>IP privée</b> = le <b>numéro de porte de quai</b> : connu seulement à l'intérieur</li>
+        <li><b>IP publique</b> = l'<b>adresse civique</b> sur la rue, pour que le monde extérieur te trouve</li>
+        <li><b>Dynamique</b> = « prends la <b>première place libre</b> »</li>
+        <li><b>Statique</b> = une <b>place attitrée</b> avec ton nom dessus (pour le répartiteur que tout le monde doit trouver : contrôleur de domaine, DNS)</li>
+        <li><b>Chevauchement d'adresses</b> = deux terminaux avec les <b>mêmes numéros de porte</b> : impossible de les relier sans confusion</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- VNET -->
+  <h2 id="vnet">1 · Le réseau virtuel et ses sous-réseaux</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Deux réseaux virtuels dans Canada Central : app-vnet avec deux sous-réseaux frontend et backend, hub-vnet avec le sous-réseau du pare-feu, reliés par appairage, et un lien VPN vers le réseau local">
+      <defs><marker id="vn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <text x="20" y="28" class="svg-small">Région : Canada Central (un VNet ne déborde jamais de sa région)</text>
+      <rect x="10" y="40" width="430" height="270" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="70" class="svg-title-c">app-vnet · 10.1.0.0/16</text>
+      <g transform="translate(30,90)">
+        <rect width="185" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="92" y="28" text-anchor="middle" class="svg-text">frontend</text>
+        <text x="92" y="46" text-anchor="middle" class="svg-small">10.1.0.0/24</text>
+        <rect x="20" y="62" width="145" height="36" rx="8" class="svg-cloud" stroke-width="1"/><text x="92" y="85" text-anchor="middle" class="svg-small">🖥️ web1 · 10.1.0.4</text>
+        <rect x="20" y="106" width="145" height="36" rx="8" class="svg-cloud" stroke-width="1"/><text x="92" y="129" text-anchor="middle" class="svg-small">🖥️ web2 · 10.1.0.5</text>
+        <text x="92" y="172" text-anchor="middle" class="svg-small">🛡️ NSG frontend</text>
+      </g>
+      <g transform="translate(235,90)">
+        <rect width="185" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="92" y="28" text-anchor="middle" class="svg-text">backend</text>
+        <text x="92" y="46" text-anchor="middle" class="svg-small">10.1.1.0/24</text>
+        <rect x="20" y="62" width="145" height="36" rx="8" class="svg-cloud" stroke-width="1"/><text x="92" y="85" text-anchor="middle" class="svg-small">🗄️ bd · 10.1.1.4</text>
+        <text x="92" y="172" text-anchor="middle" class="svg-small">🛡️ NSG backend</text>
+      </g>
+      <path d="M445 175 H535" class="svg-line-c" stroke-width="2" marker-start="url(#vn)" marker-end="url(#vn)" stroke-dasharray="6 4"/>
+      <text x="490" y="160" text-anchor="middle" class="svg-small">appairage</text>
+      <rect x="540" y="40" width="250" height="270" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="560" y="70" class="svg-title-c">hub-vnet · 10.0.0.0/16</text>
+      <g transform="translate(560,90)">
+        <rect width="210" height="110" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="105" y="28" text-anchor="middle" class="svg-text">AzureFirewallSubnet</text>
+        <text x="105" y="46" text-anchor="middle" class="svg-small">10.0.0.0/26 · nom imposé</text>
+        <text x="105" y="80" text-anchor="middle" class="svg-small">🔥 pare-feu</text>
+      </g>
+      <g transform="translate(560,210)">
+        <rect width="210" height="80" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="105" y="28" text-anchor="middle" class="svg-text">GatewaySubnet</text>
+        <text x="105" y="48" text-anchor="middle" class="svg-small">passerelle VPN · nom imposé</text>
+      </g>
+      <path d="M795 250 H855" class="svg-line-c" stroke-width="2" marker-end="url(#vn)"/>
+      <text x="825" y="238" text-anchor="middle" class="svg-small">VPN</text>
+      <rect x="860" y="200" width="95" height="100" rx="14" class="svg-onprem" stroke-width="1.6"/>
+      <text x="907" y="240" text-anchor="middle" class="svg-title-o">Local</text>
+      <text x="907" y="260" text-anchor="middle" class="svg-small">192.168.0.0</text>
+      <text x="907" y="276" text-anchor="middle" class="svg-small">/16</text>
+    </svg>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">C'est l'architecture de l'exercice du module : <b>hub and spoke</b> (le moyeu et les rayons, comme un terminal central et ses succursales). Les trois espaces <code>10.1</code>, <code>10.0</code> et <code>192.168</code> ne se chevauchent pas, donc on peut tout relier.</p>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>📏 Règles des sous-réseaux</h3>
+      <ul style="font-size:14px">
+        <li>Chaque plage est <b>dans l'espace du VNet</b>, en notation <b>CIDR</b></li>
+        <li>Plages <b>uniques</b>, <b>sans chevauchement</b> entre sous-réseaux</li>
+        <li>Au moins <b>un</b> sous-réseau par VNet</li>
+        <li>Par défaut, Azure <b>route tout le trafic entre les sous-réseaux</b> d'un VNet</li>
+        <li><b>0 ou 1 NSG</b> par sous-réseau (le même NSG peut servir à plusieurs)</li>
+        <li>➕ examen : plus petit sous-réseau = <b>/29</b> (8 adresses, 3 utilisables)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🧭 Planifier les sous-réseaux</h3>
+      <ul style="font-size:14px">
+        <li><b>Exigences des services</b> : certains veulent un sous-réseau <b>dédié</b> avec un <b>nom imposé</b> : <code>GatewaySubnet</code> (VPN), <code>AzureFirewallSubnet</code>, <code>AzureBastionSubnet</code>. Garde de l'espace libre</li>
+        <li><b>Appliance virtuelle (NVA)</b> : pour forcer le trafic à passer par un pare-feu, mets les ressources dans des <b>sous-réseaux différents</b></li>
+        <li><b>NSG</b> : filtre par sous-réseau</li>
+        <li><b>Private Link</b> : accès privé aux services PaaS (stockage, SQL) sans passer par Internet</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RESERVEES -->
+  <h2 id="reservees">2 · Les 5 adresses réservées par Azure</h2>
+  <p>Exemple avec <code>192.168.1.0/24</code> (256 adresses) : les <b>4 premières</b> et la <b>dernière</b> sont prises.</p>
+  <div class="ips">
+    <div class="ip"><code>.0</code>Adresse réseau</div>
+    <div class="ip"><code>.1</code>Passerelle par défaut</div>
+    <div class="ip"><code>.2 et .3</code>DNS Azure</div>
+    <div class="ip"><code>.255</code>Diffusion (broadcast)</div>
+    <div class="ip free"><code>.4 → .254</code>251 adresses pour toi</div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:10px">Conséquence : la <b>première VM</b> d'un sous-réseau reçoit toujours l'adresse <b>.4</b>.</p>
+
+  <div class="card" style="margin-top:14px">
+    <h3>🧮 Calculette CIDR (adresses utilisables dans Azure)</h3>
+    <div class="calc"><label for="cidr" style="font-size:14px">Taille du préfixe /</label><input id="cidr" type="number" min="8" max="29" value="24" inputmode="numeric"><output id="cidrOut"></output></div>
+    <div class="tablewrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Préfixe</th><th class="c">Adresses</th><th class="c">Utilisables</th></tr></thead>
+        <tbody>
+          <tr><td>/16</td><td class="c">65 536</td><td class="c">65 531</td></tr>
+          <tr><td>/24</td><td class="c">256</td><td class="c">251</td></tr>
+          <tr><td>/26</td><td class="c">64</td><td class="c">59</td></tr>
+          <tr><td>/27</td><td class="c">32</td><td class="c">27</td></tr>
+          <tr><td>/28</td><td class="c">16</td><td class="c">11</td></tr>
+          <tr><td>/29</td><td class="c">8</td><td class="c">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Formule : 2<sup>(32 − préfixe)</sup> − 5. Plus le chiffre après la barre est <b>grand</b>, plus le réseau est <b>petit</b>.</p>
+  </div>
+  <div class="note" style="margin-top:14px"><b>➕ examen, plages privées (RFC 1918) :</b> <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>. C'est là-dedans qu'on choisit l'espace d'un VNet, en évitant ce que ton entreprise utilise déjà.</div>
+
+  <!-- IP -->
+  <h2 id="ip">3 · Adresses IP privées et publiques</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔒 IP privée</h3>
+      <ul style="font-size:14px">
+        <li>Communication <b>dans le VNet</b>, entre VNet appairés et avec le <b>réseau local</b> (VPN, ExpressRoute)</li>
+        <li>Prise dans la plage du <b>sous-réseau</b> de la ressource</li>
+        <li><b>Dynamique (par défaut)</b> : la prochaine libre. Si .4 à .9 sont prises, tu reçois <b>.10</b></li>
+        <li><b>Statique</b> : tu choisis une adresse libre et non réservée du sous-réseau</li>
+        <li>Associée à : <b>carte réseau de VM</b>, <b>équilibreur de charge interne</b>, <b>passerelle d'application</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🌐 IP publique</h3>
+      <ul style="font-size:14px">
+        <li>Communication avec <b>Internet</b></li>
+        <li>C'est une <b>ressource Azure à part</b> (elle a son propre nom et coûte un peu à l'heure)</li>
+        <li>Associée à : <b>carte réseau de VM</b>, <b>équilibreur de charge public</b>, <b>passerelle VPN</b>, <b>passerelle d'application</b>, <b>Azure Firewall</b>, <b>Bastion</b>, <b>passerelle NAT</b></li>
+        <li>SKU de l'IP = SKU de l'<b>équilibreur de charge</b> avec lequel on l'utilise</li>
+        <li>IPv4 et IPv6 coûtent pareil</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin:20px 0 8px">Quand prendre une IP statique ?</h3>
+  <div class="opt3">
+    <div class="card"><span class="num">Résolution de noms</span><p>Un enregistrement DNS pointe vers l'IP : si elle change, il faut tout mettre à jour.</p></div>
+    <div class="card"><span class="num">Sécurité</span><p>Règles de pare-feu par plage d'IP, certificats TLS liés à une IP, modèles de sécurité basés sur l'IP.</p></div>
+    <div class="card"><span class="num">Serveurs de rôle</span><p><b>Contrôleurs de domaine</b> et <b>serveurs DNS</b> : tout le monde doit les trouver à la même adresse.</p></div>
+  </div>
+
+  <h3 style="margin:20px 0 8px">SKU des IP publiques</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th class="c">Standard</th><th class="c">De base (Basic)</th></tr></thead>
+      <tbody>
+        <tr><td>Attribution</td><td><b>Statique seulement</b></td><td>Dynamique ou statique</td></tr>
+        <tr><td>Sécurité</td><td><b>Sécurisée par défaut</b> : fermée tant qu'un <b>NSG</b> n'autorise pas le trafic</td><td>Ouverte par défaut</td></tr>
+        <tr><td>Zones de disponibilité</td><td>Non zonale, <b>zonale</b> ou <b>redondante interzone</b></td><td>Non</td></tr>
+        <tr><td>Statut</td><td>Le choix par défaut</td><td>➕ <b>Retirée</b> (fin du support le 30 sept. 2025), peut encore apparaître dans les questions</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Une IP <b>statique</b> est gardée jusqu'à la <b>suppression</b> de la ressource IP publique. Une IP dynamique (Basic) était libérée quand la VM était arrêtée et désallouée.</p>
+
+  <!-- CREATION -->
+  <h2 id="creer">4 · Créer un VNet</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🖱️ Dans le portail</h3>
+      <ul style="font-size:14px">
+        <li>Abonnement, groupe de ressources, <b>nom</b>, <b>région</b></li>
+        <li><b>Espace d'adresses</b> qui ne chevauche rien d'autre dans ton organisation</li>
+        <li>Au moins <b>un sous-réseau</b></li>
+        <li>On peut aussi le créer pendant la création d'une VM</li>
+        <li>💸 Un VNet et ses sous-réseaux sont <b>gratuits</b>. L'appairage coûte quelques sous par Go. Ne déploie <b>pas</b> le pare-feu de l'exercice : c'est cher</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⌨️ En ligne de commande</h3>
+<pre class="json" style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;margin:0">az network vnet create -g rg-labo-reseau \
+  -n app-vnet --address-prefixes 10.1.0.0/16 \
+  --subnet-name frontend --subnet-prefixes 10.1.0.0/24
+
+az network vnet subnet create -g rg-labo-reseau \
+  --vnet-name app-vnet -n backend \
+  --address-prefixes 10.1.1.0/24
+
+az network public-ip create -g rg-labo-reseau \
+  -n pip-web --sku Standard --allocation-method Static</pre>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">PowerShell : <code>New-AzVirtualNetwork</code>, <code>Add-AzVirtualNetworkSubnetConfig</code> puis <code>Set-AzVirtualNetwork</code>, <code>New-AzPublicIpAddress</code>.</p>
+    </div>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un sous-réseau /24 me donne 256 adresses pour mes VM. »</span><span class="right"><b>251.</b> Azure en réserve 5 (les 4 premières et la dernière).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je relie mon VNet 10.0.0.0/16 à un VNet 10.0.5.0/24 par appairage. »</span><span class="right"><b>Impossible</b> : les espaces se <b>chevauchent</b>. Pareil avec le réseau local par VPN.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon VNet couvre Canada Central et Canada East. »</span><span class="right"><b>Non</b>, un VNet est dans <b>une seule région</b>. Pour relier deux régions : <b>appairage global</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai mis une IP publique Standard sur ma VM, elle répond tout de suite sur le port 80. »</span><span class="right"><b>Non</b> : Standard est <b>fermée par défaut</b>. Il faut un <b>NSG</b> qui autorise le trafic.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je nomme le sous-réseau de ma passerelle VPN snet-vpn. »</span><span class="right">Le nom doit être exactement <b>GatewaySubnet</b> (et <b>AzureFirewallSubnet</b>, <b>AzureBastionSubnet</b> pour les autres).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets une IP publique Standard en attribution dynamique. »</span><span class="right">Standard = <b>statique seulement</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon contrôleur de domaine a une IP privée dynamique, c'est correct. »</span><span class="right">Mets-la <b>statique</b> : DNS et contrôleurs de domaine doivent garder leur adresse.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 L'app-vnet de l'exercice</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_virtual_network"</span> <span class="c-s">"app"</span> {
+  name                = <span class="c-s">"app-vnet"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  address_space       = [<span class="c-s">"10.1.0.0/16"</span>]
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_subnet"</span> <span class="c-s">"frontend"</span> {
+  name                 = <span class="c-s">"frontend"</span>
+  resource_group_name  = azurerm_resource_group.labo.name
+  virtual_network_name = azurerm_virtual_network.app.name
+  address_prefixes     = [<span class="c-s">"10.1.0.0/24"</span>]
+}
+
+<span class="c-c"># Utile pour calculer les plages : cidrsubnet("10.1.0.0/16", 8, 1) = "10.1.1.0/24"</span>
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_public_ip"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"pip-web"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  sku                 = <span class="c-s">"Standard"</span>
+  allocation_method   = <span class="c-s">"Static"</span>
+}
+
+<span class="c-c"># IP privée statique sur la carte réseau</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_network_interface"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"nic-web1"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  ip_configuration {
+    name                          = <span class="c-s">"ipconfig1"</span>
+    subnet_id                     = azurerm_subnet.frontend.id
+    private_ip_address_allocation = <span class="c-s">"Static"</span>
+    private_ip_address            = <span class="c-s">"10.1.0.10"</span>
+    public_ip_address_id          = azurerm_public_ip.web.id
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>VNet</td><td>Virtual Network</td><td>Réseau privé isolé dans une région Azure</td></tr>
+        <tr><td>CIDR</td><td>Classless Inter-Domain Routing</td><td>Notation adresse/préfixe : <code>10.1.0.0/16</code></td></tr>
+        <tr><td>Espace d'adresses</td><td>Address space</td><td>Plage(s) CIDR d'un VNet</td></tr>
+        <tr><td>Sous-réseau</td><td>Subnet</td><td>Découpage d'un VNet</td></tr>
+        <tr><td>NSG</td><td>Network Security Group</td><td>Liste de règles qui autorisent ou bloquent le trafic</td></tr>
+        <tr><td>NVA</td><td>Network Virtual Appliance</td><td>VM qui joue le rôle de pare-feu ou de routeur</td></tr>
+        <tr><td>NIC</td><td>Network Interface Card</td><td>Carte réseau d'une VM, qui porte ses IP</td></tr>
+        <tr><td>SKU</td><td>Stock Keeping Unit</td><td>Niveau de produit (Standard, Basic)</td></tr>
+        <tr><td>Appairage</td><td>VNet peering</td><td>Lien privé entre deux VNet</td></tr>
+        <tr><td>Hub and spoke</td><td>—</td><td>Un VNet central partagé (pare-feu, VPN) relié à des VNet d'applications</td></tr>
+        <tr><td>Private Link</td><td>Azure Private Link</td><td>Accès privé à un service PaaS depuis ton VNet</td></tr>
+        <tr><td>ExpressRoute</td><td>—</td><td>Lien privé dédié entre ton centre de données et Azure (sans Internet)</td></tr>
+        <tr><td>RFC 1918</td><td>—</td><td>Norme qui définit les plages d'adresses privées</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="rbac.html"><span class="lbl">← Précédent</span><span class="ttl">Azure RBAC</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer des réseaux virtuels », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+(function(){
+  var i=document.getElementById('cidr'),o=document.getElementById('cidrOut');
+  function u(){var p=parseInt(i.value,10);if(isNaN(p)||p<8||p>29){o.textContent='Entre un préfixe de 8 à 29 (Azure refuse plus petit que /29).';return;}
+    var n=Math.pow(2,32-p);o.innerHTML='/'+p+' = <b>'+n.toLocaleString('fr-CA')+'</b> adresses, dont <b>'+(n-5).toLocaleString('fr-CA')+'</b> utilisables';}
+  i.addEventListener('input',u);u();
+})();
+var Q=[
+  {q:"Combien d'adresses utilisables pour tes ressources dans un sous-réseau /27 ?",o:["32","30","27"],a:2,e:"2^5 = 32, moins les 5 réservées par Azure = 27."},
+  {q:"Quelle adresse reçoit la première VM déployée dans 10.1.0.0/24 ?",o:["10.1.0.1","10.1.0.4","10.1.0.10"],a:1,e:".0 réseau, .1 passerelle, .2 et .3 DNS : la première libre est .4."},
+  {q:"Tu veux relier app-vnet (10.1.0.0/16) à un VNet 10.1.4.0/24. Que se passe-t-il ?",o:["Ça marche","Impossible : les espaces se chevauchent","Ça marche seulement par VPN"],a:1,e:"10.1.4.0/24 est inclus dans 10.1.0.0/16 : chevauchement."},
+  {q:"Quel serveur doit avoir une IP privée statique ?",o:["Un serveur web derrière un équilibreur de charge","Un contrôleur de domaine","Une VM de test"],a:1,e:"Contrôleurs de domaine et DNS gardent leur adresse."},
+  {q:"Quelle attribution supporte une IP publique Standard ?",o:["Dynamique seulement","Statique seulement","Les deux"],a:1,e:"Standard = statique seulement."},
+  {q:"Tu crées une VM avec IP publique Standard sans NSG. Le site sur le port 80 répond-il ?",o:["Oui, ouvert par défaut","Non, Standard est sécurisée par défaut","Oui, mais seulement en IPv6"],a:1,e:"Standard est fermée tant qu'un NSG n'autorise pas le trafic."},
+  {q:"Combien de NSG peut-on associer à un sous-réseau ?",o:["0 ou 1","Jusqu'à 5","Illimité"],a:0,e:"0 ou 1 par sous-réseau (un NSG peut servir à plusieurs sous-réseaux)."},
+  {q:"Quel nom doit porter le sous-réseau d'une passerelle VPN ?",o:["VpnSubnet","GatewaySubnet","AzureGatewaySubnet"],a:1,e:"Exactement GatewaySubnet."},
+  {q:"Quand une IP publique statique est-elle libérée ?",o:["Quand la VM est arrêtée","Quand la VM est supprimée","Quand la ressource IP publique est supprimée"],a:2,e:"Statique = gardée jusqu'à la suppression de la ressource IP publique elle-même."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

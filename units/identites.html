@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Gérer les identités</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.opt3 li{margin:3px 0}
+.opt3 .an{font-size:14px;background:var(--surface-2);border-radius:10px;padding:8px 10px}
+.matrix td,.matrix th{text-align:center}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.yes{color:var(--ok);font-weight:700} .no{color:var(--onprem);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.flow .st{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px}
+.flow .st b{display:block;margin-bottom:4px}
+.flow .ar{align-self:center;color:var(--cloud);font-weight:700}
+@media (max-width:640px){.flow .ar{display:none}}
+.timeline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+.timeline div{padding:14px;font-size:14px}
+.timeline .t1{background:var(--ok-soft)} .timeline .t2{background:var(--warn-soft)} .timeline .t3{background:var(--onprem-soft)}
+@media (max-width:640px){.timeline{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Module identités</span></nav>
+  <h1>Créer, configurer et gérer des identités</h1>
+  <p class="lede">Utilisateurs, groupes, appareils et licences dans Entra ID : qui entre, avec quel badge, sur quel appareil et avec quels outils payés.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 12 min · module complet (14 unités)</span>
+    <span class="chip">🎯 Domaine examen : Identités et gouvernance (20-25 %)</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> il y a <b>3 sortes d'utilisateurs</b> (cloud, synchronisés, invités), <b>2 types de groupes</b> (sécurité, Microsoft 365) et <b>3 façons d'en être membre</b> (attribué, dynamique utilisateur, dynamique appareil). Un appareil peut être <b>inscrit, joint ou joint hybride</b>. On donne les <b>licences par groupe</b>, ce qui demande P1 et un <b>emplacement d'utilisation</b>. Un utilisateur supprimé reste <b>30 jours</b> dans la corbeille.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la compagnie de transport 🚛</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Dans Entra ID</th><th class="c">Dans ta compagnie</th></tr></thead>
+      <tbody>
+        <tr><td>Identité cloud</td><td>Chauffeur <b>embauché directement</b> par le bureau de répartition (n'existe que là)</td></tr>
+        <tr><td>Identité synchronisée</td><td>Chauffeur dont le dossier vient du <b>siège social</b> (AD local) et est recopié chaque jour</td></tr>
+        <tr><td>Invité</td><td><b>Sous-traitant</b> (owner-operator) : accès temporaire, retiré à la fin du contrat</td></tr>
+        <tr><td>Groupe de sécurité</td><td>Le <b>badge d'accès</b> à un quai ou à un entrepôt</td></tr>
+        <tr><td>Groupe Microsoft 365</td><td>La <b>salle des chauffeurs</b> : babillard commun, calendrier, documents partagés</td></tr>
+        <tr><td>Appartenance dynamique</td><td>« Tous les chauffeurs du <b>département Transport</b> » : la liste se met à jour toute seule quand le dossier RH change</td></tr>
+        <tr><td>Licence par groupe</td><td>La <b>carte carburant d'équipe</b> : tu rejoins l'équipe, tu reçois la carte ; tu pars, elle est coupée</td></tr>
+        <tr><td>Emplacement d'utilisation</td><td>Le <b>pays de la plaque</b> : sans lui, impossible d'émettre la carte (certains services ne sont pas permis partout)</td></tr>
+        <tr><td>Corbeille 30 jours</td><td>La remorque à la <b>fourrière</b> : récupérable pendant 30 jours, puis détruite pour de bon</td></tr>
+        <tr><td>Provisionnement automatique (SCIM)</td><td>Les RH embauchent, et le badge, la carte et le compte apparaissent tout seuls. Au départ, tout est coupé le jour même</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- UTILISATEURS -->
+  <h2 id="utilisateurs">1 · Les utilisateurs</h2>
+  <div class="opt3">
+    <div class="card">
+      <span class="num">Identité cloud</span>
+      <h3>☁️ Créée dans Entra</h3>
+      <ul><li>Existe <b>seulement</b> dans Entra ID</li><li>Comptes admin, utilisateurs gérés dans le cloud</li><li>Source : <i>Microsoft Entra ID</i> ou <i>annuaire externe</i></li></ul>
+    </div>
+    <div class="card">
+      <span class="num">Identité synchronisée</span>
+      <h3>🔄 Venue de l'AD local</h3>
+      <ul><li>Source : <i>Windows Server AD</i></li><li>Outil recommandé : <b>Entra Cloud Sync</b> (agent léger, plusieurs forêts)</li><li><b>Entra Connect Sync</b> pour les cas complexes : synchro d'appareils, groupes de plus de <b>50 000</b> membres</li></ul>
+    </div>
+    <div class="card">
+      <span class="num">Invité (B2B)</span>
+      <h3>🧳 Hors organisation</h3>
+      <ul><li>Compte Microsoft ou d'un autre fournisseur</li><li>Source : <i>Utilisateur invité</i></li><li>Type d'utilisateur : <b>Invité</b> (les autres sont <b>Membre</b>)</li><li>À supprimer à la fin du travail</li></ul>
+    </div>
+  </div>
+  <h3 style="margin:22px 0 8px">🗑️ Supprimer et restaurer</h3>
+  <div class="timeline">
+    <div class="t1"><b>Jour 0 : suppression</b><br>L'utilisateur part dans <b>Utilisateurs supprimés</b>, avec toutes ses propriétés.</div>
+    <div class="t2"><b>Jours 1 à 30 : restaurable</b><br>Utilisateurs supprimés → sélectionner → <b>Restaurer l'utilisateur</b>.</div>
+    <div class="t3"><b>Après 30 jours : définitif</b><br>Suppression automatique. <b>Plus aucune restauration possible.</b></div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Rôles qui peuvent restaurer ou supprimer définitivement : <b>Administrateur général</b>, <b>Administrateur d'utilisateurs</b>, Support partenaire niveau 1 et niveau 2. Astuce : cocher plusieurs utilisateurs dans la liste permet d'agir sur plusieurs à la fois.</p>
+
+  <!-- GROUPES -->
+  <h2 id="groupes">2 · Les groupes</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🔐 Groupe de sécurité</h3>
+      <ul><li>But : donner <b>l'accès aux ressources</b></li><li>Membres : utilisateurs, <b>appareils</b>, <b>principaux de service</b></li><li>Créé par un administrateur Entra</li></ul>
+    </div>
+    <div class="card side o">
+      <h3>💬 Groupe Microsoft 365</h3>
+      <ul><li>But : <b>collaborer</b> (boîte aux lettres, calendrier, fichiers, site SharePoint partagés)</li><li>Peut inclure des <b>personnes externes</b></li><li>Créable par les utilisateurs <b>et</b> les admins</li></ul>
+    </div>
+  </div>
+  <h3 style="margin:20px 0 8px">Types d'appartenance × type de groupe</h3>
+  <div class="tablewrap">
+    <table class="matrix">
+      <thead><tr><th>Appartenance</th><th>Comment</th><th>Sécurité</th><th>Microsoft 365</th></tr></thead>
+      <tbody>
+        <tr><td><b>Attribuée</b> (Assigned)</td><td style="text-align:left">Ajout et retrait à la main</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td><b>Utilisateur dynamique</b></td><td style="text-align:left">Règle sur les attributs (service, poste, lieu)</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td><b>Appareil dynamique</b></td><td style="text-align:left">Règle sur les attributs de l'appareil</td><td class="yes">✓</td><td class="no">✗</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:12px"><b>💳 Les groupes dynamiques demandent Entra ID P1</b> (ou Intune pour l'Éducation pour les règles d'appareils). La règle est réévaluée dès qu'un attribut change. Exemple : <code>user.department -eq "Marketing"</code>.</div>
+
+  <!-- APPAREILS -->
+  <h2 id="appareils">3 · Les appareils</h2>
+  <div class="opt3">
+    <div class="card">
+      <span class="num">Entra inscrit (registered)</span>
+      <h3>📱 Ton téléphone perso</h3>
+      <div class="an">L'appli de la compagnie sur <b>ton</b> cellulaire : tu ouvres la session avec ton compte à toi.</div>
+      <ul>
+        <li><b>BYOD</b>, mobiles · appartient à l'utilisateur ou à l'organisation</li>
+        <li>Connexion avec un <b>compte local</b> (mot de passe, Hello, NIP, biométrie)</li>
+        <li>Windows 10+, macOS, iOS, Android, Linux (Ubuntu, RHEL)</li>
+        <li>Gestion : MDM/MAM (Intune). SSO cloud, accès conditionnel</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="num">Entra joint (joined)</span>
+      <h3>🚚 Le camion de la compagnie</h3>
+      <div class="an">Il appartient à la compagnie et tu démarres avec la <b>clé de la compagnie</b> (ton compte pro).</div>
+      <ul>
+        <li>Organisations <b>cloud d'abord</b> · appartient à l'organisation</li>
+        <li>Connexion avec un <b>compte professionnel</b> Entra</li>
+        <li>Windows 10/11 (<b>pas Famille</b>), VM Windows Server 2019+ dans Azure (pas Server Core)</li>
+        <li>Joint par OOBE, inscription en bloc ou <b>Autopilot</b></li>
+        <li>SSO cloud <b>et</b> local, SSPR, réinitialisation du NIP Hello</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="num">Entra joint hybride</span>
+      <h3>🏭 Le camion du siège, aussi enregistré dans le cloud</h3>
+      <div class="an">Immatriculé au <b>siège</b> (AD local) <b>et</b> connu du bureau de répartition cloud.</div>
+      <ul>
+        <li>Organisations <b>hybrides</b> avec un AD local</li>
+        <li>Joint à l'<b>AD local</b> + enregistré dans Entra ID</li>
+        <li>Windows 10/11, Windows Server 2016/2019/2022</li>
+        <li>Gestion : <b>GPO</b>, Configuration Manager, cogestion Intune</li>
+        <li>Pour les applis Win32 qui ont besoin de l'authentification machine AD</li>
+      </ul>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:10px">ℹ️ L'<b>écriture différée des appareils</b> (device writeback) n'est plus prise en charge. Elle est remplacée par <b>cloud Kerberos Trust</b>, qui donne aux appareils joints l'accès aux ressources locales.</p>
+
+  <!-- LICENCES -->
+  <h2 id="licences">4 · Les licences</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>👥 Licences par groupe</h3>
+      <ul>
+        <li>On attribue une licence <b>à un groupe de sécurité</b> (cloud, synchronisé ou dynamique). Les membres l'obtiennent, et ceux qui sortent la perdent</li>
+        <li>Prérequis : <b>Entra ID P1</b>, ou Office 365 E3 et plus</li>
+        <li><b>1 licence par membre unique</b> : 1 000 membres = 1 000 licences</li>
+        <li>Même licence reçue par 2 groupes, ou en direct + groupe : <b>consommée une seule fois</b></li>
+        <li>On peut <b>désactiver des plans de service</b> (ex. Viva Engage)</li>
+        <li>Se gère dans le <b>Centre d'administration Microsoft 365</b> : Facturation → Licences</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🌍 L'emplacement d'utilisation</h3>
+      <p style="margin:4px 0 0">Il est <b>obligatoire</b> pour recevoir une licence, parce que certains services ne sont pas offerts dans tous les pays. Sans valeur, l'utilisateur hérite de l'emplacement de l'annuaire. Bonne pratique : le remplir <b>dès la création</b> du compte.</p>
+      <p style="margin:10px 0 0;font-size:14px"><b>Migrer du direct vers les groupes :</b> créer le groupe, y attribuer la licence, vérifier (aucune erreur, licence « héritée »), <b>puis seulement</b> retirer les licences directes. Sinon l'utilisateur garderait sa licence en quittant le groupe.</p>
+    </div>
+  </div>
+  <h3 style="margin:20px 0 8px">Les erreurs d'attribution (et leur nom PowerShell)</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Erreur</th><th>Code</th><th class="c">Solution</th></tr></thead>
+      <tbody>
+        <tr><td>Licences insuffisantes</td><td><code>CountViolation</code></td><td>Acheter ou libérer des licences</td></tr>
+        <tr><td>Plans de service en conflit</td><td><code>MutuallyExclusiveViolation</code></td><td>Ex. E1 direct + E3 de groupe. L'admin désactive un plan ou retire la licence en double (rien n'est automatique)</td></tr>
+        <tr><td>Un autre produit dépend de cette licence</td><td><code>DependencyViolation</code></td><td>Garder le plan requis autrement, ou désactiver le service dépendant</td></tr>
+        <tr><td>Emplacement d'utilisation non autorisé</td><td><code>ProhibitedInUsageLocationViolation</code></td><td>Remplir l'emplacement dans le profil, ou retirer l'utilisateur du groupe</td></tr>
+        <tr><td>Adresse proxy en double</td><td>—</td><td>Corriger l'adresse dans Exchange, puis <b>Retraiter</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Les erreurs sont notées <b>sur l'utilisateur</b>, pas affichées tout de suite. Après correction, bouton <b>Retraiter</b> (groupe ou utilisateur → Licences). Les modules complémentaires exigent leur produit prérequis <b>dans le même groupe</b>. Pour supprimer un groupe sous licence, il faut d'abord retirer ses licences.</p>
+
+  <!-- ATTRIBUTS + PROVISIONNEMENT -->
+  <h2 id="attributs">5 · Attributs de sécurité personnalisés</h2>
+  <div class="card">
+    <p style="margin:0">Des <b>étiquettes clé-valeur propres à l'entreprise</b>, posées sur des utilisateurs ou des applications d'entreprise. Exemples : <code>Projet = Optifuel</code>, <code>TauxHoraire = 32</code>. Elles servent à <b>classer</b>, à <b>restreindre</b> qui voit l'info, et à <b>contrôler l'accès</b> à des ressources Azure (ex. les blobs d'un projet).</p>
+    <ul style="margin:8px 0 0;padding-left:18px">
+      <li>Types : <b>booléen, entier, chaîne</b> ; valeur unique ou multiple ; valeurs libres ou prédéfinies</li>
+      <li>Disponibles dans tous les locataires, y compris pour les utilisateurs synchronisés</li>
+      <li><b>Non pris en charge</b> par Entra Domain Services ni dans les jetons <b>SAML</b> et <b>JWT</b></li>
+    </ul>
+  </div>
+
+  <h2 id="provisionnement">6 · Création automatique des utilisateurs</h2>
+  <div class="flow">
+    <div class="st"><b>🧑‍💼 Système RH</b>Workday, SAP SuccessFactors, système maison</div>
+    <span class="ar">→</span>
+    <div class="st"><b>⚙️ Service de provisionnement Entra</b>Protocole <b>SCIM 2.0</b> (schéma + API REST)</div>
+    <span class="ar">→</span>
+    <div class="st"><b>☁️ Entra ID</b>Le référentiel des identités</div>
+    <span class="ar">→</span>
+    <div class="st"><b>🎯 Applis cibles</b>Point de terminaison SCIM : comptes créés, mis à jour, <b>désactivés au départ</b></div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Si le système RH ne parle pas SCIM, on utilise le <b>provisionnement entrant piloté par API</b> (disponible depuis mars 2024) : un script lit les données RH et les pousse vers l'API de provisionnement d'Entra.</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je crée un groupe Microsoft 365 avec appartenance <b>appareil dynamique</b>. »</span><span class="right"><b>Impossible.</b> Appareil dynamique = <b>groupe de sécurité seulement</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Les groupes dynamiques sont inclus dans Entra ID Free. »</span><span class="right"><b>Non.</b> Il faut <b>P1</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai supprimé un utilisateur il y a 45 jours, je le restaure. »</span><span class="right"><b>Trop tard.</b> Au-delà de <b>30 jours</b>, la suppression est définitive.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La licence de groupe échoue pour un utilisateur, la cause doit être le nombre de licences. »</span><span class="right"><b>Pas forcément.</b> Vérifie d'abord l'<b>emplacement d'utilisation</b> : sans lui, aucune licence ne peut être attribuée.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un PC Windows 11 <b>Famille</b> peut être joint à Entra. »</span><span class="right"><b>Non.</b> Joint = Windows 10/11 <b>sauf Famille</b>. Un appareil perso sera plutôt <b>inscrit</b> (registered).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« L'entreprise garde ses GPO et ses applis Win32 liées à AD, donc je choisis Entra joint. »</span><span class="right"><b>Non.</b> Il faut <b>Entra joint hybride</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un utilisateur dans 2 groupes avec la licence E3 consomme 2 licences. »</span><span class="right"><b>Faux.</b> Une même licence n'est consommée <b>qu'une fois</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Utilisateur, invité et groupe dynamique avec <code>azuread</code></h3>
+    <p style="margin:0;font-size:15px">Le provider <code>azuread</code> gère utilisateurs, invités et groupes. Les <b>licences</b> ne s'y gèrent pas : elles passent par le Centre d'administration Microsoft 365 ou Microsoft Graph (<code>Set-MgUserLicense</code>).</p>
+<pre><span class="c-k">resource</span> <span class="c-s">"azuread_user"</span> <span class="c-s">"dominique"</span> {
+  user_principal_name = <span class="c-s">"DominiqueK@contoso.onmicrosoft.com"</span>
+  display_name        = <span class="c-s">"Dominique Koch"</span>
+  department          = <span class="c-s">"Transport"</span>
+  usage_location      = <span class="c-s">"CA"</span>   <span class="c-c"># obligatoire avant une licence</span>
+  password            = var.initial_password
+}
+
+<span class="c-c"># Invité (B2B) : un sous-traitant</span>
+<span class="c-k">resource</span> <span class="c-s">"azuread_invitation"</span> <span class="c-s">"soustraitant"</span> {
+  user_email_address = <span class="c-s">"owner.op@gmail.com"</span>
+  redirect_url       = <span class="c-s">"https://myapps.microsoft.com"</span>
+}
+
+<span class="c-c"># Groupe de sécurité dynamique (demande P1)</span>
+<span class="c-k">resource</span> <span class="c-s">"azuread_group"</span> <span class="c-s">"transport"</span> {
+  display_name     = <span class="c-s">"Chauffeurs Transport"</span>
+  security_enabled = true
+  types            = [<span class="c-s">"DynamicMembership"</span>]
+
+  dynamic_membership {
+    enabled = true
+    rule    = <span class="c-s">"user.department -eq \"Transport\""</span>
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Invité / B2B</td><td>Guest / Business-to-Business</td><td>Utilisateur externe invité dans ton locataire</td></tr>
+        <tr><td>Cloud Sync</td><td>Microsoft Entra Cloud Sync</td><td>Synchro AD local → Entra, par un agent léger (recommandé)</td></tr>
+        <tr><td>Connect Sync</td><td>Microsoft Entra Connect Sync</td><td>Ancien outil de synchro, pour les cas complexes</td></tr>
+        <tr><td>BYOD</td><td>Bring Your Own Device</td><td>Apporter son appareil perso au travail</td></tr>
+        <tr><td>MDM / MAM</td><td>Mobile Device / Application Management</td><td>Gérer l'appareil entier / seulement les applis pro</td></tr>
+        <tr><td>OOBE</td><td>Out-Of-Box Experience</td><td>L'assistant du premier démarrage de Windows</td></tr>
+        <tr><td>Autopilot</td><td>Windows Autopilot</td><td>Préparer et joindre des PC neufs automatiquement</td></tr>
+        <tr><td>Principal de service</td><td>Service principal</td><td>L'identité d'une application</td></tr>
+        <tr><td>Plan de service</td><td>Service plan</td><td>Un service inclus dans une licence (ex. Exchange dans E3)</td></tr>
+        <tr><td>Emplacement d'utilisation</td><td>Usage location</td><td>Pays où l'utilisateur utilise les services. Requis pour la licence</td></tr>
+        <tr><td>SCIM</td><td>System for Cross-domain Identity Management</td><td>Protocole standard pour créer et supprimer des comptes automatiquement</td></tr>
+        <tr><td>HCM / SIRH</td><td>Human Capital Management</td><td>Le système RH (Workday, SuccessFactors…)</td></tr>
+        <tr><td>JWT</td><td>JSON Web Token</td><td>Jeton d'accès moderne (OIDC/OAuth)</td></tr>
+        <tr><td>Retraiter</td><td>Reprocess</td><td>Relancer l'attribution des licences après une correction</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="entra-domain-services.html"><span class="lbl">← Précédent</span><span class="ttl">Entra Domain Services</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Créer, configurer et gérer des identités » (14 unités).</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Les comptes de tes employés viennent de l'AD local de l'entreprise. Quel type d'identité ?",o:["Cloud","Synchronisée","Invité"],a:1,e:"Source « Windows Server AD », synchronisée par Cloud Sync ou Connect Sync."},
+  {q:"Tu veux un groupe qui contient automatiquement tous les PC Windows 11 de l'entreprise. Quel groupe ?",o:["Microsoft 365, appareil dynamique","Sécurité, appareil dynamique","Sécurité, attribué"],a:1,e:"Appareil dynamique = groupe de sécurité uniquement. Et il faut P1."},
+  {q:"Combien de jours pour restaurer un utilisateur supprimé ?",o:["7","30","90"],a:1,e:"30 jours, puis suppression définitive."},
+  {q:"L'attribution de licence échoue avec ProhibitedInUsageLocationViolation. Que faire ?",o:["Acheter des licences","Remplir l'emplacement d'utilisation du profil","Supprimer le groupe"],a:1,e:"Le service n'est pas permis à l'emplacement : renseigne l'emplacement d'utilisation."},
+  {q:"Les employés utilisent leur téléphone personnel pour Outlook et Teams. Quel état d'appareil ?",o:["Entra inscrit","Entra joint","Entra joint hybride"],a:0,e:"BYOD = inscrit (registered), avec le compte local de l'appareil."},
+  {q:"Une PME 100 % cloud, sans AD local, déploie des PC neufs avec Autopilot. Quel état ?",o:["Entra inscrit","Entra joint","Entra joint hybride"],a:1,e:"Cloud d'abord, appareils de l'organisation, Autopilot = Entra joint."},
+  {q:"Quelle licence minimum pour attribuer des licences par groupe ?",o:["Entra ID Free","Entra ID P1 (ou O365 E3+)","Entra ID P2 seulement"],a:1,e:"P1 ou plus, ou Office 365 E3 et plus."},
+  {q:"Un utilisateur reçoit E3 de deux groupes différents. Combien de licences consommées ?",o:["1","2"],a:0,e:"La même licence n'est consommée qu'une fois."},
+  {q:"Les RH utilisent Workday et veulent créer les comptes automatiquement à l'embauche. Quel protocole ?",o:["LDAP","SCIM","Kerberos"],a:1,e:"Le provisionnement Entra utilise SCIM 2.0."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

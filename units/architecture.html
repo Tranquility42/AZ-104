@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Architecture Azure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.nest{border-radius:14px;padding:12px 14px 14px;border:2px solid}
+.nest>.h{font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.nest>.h small{font-weight:400;color:var(--muted);font-size:13px}
+.nest .kids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+@media (max-width:640px){.nest .kids{grid-template-columns:minmax(0,1fr)}}
+.n1{border-color:var(--tf);background:var(--tf-soft)}
+.n2{border-color:var(--cloud);background:var(--cloud-soft)}
+.n3{border-color:var(--ok);background:var(--ok-soft)}
+.n4{border-color:var(--line);background:var(--surface);font-size:14px;padding:8px 12px;border-width:1px}
+.n4 b{display:block}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Architecture Azure</span></nav>
+  <h1>Les composants architecturaux d'Azure</h1>
+  <p class="lede">Où vivent physiquement tes ressources (régions, zones) et comment on les range (groupes d'administration, abonnements, groupes de ressources).</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Base de tout l'AZ-104 (et de l'AZ-900)</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> <b>physique</b> = centre de données → zone de disponibilité → région → paire de régions. <b>Gestion</b> = ressource → groupe de ressources → abonnement → groupe d'administration. Tout ce que tu fais dans Azure se place sur ces deux échelles.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le réseau de terminaux 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🏗️ L'infrastructure physique</h3>
+      <ul>
+        <li><b>Centre de données</b> = un <b>entrepôt</b></li>
+        <li><b>Zone de disponibilité</b> = un <b>terminal</b> avec sa propre électricité, son refroidissement et son réseau. Si un terminal brûle, les autres roulent</li>
+        <li><b>Région</b> = la <b>ville</b> qui regroupe ses terminaux (Toronto = Canada Central)</li>
+        <li><b>Paire de régions</b> = le <b>terminal de secours</b> dans une autre ville du même pays (Toronto ↔ Québec)</li>
+        <li><b>Région souveraine</b> = une <b>cour sous douane</b> réservée au gouvernement</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🗂️ La gestion</h3>
+      <ul>
+        <li><b>Ressource</b> = une <b>palette</b> (une VM, un compte de stockage…)</li>
+        <li><b>Groupe de ressources</b> = la <b>remorque</b> : on y charge ce qui part et revient ensemble. On décroche la remorque, tout part avec</li>
+        <li><b>Abonnement</b> = le <b>contrat client</b> : une facture et des règles d'accès</li>
+        <li><b>Groupe d'administration</b> = la <b>division</b> (Canada, É.-U.) qui impose ses règles à tous ses contrats</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PHYSIQUE -->
+  <h2 id="physique">1 · L'infrastructure physique</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Région Canada Central avec trois zones de disponibilité contenant des centres de données, reliée par une paire de régions à Canada East">
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="20" width="640" height="290" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="50" class="svg-title-c">Région : Canada Central (Toronto)</text>
+      <text x="30" y="70" class="svg-small">reliée par fibre privée à faible latence · au moins 3 zones si la région les prend en charge</text>
+      <g transform="translate(30,90)">
+        <rect width="190" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="95" y="28" text-anchor="middle" class="svg-text">Zone 1</text>
+        <text x="95" y="46" text-anchor="middle" class="svg-small">⚡ ❄️ 🌐 indépendants</text>
+        <rect x="20" y="62" width="150" height="40" rx="8" class="svg-cloud" stroke-width="1"/><text x="95" y="87" text-anchor="middle" class="svg-small">🏢 centre de données</text>
+        <rect x="20" y="112" width="150" height="40" rx="8" class="svg-cloud" stroke-width="1"/><text x="95" y="137" text-anchor="middle" class="svg-small">🏢 centre de données</text>
+      </g>
+      <g transform="translate(235,90)">
+        <rect width="190" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="95" y="28" text-anchor="middle" class="svg-text">Zone 2</text>
+        <text x="95" y="46" text-anchor="middle" class="svg-small">⚡ ❄️ 🌐 indépendants</text>
+        <rect x="20" y="62" width="150" height="40" rx="8" class="svg-cloud" stroke-width="1"/><text x="95" y="87" text-anchor="middle" class="svg-small">🏢 centre de données</text>
+      </g>
+      <g transform="translate(440,90)">
+        <rect width="190" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+        <text x="95" y="28" text-anchor="middle" class="svg-text">Zone 3</text>
+        <text x="95" y="46" text-anchor="middle" class="svg-small">⚡ ❄️ 🌐 indépendants</text>
+        <rect x="20" y="62" width="150" height="40" rx="8" class="svg-cloud" stroke-width="1"/><text x="95" y="87" text-anchor="middle" class="svg-small">🏢 centre de données</text>
+        <rect x="20" y="112" width="150" height="40" rx="8" class="svg-cloud" stroke-width="1"/><text x="95" y="137" text-anchor="middle" class="svg-small">🏢 centre de données</text>
+      </g>
+      <path d="M655 165 H745" class="svg-line-c" stroke-width="2" marker-start="url(#a5)" marker-end="url(#a5)" stroke-dasharray="6 4"/>
+      <text x="700" y="150" text-anchor="middle" class="svg-small">paire</text>
+      <text x="700" y="190" text-anchor="middle" class="svg-small">de régions</text>
+      <rect x="750" y="90" width="200" height="150" rx="16" class="svg-onprem" stroke-width="1.6"/>
+      <text x="850" y="125" text-anchor="middle" class="svg-title-o">Canada East</text>
+      <text x="850" y="145" text-anchor="middle" class="svg-small">(Québec)</text>
+      <text x="850" y="180" text-anchor="middle" class="svg-small">même géographie</text>
+      <text x="850" y="198" text-anchor="middle" class="svg-small">≈ 300 milles et plus</text>
+      <text x="850" y="216" text-anchor="middle" class="svg-small">reprise prioritaire</text>
+    </svg>
+  </div>
+
+  <div class="tablewrap" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Élément</th><th class="c">Ce qu'il faut savoir</th></tr></thead>
+      <tbody>
+        <tr><td>Centre de données</td><td>Bâtiment avec serveurs, électricité, refroidissement et réseau. Tu ne le choisis jamais directement</td></tr>
+        <tr><td>Région</td><td>Un ou plusieurs centres de données proches, reliés par un réseau à faible latence. <b>C'est toi qui choisis la région</b> d'une ressource. Certains services ou tailles de VM n'existent que dans certaines régions</td></tr>
+        <tr><td>Zone de disponibilité</td><td>Centres de données <b>physiquement séparés</b> dans une région, avec électricité, refroidissement et réseau <b>indépendants</b>. <b>Minimum 3</b> dans les régions qui en ont. <b>Toutes les régions n'en ont pas</b></td></tr>
+        <tr><td>Paire de régions</td><td>Deux régions de la <b>même géographie</b>, idéalement à ≈ 300 milles et plus l'une de l'autre. Mises à jour Azure <b>une région à la fois</b>, <b>reprise prioritaire</b> d'une des deux en cas de panne majeure, données gardées dans la même géographie (sauf Brésil Sud)</td></tr>
+        <tr><td>Région souveraine</td><td>Instances isolées d'Azure pour les gouvernements : <b>US Gov</b> (Virginie, Iowa…) et <b>Chine</b> (exploitée par <b>21Vianet</b>, pas par Microsoft)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin:20px 0 8px">Comment un service utilise les zones</h3>
+  <div class="opt3">
+    <div class="card"><span class="num">Zonal</span><h3>📌 Épinglé à une zone</h3><p style="margin:0;font-size:14px">Tu choisis <b>la</b> zone : VM, disque managé, IP publique. Pour la haute dispo, tu en déploies plusieurs, une par zone.</p></div>
+    <div class="card"><span class="num">Redondant interzone</span><h3>🔁 Répliqué automatiquement</h3><p style="margin:0;font-size:14px">Azure copie lui-même dans plusieurs zones : stockage <b>ZRS</b>, Azure SQL Database.</p></div>
+    <div class="card"><span class="num">Non régional</span><h3>🌍 Toujours disponible</h3><p style="margin:0;font-size:14px">Service <b>mondial</b>, résilient aux pannes de zone et de région : Entra ID, Front Door, Traffic Manager.</p></div>
+  </div>
+  <div class="note" style="margin-top:14px"><b>🇨🇦 Pour toi :</b> <b>Canada Central</b> (Toronto) et <b>Canada East</b> (Québec) forment une paire. Canada Central a des zones de disponibilité, Canada East <b>n'en a pas</b>. C'est pour ça que <code>canadacentral</code> est le meilleur choix pour tes labos sur la haute disponibilité.</div>
+
+  <!-- GESTION -->
+  <h2 id="gestion">2 · L'infrastructure de gestion</h2>
+  <div class="nest n1">
+    <div class="h">🏛️ Groupe d'administration racine <small>(Tenant Root Group)</small></div>
+    <div class="kids">
+      <div class="nest n1">
+        <div class="h">🏢 GA « Production » <small>stratégies héritées ↓</small></div>
+        <div class="nest n2" style="margin-top:10px">
+          <div class="h">💳 Abonnement « Prod » <small>facture + accès</small></div>
+          <div class="kids">
+            <div class="nest n3"><div class="h">📦 rg-optifuel-prod</div><div class="kids" style="grid-template-columns:minmax(0,1fr)"><div class="nest n4"><b>🖥️ VM</b></div><div class="nest n4"><b>🗄️ Base PostgreSQL</b></div></div></div>
+            <div class="nest n3"><div class="h">📦 rg-reseau</div><div class="kids" style="grid-template-columns:minmax(0,1fr)"><div class="nest n4"><b>🌐 VNet</b></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="nest n1">
+        <div class="h">🧪 GA « Labo » <small>stratégies héritées ↓</small></div>
+        <div class="nest n2" style="margin-top:10px">
+          <div class="h">💳 Azure subscription 1 <small>ton essai</small></div>
+          <div class="kids">
+            <div class="nest n3"><div class="h">📦 Training</div><div class="kids" style="grid-template-columns:minmax(0,1fr)"><div class="nest n4"><b>🗄️ Compte de stockage</b></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tablewrap" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Niveau</th><th class="c">Règles à connaître</th></tr></thead>
+      <tbody>
+        <tr><td>Ressource</td><td>Instance d'un service (VM, VNet, base de données…). Appartient à <b>un seul</b> groupe de ressources</td></tr>
+        <tr><td>Groupe de ressources</td><td>Conteneur logique. <b>Pas d'imbrication</b> (pas de groupe dans un groupe). Une ressource peut être <b>déplacée</b> vers un autre groupe. <b>Supprimer le groupe supprime tout ce qu'il contient.</b> Les droits (RBAC) donnés au groupe s'appliquent à ses ressources. Bonne pratique : regrouper ce qui a le <b>même cycle de vie</b></td></tr>
+        <tr><td>Abonnement</td><td>Unité de <b>facturation</b> et de <b>contrôle d'accès</b>. On en crée plusieurs pour séparer les environnements (dev/test/prod), les équipes ou les factures. Chacun a ses <b>limites (quotas)</b></td></tr>
+        <tr><td>Groupe d'administration</td><td>Regroupe des abonnements pour appliquer <b>Azure Policy</b> et <b>RBAC</b> à tous d'un coup. Jusqu'à <b>10 000</b> par annuaire, arborescence de <b>6 niveaux</b> de profondeur (sans compter la racine et les abonnements). Chaque groupe ou abonnement a <b>un seul parent</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">🔽 <b>Héritage :</b> une stratégie ou un rôle posé en haut descend jusqu'aux ressources. Exemple : « seulement les régions canadiennes » sur le GA Production s'applique à tous ses abonnements, groupes et ressources.</p>
+
+  <!-- COMPTES -->
+  <h2 id="comptes">3 · Les comptes Azure</h2>
+  <div class="opt3">
+    <div class="card"><span class="num">Compte gratuit</span><h3>🎁 Ce que tu as</h3><ul><li>Crédit de <b>200 $US pendant 30 jours</b></li><li>Services populaires gratuits <b>12 mois</b></li><li>Plus de 65 services <b>toujours gratuits</b></li><li>Carte demandée pour vérifier l'identité, mais pas débitée</li></ul></div>
+    <div class="card"><span class="num">Compte étudiant</span><h3>🎓 Pour les étudiants</h3><ul><li><b>100 $US</b> de crédit pour 12 mois</li><li><b>Sans carte de crédit</b></li><li>Il faut un courriel scolaire valide</li></ul></div>
+    <div class="card"><span class="num">Bac à sable Learn</span><h3>🧪 Temporaire</h3><ul><li>Abonnement temporaire offert par certains exercices Learn</li><li>Gratuit, nettoyé automatiquement</li><li>Pas disponible partout</li></ul></div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Hiérarchie de base : un <b>compte Azure</b> peut avoir <b>plusieurs abonnements</b>, et chaque abonnement contient des groupes de ressources.</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets un groupe de ressources dans un autre groupe de ressources. »</span><span class="right"><b>Impossible.</b> Pas d'imbrication. Pour une hiérarchie, ce sont les <b>groupes d'administration</b> qui s'imbriquent.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une VM peut appartenir à deux groupes de ressources. »</span><span class="right"><b>Non</b>, un seul. On peut la <b>déplacer</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Toutes les régions Azure ont des zones de disponibilité. »</span><span class="right"><b>Faux.</b> Exemple : Canada East n'en a pas.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour séparer la facturation du marketing et des TI, je crée deux groupes de ressources. »</span><span class="right"><b>Non.</b> L'unité de <b>facturation</b>, c'est l'<b>abonnement</b> (les étiquettes aident à ventiler, mais la frontière, c'est l'abonnement).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une ressource doit être dans la même région que son groupe de ressources. »</span><span class="right"><b>Faux.</b> La région du groupe stocke seulement ses <b>métadonnées</b>. Ses ressources peuvent être ailleurs.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux appliquer une stratégie à 50 abonnements d'un coup : je l'attache à chacun. »</span><span class="right"><b>Non.</b> Regroupe-les dans un <b>groupe d'administration</b> et attache-la une fois, l'héritage fait le reste.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 La hiérarchie et les zones en code</h3>
+<pre><span class="c-c"># Groupe d'administration + rattachement d'un abonnement</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_management_group"</span> <span class="c-s">"labo"</span> {
+  display_name = <span class="c-s">"Labo"</span>
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_management_group_subscription_association"</span> <span class="c-s">"essai"</span> {
+  management_group_id = azurerm_management_group.labo.id
+  subscription_id     = <span class="c-s">"/subscriptions/${var.subscription_id}"</span>
+}
+
+<span class="c-c"># Groupe de ressources : la région ne sert qu'aux métadonnées</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_resource_group"</span> <span class="c-s">"labo"</span> {
+  name     = <span class="c-s">"rg-labo-archi"</span>
+  location = <span class="c-s">"canadacentral"</span>
+}
+
+<span class="c-c"># Service zonal : la VM est épinglée à la zone 1</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_linux_virtual_machine"</span> <span class="c-s">"vm1"</span> {
+  <span class="c-c"># name, size, network_interface_ids, os_disk…</span>
+  zone = <span class="c-s">"1"</span>
+}
+
+<span class="c-c"># Service redondant interzone : stockage ZRS</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_storage_account"</span> <span class="c-s">"zrs"</span> {
+  <span class="c-c"># name, resource_group_name, location…</span>
+  account_tier             = <span class="c-s">"Standard"</span>
+  account_replication_type = <span class="c-s">"ZRS"</span>
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Région</td><td>Region</td><td>Zone géographique avec un ou plusieurs centres de données</td></tr>
+        <tr><td>Zone de disponibilité</td><td>Availability Zone (AZ)</td><td>Groupe de centres de données indépendant à l'intérieur d'une région</td></tr>
+        <tr><td>Paire de régions</td><td>Region pair</td><td>Deux régions jumelées pour la reprise après sinistre</td></tr>
+        <tr><td>Géographie</td><td>Geography</td><td>Ensemble de régions d'un même pays ou marché (ex. « canada »)</td></tr>
+        <tr><td>Région souveraine</td><td>Sovereign region</td><td>Azure isolé pour un gouvernement (US Gov, Chine)</td></tr>
+        <tr><td>Groupe de ressources</td><td>Resource group (RG)</td><td>Conteneur logique de ressources</td></tr>
+        <tr><td>Abonnement</td><td>Subscription</td><td>Frontière de facturation et d'accès</td></tr>
+        <tr><td>Groupe d'administration</td><td>Management group (MG)</td><td>Dossier d'abonnements pour appliquer Policy et RBAC</td></tr>
+        <tr><td>ZRS</td><td>Zone-Redundant Storage</td><td>Stockage copié dans 3 zones de la région</td></tr>
+        <tr><td>Quota</td><td>Quota / limit</td><td>Plafond de ressources par abonnement (ex. nombre de vCPU)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="identites.html"><span class="lbl">← Précédent</span><span class="ttl">Module identités</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Décrire les principaux composants architecturaux d'Azure ».</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Combien de zones de disponibilité au minimum dans une région qui les prend en charge ?",o:["2","3","5"],a:1,e:"Au moins 3 zones séparées."},
+  {q:"Quelle est la frontière de facturation dans Azure ?",o:["Le groupe de ressources","L'abonnement","La région"],a:1,e:"L'abonnement : facturation et contrôle d'accès."},
+  {q:"Tu supprimes un groupe de ressources qui contient 3 VM. Que se passe-t-il ?",o:["Les VM restent, orphelines","Les VM sont supprimées aussi","Impossible tant qu'il y a des VM"],a:1,e:"Supprimer le groupe supprime tout son contenu."},
+  {q:"Tu veux appliquer la même stratégie à tous les abonnements de production. Où l'attaches-tu ?",o:["À chaque groupe de ressources","À un groupe d'administration","À la région"],a:1,e:"Groupe d'administration + héritage."},
+  {q:"Une VM déployée « dans la zone 2 », c'est un service…",o:["Zonal","Redondant interzone","Non régional"],a:0,e:"Épinglé à une zone que tu choisis = zonal."},
+  {q:"Quelle est la profondeur maximale de l'arborescence des groupes d'administration ?",o:["3 niveaux","6 niveaux","Illimitée"],a:1,e:"6 niveaux, sans compter la racine et les abonnements."},
+  {q:"Quel est l'avantage d'une paire de régions ?",o:["Les deux régions sont mises à jour en même temps","Mises à jour une région à la fois et reprise prioritaire","Les données sont copiées dans un autre pays"],a:1,e:"Une région de la paire à la fois, reprise prioritaire, même géographie."},
+  {q:"Entra ID est un service…",o:["Zonal","Redondant interzone","Non régional (mondial)"],a:2,e:"Service mondial, toujours disponible."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

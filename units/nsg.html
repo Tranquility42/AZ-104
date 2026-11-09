@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Groupes de sécurité réseau</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.allow{color:var(--ok);font-weight:700}.deny{color:var(--onprem);font-weight:700}
+tr.def td{color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Groupes de sécurité réseau</span></nav>
+  <h1>Groupes de sécurité réseau (NSG)</h1>
+  <p class="lede">Les règles qui laissent passer ou bloquent le trafic vers tes VM, au niveau du sous-réseau et de la carte réseau. Plus les groupes de sécurité d'application (ASG) pour écrire ces règles par rôle plutôt que par adresse IP.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Questions de calcul très fréquentes (priorités, ordre)</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> un NSG est une liste de règles <b>Autoriser / Refuser</b> lues par <b>priorité</b> (100 à 4096, <b>le plus petit chiffre passe en premier</b>). Dès qu'une règle correspond, Azure <b>arrête de lire</b>. On l'attache à un <b>sous-réseau</b> et/ou à une <b>carte réseau</b> : le trafic doit être autorisé <b>aux deux niveaux</b>.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : les guérites du terminal 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🚧 Les barrières</h3>
+      <ul>
+        <li><b>NSG sur le sous-réseau</b> = la <b>guérite à l'entrée de la zone</b> (quais, atelier) : elle filtre pour tous les camions de la zone</li>
+        <li><b>NSG sur la carte réseau</b> = le <b>cadenas sur la porte d'un camion</b> précis</li>
+        <li>Pour livrer, il faut passer <b>la guérite ET le cadenas</b>. Un seul refus et c'est non</li>
+        <li><b>En entrant</b>, on passe la guérite d'abord, puis le cadenas. <b>En sortant</b>, l'inverse</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📋 La liste du gardien</h3>
+      <ul>
+        <li><b>Règles</b> = la liste du gardien, <b>lue de haut en bas</b> (priorité 100 avant 200)</li>
+        <li>Dès qu'une ligne correspond au camion, le gardien <b>applique et arrête de lire</b></li>
+        <li><b>Règles par défaut</b> = les consignes imprimées en bas de la liste (65000+), qu'on <b>ne peut pas effacer</b>, seulement passer devant</li>
+        <li><b>ASG</b> = un <b>macaron</b> « citerne » ou « frigo » : la règle dit « les citernes vont au quai 3 », peu importe la plaque</li>
+        <li><b>Balise de service</b> = un macaron fourni par Microsoft : « Internet », « VirtualNetwork », « Storage »</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ASSOCIATION -->
+  <h2 id="association">1 · Où attacher un NSG</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 290" role="img" aria-label="Le trafic entrant venant d'Internet passe d'abord par le NSG du sous-réseau puis par le NSG de la carte réseau avant d'atteindre la VM ; le trafic sortant passe dans l'ordre inverse">
+      <defs>
+        <marker id="ns" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker>
+        <marker id="ns2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--onprem)"/></marker>
+      </defs>
+      <rect x="10" y="90" width="140" height="80" rx="14" class="svg-onprem" stroke-width="1.6"/>
+      <text x="80" y="128" text-anchor="middle" class="svg-title-o">🌐 Internet</text>
+      <text x="80" y="150" text-anchor="middle" class="svg-small">ou autre VNet</text>
+      <rect x="200" y="20" width="750" height="250" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="220" y="48" class="svg-title-c">Sous-réseau frontend</text>
+      <rect x="215" y="70" width="170" height="180" rx="12" class="svg-node" stroke-width="1.4"/>
+      <text x="300" y="110" text-anchor="middle" class="svg-text">🛡️ NSG</text>
+      <text x="300" y="130" text-anchor="middle" class="svg-text">du sous-réseau</text>
+      <text x="300" y="160" text-anchor="middle" class="svg-small">filtre toute la zone</text>
+      <text x="300" y="178" text-anchor="middle" class="svg-small">1 max par sous-réseau</text>
+      <rect x="480" y="70" width="450" height="180" rx="12" class="svg-node" stroke-width="1.2"/>
+      <rect x="500" y="100" width="170" height="120" rx="12" class="svg-node" stroke-width="1.4"/>
+      <text x="585" y="140" text-anchor="middle" class="svg-text">🛡️ NSG</text>
+      <text x="585" y="160" text-anchor="middle" class="svg-text">de la carte réseau</text>
+      <text x="585" y="190" text-anchor="middle" class="svg-small">0 ou 1 par NIC</text>
+      <rect x="730" y="110" width="180" height="100" rx="12" class="svg-cloud" stroke-width="1.2"/>
+      <text x="820" y="155" text-anchor="middle" class="svg-text">🖥️ VM1</text>
+      <text x="820" y="178" text-anchor="middle" class="svg-small">10.1.0.4</text>
+      <path d="M150 115 H210" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ns)"/>
+      <path d="M385 115 H495" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ns)"/>
+      <path d="M670 140 H725" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ns)"/>
+      <text x="440" y="100" text-anchor="middle" class="svg-small">entrée : sous-réseau ①</text><text x="440" y="140" text-anchor="middle" class="svg-small">puis NIC ②</text>
+      <path d="M725 180 H675" stroke="var(--onprem)" stroke-width="2.5" marker-end="url(#ns2)"/>
+      <path d="M495 225 H390" stroke="var(--onprem)" stroke-width="2.5" marker-end="url(#ns2)"/>
+      <path d="M210 150 H155" stroke="var(--onprem)" stroke-width="2.5" marker-end="url(#ns2)"/>
+      <text x="440" y="242" text-anchor="middle" class="svg-small">sortie : NIC ① puis sous-réseau ②</text>
+    </svg>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>➡️ Entrant</h3>
+      <p style="margin:0;font-size:14px">NSG du <b>sous-réseau</b> d'abord, puis NSG de la <b>carte réseau</b>.</p>
+    </div>
+    <div class="card">
+      <h3>⬅️ Sortant</h3>
+      <p style="margin:0;font-size:14px">NSG de la <b>carte réseau</b> d'abord, puis NSG du <b>sous-réseau</b>.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:14px"><b>La règle d'or :</b> si un NSG existe à un niveau, il faut une règle <b>Autoriser</b> à ce niveau. Sous-réseau autorise le port 80 mais NIC ne dit rien ? <b>Bloqué</b> par le DenyAllInbound de la NIC. Sans aucun NSG, tout passe. Les NSG filtrent aussi le trafic <b>entre VM du même sous-réseau</b>.</div>
+
+  <!-- REGLES -->
+  <h2 id="regles">2 · Anatomie d'une règle</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Champ</th><th class="c">Valeurs possibles</th></tr></thead>
+      <tbody>
+        <tr><td>Source</td><td>Tous, adresses IP, Mon adresse IP, <b>balise de service</b>, <b>ASG</b></td></tr>
+        <tr><td>Plage de ports source</td><td>Presque toujours <code>*</code> (le port source est aléatoire)</td></tr>
+        <tr><td>Destination</td><td>Tous, adresses IP, balise de service, ASG</td></tr>
+        <tr><td>Service / port de destination</td><td>Prédéfini (<b>RDP</b> 3389, <b>SSH</b> 22, HTTP 80, HTTPS 443) ou plage perso</td></tr>
+        <tr><td>Protocole</td><td>TCP, UDP, ICMP, Tous (ESP et AH seulement en JSON/PowerShell)</td></tr>
+        <tr><td>Action</td><td><span class="allow">Autoriser</span> ou <span class="deny">Refuser</span></td></tr>
+        <tr><td>Priorité</td><td><b>100 à 4096</b>, unique dans le NSG. <b>Plus petit = lu en premier</b>. Laisse des trous (100, 200, 300) pour insérer plus tard</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px"><b>Règles augmentées :</b> une seule règle peut viser plusieurs IP et plusieurs ports (ex. <code>80,443,8080,8090</code>) au lieu de quatre règles.</p>
+
+  <h3 style="margin:20px 0 8px">➕ examen : les 6 règles par défaut (impossibles à supprimer)</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Sens</th><th>Nom</th><th class="c">Priorité</th><th>Source → Destination</th><th class="c">Action</th></tr></thead>
+      <tbody>
+        <tr><td>Entrant</td><td>AllowVNetInBound</td><td class="c">65000</td><td>VirtualNetwork → VirtualNetwork</td><td class="c allow">Autoriser</td></tr>
+        <tr><td>Entrant</td><td>AllowAzureLoadBalancerInBound</td><td class="c">65001</td><td>AzureLoadBalancer → Tous</td><td class="c allow">Autoriser</td></tr>
+        <tr><td>Entrant</td><td><b>DenyAllInBound</b></td><td class="c">65500</td><td>Tous → Tous</td><td class="c deny">Refuser</td></tr>
+        <tr><td>Sortant</td><td>AllowVNetOutBound</td><td class="c">65000</td><td>VirtualNetwork → VirtualNetwork</td><td class="c allow">Autoriser</td></tr>
+        <tr><td>Sortant</td><td>AllowInternetOutBound</td><td class="c">65001</td><td>Tous → Internet</td><td class="c allow">Autoriser</td></tr>
+        <tr><td>Sortant</td><td>DenyAllOutBound</td><td class="c">65500</td><td>Tous → Tous</td><td class="c deny">Refuser</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">En résumé : <b>entrant</b>, seul le VNet et l'équilibreur de charge Azure passent, Internet est bloqué. <b>Sortant</b>, la VM peut aller vers le VNet et Internet. Pour changer ça, crée une règle avec une priorité <b>plus petite</b> (ex. 100).</p>
+
+  <!-- EXEMPLE -->
+  <h2 id="calcul">3 · Exemple de calcul (style examen)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📋 NSG sur la carte réseau de VM1</h3>
+      <div class="tablewrap" style="margin:0">
+        <table>
+          <thead><tr><th class="c">Priorité</th><th>Port</th><th>Source</th><th class="c">Action</th></tr></thead>
+          <tbody>
+            <tr><td class="c">100</td><td>3389</td><td>Tous</td><td class="c deny">Refuser</td></tr>
+            <tr><td class="c">200</td><td>3389</td><td>Mon IP</td><td class="c allow">Autoriser</td></tr>
+            <tr><td class="c">300</td><td>80</td><td>Internet</td><td class="c allow">Autoriser</td></tr>
+            <tr class="def"><td class="c">65500</td><td>*</td><td>*</td><td class="c">Refuser</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🧠 Réponses</h3>
+      <ul style="font-size:14px">
+        <li>RDP (3389) depuis ton IP ? <b class="deny">Bloqué.</b> La règle 100 correspond en premier, Azure arrête de lire. La 200 ne sert à rien</li>
+        <li>Correction : donner à l'autorisation une priorité <b>plus petite</b> que le refus (ex. 90, ou passer le refus à 300)</li>
+        <li>HTTP (80) depuis Internet ? <b class="allow">Autorisé</b> par la 300… <b>si</b> le NSG du sous-réseau l'autorise aussi</li>
+        <li>SSH (22) ? Aucune règle perso, donc <b class="deny">bloqué</b> par DenyAllInBound</li>
+      </ul>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">🔍 Pour vérifier : <b>Règles de sécurité effectives</b> sur la VM, la carte réseau ou le sous-réseau (fusionne tous les NSG). <b>Network Watcher › Vérification du flux IP</b> te dit quelle règle bloque un paquet précis.</p>
+
+  <!-- ASG -->
+  <h2 id="asg">4 · Groupes de sécurité d'application (ASG)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🏷️ Le principe</h3>
+      <p style="font-size:14px;margin:0 0 8px">On colle un <b>macaron</b> sur la carte réseau de chaque VM (asg-web, asg-app), puis les règles NSG utilisent ces macarons comme source ou destination. Plus besoin de connaître les IP.</p>
+      <ol class="numl">
+        <li><span>Créer un ASG par rôle : <b>asg-web</b>, <b>asg-app</b></span></li>
+        <li><span>Associer la <b>carte réseau</b> de chaque VM à son ASG</span></li>
+        <li><span>Écrire les règles NSG avec les ASG</span></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>🛒 L'exemple du détaillant en ligne</h3>
+      <div class="tablewrap" style="margin:0">
+        <table>
+          <thead><tr><th class="c">Prio.</th><th>De → Vers</th><th>Port</th><th class="c">Action</th></tr></thead>
+          <tbody>
+            <tr><td class="c">100</td><td>Internet → asg-web</td><td>80, 443</td><td class="c allow">Autoriser</td></tr>
+            <tr><td class="c">110</td><td>asg-web → asg-app</td><td>1433 (SQL)</td><td class="c allow">Autoriser</td></tr>
+            <tr><td class="c">120</td><td>Tous → asg-app</td><td>80, 443</td><td class="c deny">Refuser</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Tu ajoutes une 5<sup>e</sup> VM web ? Associe-la à asg-web, elle hérite des règles sans rien toucher.</p>
+    </div>
+  </div>
+  <div class="opt3" style="margin-top:14px">
+    <div class="card"><span class="num">ASG</span><p>Groupe de <b>tes VM</b>, que tu crées. Doit être dans le <b>même VNet</b> que les cartes réseau.</p></div>
+    <div class="card"><span class="num">Balise de service</span><p>Groupe d'<b>IP Microsoft</b> tenu à jour par Azure : <code>Internet</code>, <code>VirtualNetwork</code>, <code>AzureLoadBalancer</code>, <code>Storage</code>, <code>Sql</code>…</p></div>
+    <div class="card"><span class="num">Adresse IP</span><p>Une IP ou une plage CIDR précise. À éviter quand un ASG ou une balise fait l'affaire.</p></div>
+  </div>
+
+  <!-- EXERCICE -->
+  <h2 id="exercice">5 · Pour ton exercice (refait sans les instructions)</h2>
+  <div class="card">
+    <ol class="numl">
+      <li><span>Recrée <b>app-vnet</b> (10.1.0.0/16) avec <b>frontend</b> 10.1.0.0/24 et <b>backend</b> 10.1.1.0/24. Supprime le sous-réseau « default » ou renomme-le</span></li>
+      <li><span>Crée l'ASG <b>app-frontend-asg</b> dans la même région</span></li>
+      <li><span>Crée le NSG <b>app-vnet-nsg</b> et <b>associe-le au sous-réseau backend</b> (NSG › Sous-réseaux › Associer)</span></li>
+      <li><span>Règle entrante : source <b>ASG app-frontend-asg</b>, destination tous, port <b>22</b> (SSH), Autoriser, priorité 100</span></li>
+      <li><span>Associe la <b>carte réseau de VM1</b> à app-frontend-asg (VM › Réseau › Groupes de sécurité d'application)</span></li>
+    </ol>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">💸 VNet, NSG et ASG sont <b>gratuits</b>. Seules les VM coûtent : prends une petite taille (B1s) et supprime le groupe de ressources à la fin. Les zones DNS (optionnelles) coûtent quelques sous par mois.</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Priorité 4000 passe avant priorité 200, c'est le plus gros chiffre qui gagne. »</span><span class="right"><b>Inverse.</b> Le <b>plus petit</b> chiffre est lu en premier.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai un Refuser en 100 et un Autoriser en 200 sur le même port : la plus permissive l'emporte. »</span><span class="right"><b>Non</b>, la première qui correspond gagne : <b>Refuser</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Le NSG du sous-réseau autorise le port 80, donc ma VM est joignable. »</span><span class="right">Seulement si le NSG de la <b>carte réseau</b> (s'il existe) l'autorise <b>aussi</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets deux NSG sur le même sous-réseau. »</span><span class="right"><b>Un seul</b> par sous-réseau et un seul par carte réseau. Mais un même NSG peut servir à plusieurs sous-réseaux et cartes.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je supprime DenyAllInBound pour tout ouvrir. »</span><span class="right">Les règles par défaut <b>ne se suppriment pas</b>. On les contourne avec une priorité plus petite.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai autorisé le port 80 en entrée, il faut aussi une règle sortante pour la réponse. »</span><span class="right"><b>Non</b> : ➕ examen, les NSG sont <b>avec état</b> (stateful). La réponse repart automatiquement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Les VM d'un même sous-réseau se parlent toujours, le NSG ne s'applique pas entre elles. »</span><span class="right">Faux, le NSG du sous-réseau filtre aussi ce trafic interne (même si AllowVNetInBound l'autorise par défaut).</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 NSG + ASG de l'exercice</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_application_security_group"</span> <span class="c-s">"frontend"</span> {
+  name                = <span class="c-s">"app-frontend-asg"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_network_security_group"</span> <span class="c-s">"app"</span> {
+  name                = <span class="c-s">"app-vnet-nsg"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+
+  security_rule {
+    name                                  = <span class="c-s">"AllowSSHFromFrontend"</span>
+    priority                              = 100
+    direction                             = <span class="c-s">"Inbound"</span>
+    access                                = <span class="c-s">"Allow"</span>
+    protocol                              = <span class="c-s">"Tcp"</span>
+    source_port_range                     = <span class="c-s">"*"</span>
+    destination_port_range                = <span class="c-s">"22"</span>
+    source_application_security_group_ids = [azurerm_application_security_group.frontend.id]
+    destination_address_prefix           = <span class="c-s">"*"</span>
+  }
+}
+
+<span class="c-c"># Associer le NSG au sous-réseau backend</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_subnet_network_security_group_association"</span> <span class="c-s">"backend"</span> {
+  subnet_id                 = azurerm_subnet.backend.id
+  network_security_group_id = azurerm_network_security_group.app.id
+}
+
+<span class="c-c"># Mettre la carte réseau de VM1 dans l'ASG</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_network_interface_application_security_group_association"</span> <span class="c-s">"vm1"</span> {
+  network_interface_id          = azurerm_network_interface.vm1.id
+  application_security_group_id = azurerm_application_security_group.frontend.id
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>NSG</td><td>Network Security Group</td><td>Liste de règles Autoriser/Refuser sur un sous-réseau ou une carte réseau</td></tr>
+        <tr><td>ASG</td><td>Application Security Group</td><td>Étiquette de groupe sur des cartes réseau, utilisable dans les règles NSG</td></tr>
+        <tr><td>Balise de service</td><td>Service tag</td><td>Groupe d'IP Microsoft tenu à jour (Internet, Storage…)</td></tr>
+        <tr><td>NIC</td><td>Network Interface Card</td><td>Carte réseau virtuelle d'une VM</td></tr>
+        <tr><td>Règles effectives</td><td>Effective security rules</td><td>Toutes les règles qui s'appliquent vraiment à une VM, fusionnées</td></tr>
+        <tr><td>Vérification du flux IP</td><td>IP flow verify</td><td>Outil Network Watcher : quelle règle autorise ou bloque ce paquet ?</td></tr>
+        <tr><td>Avec état</td><td>Stateful</td><td>La réponse à une connexion autorisée passe automatiquement</td></tr>
+        <tr><td>DMZ</td><td>Demilitarized zone</td><td>Sous-réseau tampon entre Internet et le réseau interne</td></tr>
+        <tr><td>RDP / SSH</td><td>Remote Desktop / Secure Shell</td><td>Connexion à distance Windows (3389) / Linux (22)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="reseaux-virtuels.html"><span class="lbl">← Précédent</span><span class="ttl">Réseaux virtuels</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer des groupes de sécurité réseau », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Quelle règle est évaluée en premier ?",o:["Priorité 4096","Priorité 100","La plus récente"],a:1,e:"Le plus petit chiffre passe en premier."},
+  {q:"Trafic entrant vers une VM, NSG sur le sous-réseau et sur la carte réseau. Ordre d'évaluation ?",o:["Carte réseau puis sous-réseau","Sous-réseau puis carte réseau","Les deux en même temps, le plus permissif gagne"],a:1,e:"Entrant : sous-réseau d'abord. Sortant : carte réseau d'abord."},
+  {q:"Le NSG du sous-réseau autorise le port 443, celui de la carte réseau n'a aucune règle perso. HTTPS depuis Internet ?",o:["Autorisé","Bloqué par DenyAllInBound de la carte réseau","Autorisé, la carte réseau hérite"],a:1,e:"Il faut une autorisation à chaque niveau qui a un NSG."},
+  {q:"Combien de NSG peut-on associer à un sous-réseau ?",o:["Un seul","Deux (entrant et sortant)","Illimité"],a:0,e:"Un par sous-réseau, un par carte réseau."},
+  {q:"Par défaut, sans règle perso, une VM peut-elle aller sur Internet ?",o:["Oui (AllowInternetOutBound)","Non, tout est bloqué","Seulement en HTTPS"],a:0,e:"Sortant vers Internet autorisé par défaut, entrant depuis Internet bloqué."},
+  {q:"Tu veux autoriser SQL seulement depuis tes serveurs web, sans gérer leurs IP. Quoi utiliser ?",o:["Une balise de service","Un groupe de sécurité d'application","Une route personnalisée"],a:1,e:"ASG = macaron sur tes VM, utilisé comme source ou destination."},
+  {q:"Quel outil dit quelle règle précise bloque un paquet vers une VM ?",o:["Journal d'activité","Network Watcher : vérification du flux IP","Azure Policy"],a:1,e:"IP flow verify teste un paquet contre les règles NSG."},
+  {q:"Refuser 3389 en priorité 150, Autoriser 3389 depuis ton IP en priorité 300. Ton RDP ?",o:["Autorisé","Bloqué","Ça dépend de l'heure"],a:1,e:"150 correspond d'abord, Azure arrête de lire."},
+  {q:"Quelle balise de service représente l'espace d'adresses du VNet et des réseaux connectés ?",o:["Internet","VirtualNetwork","AzureCloud"],a:1,e:"VirtualNetwork, utilisée par AllowVNetInBound."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

@@ -28,11 +28,11 @@
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
-  <button class="theme-btn" id="theme" type="button">Thème</button>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
 </div></header>
 
 <main class="wrap">
-  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unités 3-4</p>
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Unités 3-4</span></nav>
   <h1>Microsoft Entra Domain Services</h1>
   <p class="lede">Tu déménages dans Azure de vieilles applis qui ont besoin d'un domaine (Kerberos, LDAP, GPO). Comment les authentifier sans gérer de contrôleurs de domaine ?</p>
   <div class="meta">
@@ -210,7 +210,9 @@
     </table>
   </div>
 
-  <footer><a href="entra-vs-adds.html">← Unités 1-2 : Entra ID vs AD DS</a> · <a href="../index.html">Sommaire</a><br>Résumé personnel d'après l'unité Microsoft Learn « Examiner les services de domaine Microsoft Entra ».</footer>
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="entra-vs-adds.html"><span class="lbl">← Précédent</span><span class="ttl">Entra ID vs AD DS</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après l'unité Microsoft Learn « Examiner les services de domaine Microsoft Entra ».</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
 </main>
 
 <script>
@@ -248,6 +250,7 @@ Q.forEach(function(item,i){
   });
   box.appendChild(d);
 });
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
 </body>
 </html>

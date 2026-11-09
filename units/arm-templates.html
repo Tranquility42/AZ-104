@@ -31,11 +31,11 @@
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
-  <button class="theme-btn" id="theme" type="button">Thème</button>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
 </div></header>
 
 <main class="wrap">
-  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Prérequis › Modèles ARM</p>
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Prérequis</span><span class="sep">›</span><span class="here">Modèles ARM</span></nav>
   <h1>Les modèles ARM : structure, paramètres et déploiement</h1>
   <p class="lede">Un fichier JSON qui décrit <b>ce que tu veux</b> dans Azure. Resource Manager se charge du <b>comment</b>.</p>
   <div class="meta">
@@ -318,7 +318,9 @@ New-AzResourceGroupDeployment `
     </table>
   </div>
 
-  <footer><a href="../index.html">← Sommaire</a><br>Résumé personnel d'après le module Microsoft Learn « Déployer l'infrastructure Azure en utilisant des modèles ARM JSON » (7 unités).</footer>
+  <nav class="pager" aria-label="Navigation entre les unités"><span class="prev ghost"></span><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="entra-vs-adds.html"><span class="lbl">Suivant →</span><span class="ttl">Entra ID vs AD DS</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Déployer l'infrastructure Azure en utilisant des modèles ARM JSON » (7 unités).</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
 </main>
 
 <script>
@@ -360,6 +362,7 @@ Q.forEach(function(item,i){
   });
   box.appendChild(d);
 });
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
 </body>
 </html>

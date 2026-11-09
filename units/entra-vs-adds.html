@@ -12,11 +12,11 @@
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
-  <button class="theme-btn" id="theme" type="button">Thème</button>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
 </div></header>
 
 <main class="wrap">
-  <p class="crumbs" style="margin-top:20px"><a href="../index.html">Accueil</a> › Identités et gouvernance › Unités 1-2</p>
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Unités 1-2</span></nav>
   <h1>Microsoft Entra ID vs AD DS</h1>
   <p class="lede">Deux annuaires Microsoft qui se ressemblent de nom, mais pas de nature : l'un vit dans tes serveurs et parle Kerberos, l'autre vit dans le cloud et parle HTTPS.</p>
   <div class="meta">
@@ -330,7 +330,9 @@
     </table>
   </div>
 
-  <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ». · <a href="../index.html">← Retour au sommaire</a> · <a href="entra-domain-services.html">Unité 3 : Entra Domain Services →</a></footer>
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="arm-templates.html"><span class="lbl">← Précédent</span><span class="ttl">Modèles ARM</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="entra-domain-services.html"><span class="lbl">Suivant →</span><span class="ttl">Entra Domain Services</span></a></nav>
+  <footer>Résumé personnel d'après l'unité Microsoft Learn « Comparer Microsoft Entra ID et Active Directory Domain Services ».</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
 </main>
 
 <script>
@@ -371,6 +373,7 @@ Q.forEach(function(item,i){
   });
   box.appendChild(d);
 });
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
 </body>
 </html>

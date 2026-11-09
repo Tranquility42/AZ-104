@@ -23,6 +23,8 @@
     <div class="progress"><i style="width:55%"></i></div>
   </div>
 
+  <button class="fold-all" id="foldAll" type="button">Tout ouvrir</button>
+
   <p class="mod">1 · Prérequis</p>
   <div class="units">
     <a class="card unit" href="units/arm-templates.html"><div><b>Module : déployer avec des modèles ARM JSON</b><div class="s">Structure S·C·R, paramètres, sorties, exercices, ARM vs Terraform</div></div><span class="badge">résumé ✓</span></a>
@@ -63,6 +65,30 @@
     r.dataset.theme=dark?'light':'dark';
     try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
   });
+})();
+(function(){
+  var KEY='sommaire-ouverts',open={};
+  try{open=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  var btns=[];
+  document.querySelectorAll('p.mod').forEach(function(p,i){
+    var list=p.nextElementSibling;if(!list||!list.classList.contains('units'))return;
+    var id='m'+i,n=list.querySelectorAll('a.unit').length;
+    var b=document.createElement('button');b.type='button';b.className='mod-toggle';
+    list.id='units-'+id;b.setAttribute('aria-controls',list.id);
+    p.parentNode.insertBefore(b,p);b.appendChild(p);
+    var c=document.createElement('span');c.className='cnt';c.textContent=n?n+(n>1?' résumés':' résumé'):'à venir';b.appendChild(c);
+    var v=document.createElement('span');v.className='chev';v.setAttribute('aria-hidden','true');v.textContent='▾';b.appendChild(v);
+    function set(o){b.setAttribute('aria-expanded',o);list.hidden=!o;}
+    set(!!open[id]);
+    b.addEventListener('click',function(){var o=b.getAttribute('aria-expanded')!=='true';set(o);open[id]=o;save();label();});
+    btns.push({b:b,set:set,id:id});
+  });
+  var all=document.getElementById('foldAll');
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(open));}catch(e){}}
+  function anyClosed(){return btns.some(function(x){return x.b.getAttribute('aria-expanded')!=='true';});}
+  function label(){all.textContent=anyClosed()?'Tout ouvrir':'Tout fermer';}
+  all.addEventListener('click',function(){var o=anyClosed();btns.forEach(function(x){x.set(o);open[x.id]=o;});save();label();});
+  label();
 })();
 </script>
 </body>

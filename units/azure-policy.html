@@ -15,9 +15,9 @@
 .opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .opt3 ul{margin:4px 0 0;padding-left:18px;font-size:14px}
 .opt3 p{margin:0;font-size:14px}
-.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
-.steps li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
-.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
 pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:0}
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
 .sync{background:var(--onprem-soft);color:var(--onprem)}
@@ -76,7 +76,7 @@ pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12
   <h2 id="caf">1 · Pourquoi : la gouvernance du Cloud Adoption Framework</h2>
   <p>Le <b>CAF</b> est le guide Microsoft pour adopter le cloud. Sa méthode <b>Gouverner</b> tient en 5 étapes, et Azure Policy en est l'outil principal (étape 4).</p>
   <div class="card">
-    <ol class="steps">
+    <ol class="numl">
       <li><span><b>Créer une équipe de gouvernance</b> qui définit et suit les règles</span></li>
       <li><span><b>Évaluer les risques</b> : conformité, sécurité, opérations, coûts, données, ressources, IA</span></li>
       <li><span><b>Documenter les stratégies</b> : ce qui est permis et ce qui ne l'est pas</span></li>
@@ -234,7 +234,7 @@ pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12
     </div>
     <div class="card">
       <h3>🎯 Déploiement en anneaux</h3>
-      <ol class="steps">
+      <ol class="numl">
         <li><span>Définition créée à la <b>racine</b></span></li>
         <li><span>Affectation sur un petit anneau de test, <b>enforcementMode désactivé</b></span></li>
         <li><span>Vérifier la <b>conformité</b> et la <b>santé des applis</b></span></li>
@@ -312,7 +312,7 @@ pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12
     </table>
   </div>
 
-  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="architecture.html"><span class="lbl">← Précédent</span><span class="ttl">Architecture Azure</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="architecture.html"><span class="lbl">← Précédent</span><span class="ttl">Architecture Azure</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="rbac.html"><span class="lbl">Suivant →</span><span class="ttl">Azure RBAC</span></a></nav>
   <footer>Résumé personnel d'après le module Microsoft Learn « Initiatives de la politique Azure ».</footer>
   <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
 </main>

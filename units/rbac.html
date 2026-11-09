@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Azure RBAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.opt4.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.opt4,.opt4.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.opt4,.opt4.three{grid-template-columns:minmax(0,1fr)}}
+.opt4 .card{display:flex;flex-direction:column;gap:6px}
+.opt4 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt4 p{margin:0;font-size:14px}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:0}
+.yes{color:var(--ok);font-weight:700}.no{color:var(--onprem);font-weight:700}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Azure RBAC</span></nav>
+  <h1>Sécuriser l'accès avec Azure RBAC</h1>
+  <p class="lede">Qui peut faire quoi, et où, sur tes ressources Azure. Le module est court, mais RBAC revient partout à l'examen : j'ai ajouté les notions qui y tombent souvent (marquées <b>➕ examen</b>).</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Incontournable AZ-104</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> une <b>attribution de rôle</b> = <b>QUI</b> (principal de sécurité) + <b>QUOI</b> (définition de rôle) + <b>OÙ</b> (étendue). Accorder un accès = créer une attribution. Retirer un accès = la supprimer. Les rôles <b>s'additionnent</b> et <b>descendent</b> par héritage.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le coffre à clés du terminal 🔑</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🚛 Les rôles = les trousseaux</h3>
+      <ul>
+        <li><b>Propriétaire</b> = la <b>clé maîtresse</b> + le droit de <b>faire des doubles</b> pour les autres</li>
+        <li><b>Contributeur</b> = les clés de <b>tous les camions</b>, mais <b>interdit de faire des doubles</b></li>
+        <li><b>Lecteur</b> = il peut <b>regarder le tableau de répartition</b>, sans toucher à rien</li>
+        <li><b>Administrateur de l'accès utilisateur</b> = le <b>gardien du coffre à clés</b> : il fait les doubles, mais ne conduit pas</li>
+        <li><b>Contributeur de machines virtuelles</b> = les clés des <b>tracteurs seulement</b>, pas des remorques</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📒 Le registre des clés</h3>
+      <ul>
+        <li><b>Principal</b> = le <b>chauffeur</b> (ou une équipe, ou un système automatique)</li>
+        <li><b>Étendue</b> = <b>toute la division</b>, <b>un terminal</b>, <b>une remorque</b> ou <b>un camion</b></li>
+        <li><b>Attribution</b> = la <b>ligne signée dans le registre</b> : « Alain, clés des tracteurs, terminal Laval »</li>
+        <li><b>Héritage</b> = une clé du terminal ouvre aussi tous les camions du terminal</li>
+        <li><b>Journal d'activité</b> = le registre qu'on sort pour l'<b>audit trimestriel</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MODELE -->
+  <h2 id="modele">1 · Qui + Quoi + Où = attribution</h2>
+  <div class="card diagram">
+    <svg viewBox="0 10 890 215" role="img" aria-label="Une attribution de rôle combine un principal de sécurité, une définition de rôle et une étendue">
+      <rect x="10" y="20" width="250" height="130" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="135" y="52" text-anchor="middle" class="svg-text">👤 QUI</text>
+      <text x="135" y="74" text-anchor="middle" class="svg-small">principal de sécurité</text>
+      <text x="135" y="100" text-anchor="middle" class="svg-small">utilisateur · groupe</text>
+      <text x="135" y="118" text-anchor="middle" class="svg-small">principal de service</text>
+      <text x="135" y="136" text-anchor="middle" class="svg-small">identité managée</text>
+      <text x="290" y="92" text-anchor="middle" class="svg-title-c">+</text>
+      <rect x="320" y="20" width="250" height="130" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="445" y="52" text-anchor="middle" class="svg-text">📜 QUOI</text>
+      <text x="445" y="74" text-anchor="middle" class="svg-small">définition de rôle</text>
+      <text x="445" y="100" text-anchor="middle" class="svg-small">Propriétaire · Contributeur</text>
+      <text x="445" y="118" text-anchor="middle" class="svg-small">Lecteur · Admin accès util.</text>
+      <text x="445" y="136" text-anchor="middle" class="svg-small">ou rôle personnalisé</text>
+      <text x="600" y="92" text-anchor="middle" class="svg-title-c">+</text>
+      <rect x="630" y="20" width="250" height="130" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="755" y="52" text-anchor="middle" class="svg-text">📍 OÙ</text>
+      <text x="755" y="74" text-anchor="middle" class="svg-small">étendue</text>
+      <text x="755" y="100" text-anchor="middle" class="svg-small">groupe d'administration</text>
+      <text x="755" y="118" text-anchor="middle" class="svg-small">abonnement · groupe de ressources</text>
+      <text x="755" y="136" text-anchor="middle" class="svg-small">ressource</text>
+      <rect x="160" y="170" width="620" height="48" rx="14" class="svg-cloud" stroke-width="1.6"/>
+      <text x="470" y="200" text-anchor="middle" class="svg-title-c">= Attribution : « Groupe Marketing · Contributeur · rg-ventes »</text>
+    </svg>
+  </div>
+
+  <h3 style="margin:20px 0 8px">Les 4 rôles fondamentaux</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Rôle</th><th class="c">Voir</th><th class="c">Créer / modifier</th><th class="c">Donner l'accès</th></tr></thead>
+      <tbody>
+        <tr><td><b>Propriétaire</b> (Owner)</td><td class="c yes">✔</td><td class="c yes">✔</td><td class="c yes">✔</td></tr>
+        <tr><td><b>Contributeur</b> (Contributor)</td><td class="c yes">✔</td><td class="c yes">✔</td><td class="c no">✘</td></tr>
+        <tr><td><b>Lecteur</b> (Reader)</td><td class="c yes">✔</td><td class="c no">✘</td><td class="c no">✘</td></tr>
+        <tr><td><b>Administrateur de l'accès utilisateur</b></td><td class="c yes">✔</td><td class="c no">✘</td><td class="c yes">✔</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Il existe des centaines de rôles intégrés <b>spécialisés</b> (Contributeur de machines virtuelles, Opérateur de sauvegarde, Contributeur de réseau…). Le principe du <b>moindre privilège</b> : choisir le plus petit rôle, sur la plus petite étendue.</p>
+
+  <!-- ETENDUE -->
+  <h2 id="etendue">2 · Étendue et héritage</h2>
+  <div class="grid2">
+    <div class="card">
+      <ol class="numl">
+        <li><span><b>Groupe d'administration</b> : plusieurs abonnements</span></li>
+        <li><span><b>Abonnement</b> : tous ses groupes de ressources</span></li>
+        <li><span><b>Groupe de ressources</b> : toutes ses ressources</span></li>
+        <li><span><b>Ressource</b> : une seule VM, un seul compte de stockage…</span></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>🔽 Ça descend, ça s'additionne</h3>
+      <ul style="font-size:14px">
+        <li>Contributeur sur l'<b>abonnement</b> = Contributeur sur <b>tous</b> ses groupes et ressources</li>
+        <li>Dans l'onglet <b>Attributions de rôles</b>, l'origine est indiquée : <b>Cette ressource</b> ou <b>(Hérité)</b></li>
+        <li>Lecteur + Contributeur sur le même groupe = tu as <b>les deux</b> (lecture et écriture)</li>
+        <li>On <b>ne peut pas retirer</b> à un niveau enfant un droit hérité d'un parent. Il faut supprimer l'attribution là où elle a été faite</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Entra ID d'abord :</b> chaque abonnement fait confiance à <b>un seul locataire Entra</b>. Les utilisateurs, groupes et applis de ce locataire sont ceux à qui tu peux donner des rôles. Désactiver un compte (même synchronisé depuis AD local avec Entra Connect) lui retire l'accès partout.</div>
+
+  <!-- DEFINITION -->
+  <h2 id="definition">3 · Dans une définition de rôle</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📄 Le rôle Contributeur (simplifié)</h3>
+<pre class="json">{
+  "Name": "Contributor",
+  "Actions": [ "*" ],
+  "NotActions": [
+    "Microsoft.Authorization/*/Delete",
+    "Microsoft.Authorization/*/Write",
+    "Microsoft.Authorization/elevateAccess/Action",
+    "Microsoft.Blueprint/blueprintAssignments/write",
+    "Microsoft.Blueprint/blueprintAssignments/delete"
+  ],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [ "/" ]
+}</pre>
+    </div>
+    <div class="card">
+      <h3>🧮 Le calcul</h3>
+      <p style="font-size:15px"><b>Droits effectifs = Actions − NotActions</b></p>
+      <ul style="font-size:14px">
+        <li><code>*</code> = toutes les opérations du <b>plan de contrôle</b></li>
+        <li>Les NotActions retirent <code>Microsoft.Authorization/*</code> en écriture et suppression : c'est pour ça que le Contributeur <b>ne peut pas donner d'accès</b></li>
+        <li>➕ examen : <b>DataActions</b> = opérations sur les <b>données</b> (lire un blob, un secret). <b>Contributeur ne lit pas les blobs</b> par Entra : il faut un rôle de données comme <b>Lecteur des données Blob du stockage</b></li>
+        <li>➕ examen : <b>AssignableScopes</b> = où un rôle personnalisé peut être attribué</li>
+        <li>➕ examen : <b>NotActions n'est pas un refus</b>. Si un autre rôle donne l'action, tu l'as. Seule une <b>attribution de refus</b> (deny assignment) bloque, et tu ne peux pas en créer toi-même (Azure les pose, par exemple via les Blueprints ou les applis managées)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PORTAIL -->
+  <h2 id="portail">4 · Dans le portail (les 3 exercices)</h2>
+  <div class="opt4 three">
+    <div class="card"><span class="num">Lister</span><h3>👀 Voir les accès</h3>
+      <ul style="font-size:14px;padding-left:18px;margin:0"><li>Tes droits : menu du <b>profil</b> › <b>…</b> › <b>Mes autorisations</b></li><li>Une ressource : <b>Contrôle d'accès (IAM)</b> › onglet <b>Attributions de rôles</b></li><li>Onglet <b>Rôles</b> › <b>Afficher</b> › <b>Attributions</b> pour voir qui a ce rôle</li><li><b>Vérifier l'accès</b> : chercher un utilisateur et voir ses rôles ici</li></ul></div>
+    <div class="card"><span class="num">Accorder</span><h3>➕ Donner un rôle</h3>
+      <ul style="font-size:14px;padding-left:18px;margin:0"><li>Il faut être <b>Propriétaire</b> ou <b>Admin de l'accès utilisateur</b> (sinon le bouton est grisé)</li><li><b>IAM</b> › <b>Ajouter</b> › <b>Ajouter une attribution de rôle</b></li><li>Onglet <b>Rôle</b> (ex. Contributeur de machines virtuelles) › <b>Membres</b> › <b>Vérifier + attribuer</b></li><li>Retirer : cocher l'attribution › <b>Supprimer</b></li></ul></div>
+    <div class="card"><span class="num">Auditer</span><h3>📜 Journal d'activité</h3>
+      <ul style="font-size:14px;padding-left:18px;margin:0"><li><b>Journal d'activité</b> › Période : <b>Le mois dernier</b></li><li>Filtre <b>Opération</b> : tape <code>role</code></li><li>Create / Delete <b>role assignment</b>, Create or update / Delete <b>custom role definition</b></li><li>Export <b>CSV</b> pour l'audit</li></ul></div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">🧪 Gratuit à pratiquer : donner et retirer des rôles ne coûte rien. Essaie sur ton groupe de ressources avec <code>labadmin</code> comme membre.</p>
+
+  <!-- RBAC vs ENTRA -->
+  <h2 id="vs">5 · ➕ examen : rôles Azure ≠ rôles Entra ≠ Policy</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th class="c">Rôles Azure (RBAC)</th><th class="c">Rôles Microsoft Entra</th><th class="c">Azure Policy</th></tr></thead>
+      <tbody>
+        <tr><td>Contrôle</td><td>Les <b>ressources Azure</b> (VM, stockage, réseau)</td><td>L'<b>annuaire</b> (utilisateurs, groupes, licences)</td><td>Les <b>propriétés</b> des ressources</td></tr>
+        <tr><td>Exemple</td><td>Propriétaire, Contributeur</td><td>Administrateur général, Administrateur d'utilisateurs</td><td>Régions autorisées</td></tr>
+        <tr><td>Question</td><td>Qui peut agir ?</td><td>Qui gère les identités ?</td><td>Qu'est-ce qui est permis ?</td></tr>
+        <tr><td>Où</td><td>IAM de la ressource</td><td>Entra ID › Rôles et administrateurs</td><td>Azure Policy</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Un <b>Administrateur général</b> Entra n'a <b>pas</b> automatiquement accès aux ressources Azure. Il peut <b>élever son accès</b> (Entra ID › Propriétés › « Gestion de l'accès pour les ressources Azure ») pour devenir Admin de l'accès utilisateur à la racine.</p>
+
+  <!-- COMMANDES -->
+  <h2 id="commandes">6 · Les commandes</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Azure CLI</th><th>PowerShell</th><th class="c">Rôle</th></tr></thead>
+      <tbody>
+        <tr><td><code>az role assignment list --assignee alain@… -o table</code></td><td><code>Get-AzRoleAssignment -SignInName alain@…</code></td><td>Lister les attributions</td></tr>
+        <tr><td><code>az role assignment create --assignee alain@… --role "Virtual Machine Contributor" --resource-group rg-labo</code></td><td><code>New-AzRoleAssignment -SignInName alain@… -RoleDefinitionName "Virtual Machine Contributor" -ResourceGroupName rg-labo</code></td><td>Accorder</td></tr>
+        <tr><td><code>az role assignment delete --assignee … --role … --resource-group …</code></td><td><code>Remove-AzRoleAssignment …</code></td><td>Retirer</td></tr>
+        <tr><td><code>az role definition list --name "Contributor"</code></td><td><code>Get-AzRoleDefinition -Name "Contributor"</code></td><td>Voir Actions / NotActions</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Alain est Contributeur sur l'abonnement, il peut donc donner l'accès à son collègue. »</span><span class="right"><b>Non.</b> Contributeur ne peut pas attribuer de rôles. Il faut <b>Propriétaire</b> ou <b>Admin de l'accès utilisateur</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour qu'un auditeur voie tout sans rien changer, je lui donne Contributeur. »</span><span class="right"><b>Lecteur</b> suffit (moindre privilège).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je retire à Alain le droit d'un groupe de ressources alors qu'il est Contributeur sur l'abonnement. »</span><span class="right"><b>Impossible</b> au niveau du groupe : l'héritage gagne. Supprime l'attribution sur l'abonnement et refais-la plus bas.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un administrateur général Entra gère forcément toutes les VM. »</span><span class="right"><b>Faux.</b> Rôles Entra et rôles Azure sont séparés. Il doit <b>élever son accès</b> d'abord.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Contributeur peut lire le contenu d'un blob avec son compte Entra. »</span><span class="right"><b>Non</b>, c'est du plan de données : il faut <b>Lecteur des données Blob du stockage</b> (DataActions).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour voir qui a donné un rôle le mois dernier, je regarde l'onglet IAM. »</span><span class="right">IAM montre l'état <b>actuel</b>. L'historique est dans le <b>Journal d'activité</b> (filtre Opération « role »).</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Une attribution de rôle en code</h3>
+<pre><span class="c-k">data</span> <span class="c-s">"azuread_user"</span> <span class="c-s">"alain"</span> {
+  user_principal_name = <span class="c-s">"alain@bewithulive.onmicrosoft.com"</span>
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_resource_group"</span> <span class="c-s">"labo"</span> {
+  name     = <span class="c-s">"rg-labo-rbac"</span>
+  location = <span class="c-s">"canadacentral"</span>
+}
+
+<span class="c-c"># QUI + QUOI + OÙ</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_role_assignment"</span> <span class="c-s">"alain_vm"</span> {
+  principal_id         = data.azuread_user.alain.object_id     <span class="c-c"># qui</span>
+  role_definition_name = <span class="c-s">"Virtual Machine Contributor"</span>        <span class="c-c"># quoi</span>
+  scope                = azurerm_resource_group.labo.id          <span class="c-c"># où</span>
+}
+
+<span class="c-c"># Rôle personnalisé : azurerm_role_definition (permissions { actions, not_actions }, assignable_scopes)</span></pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>RBAC</td><td>Role-Based Access Control</td><td>Contrôle d'accès en fonction du rôle</td></tr>
+        <tr><td>IAM</td><td>Identity and Access Management</td><td>Volet « Contrôle d'accès » de chaque ressource</td></tr>
+        <tr><td>Principal de sécurité</td><td>Security principal</td><td>Qui reçoit le rôle : utilisateur, groupe, principal de service, identité managée</td></tr>
+        <tr><td>Principal de service</td><td>Service principal (SP)</td><td>Identité d'une application ou d'un script</td></tr>
+        <tr><td>Définition de rôle</td><td>Role definition</td><td>Liste d'opérations permises (Actions, NotActions…)</td></tr>
+        <tr><td>Attribution de rôle</td><td>Role assignment</td><td>Qui + quoi + où</td></tr>
+        <tr><td>Étendue</td><td>Scope</td><td>Le niveau où l'attribution s'applique</td></tr>
+        <tr><td>Attribution de refus</td><td>Deny assignment</td><td>Bloque une action même si un rôle la donne (posée par Azure)</td></tr>
+        <tr><td>Moindre privilège</td><td>Least privilege</td><td>Le plus petit rôle, sur la plus petite étendue</td></tr>
+        <tr><td>Plan de contrôle / de données</td><td>Control / data plane</td><td>Gérer la ressource (Actions) / toucher ses données (DataActions)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="azure-policy.html"><span class="lbl">← Précédent</span><span class="ttl">Azure Policy</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Sécuriser vos ressources Azure avec Azure RBAC », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Quels sont les 3 éléments d'une attribution de rôle ?",o:["Utilisateur, mot de passe, région","Principal de sécurité, définition de rôle, étendue","Abonnement, stratégie, étiquette"],a:1,e:"Qui + quoi + où."},
+  {q:"Alain doit créer et gérer des VM dans un seul groupe de ressources, sans plus. Quel rôle et où ?",o:["Contributeur sur l'abonnement","Contributeur de machines virtuelles sur le groupe de ressources","Propriétaire sur le groupe de ressources"],a:1,e:"Moindre privilège : rôle spécialisé, plus petite étendue."},
+  {q:"Quel rôle permet de gérer les accès sans pouvoir modifier les ressources ?",o:["Administrateur de l'accès utilisateur","Contributeur","Lecteur"],a:0,e:"Il fait les doubles de clés sans conduire."},
+  {q:"Comment sont calculées les autorisations effectives d'un rôle ?",o:["Actions + NotActions","Actions − NotActions","Seulement NotActions"],a:1,e:"On soustrait NotActions de Actions."},
+  {q:"Lecteur et Contributeur sur le même groupe de ressources. Résultat ?",o:["Lecteur (le plus restrictif gagne)","Lecture et écriture (les rôles s'additionnent)","Conflit, aucun accès"],a:1,e:"RBAC est additif (contrairement à Policy, où le plus strict gagne)."},
+  {q:"Où trouver qui a créé une attribution de rôle le mois dernier ?",o:["Journal d'activité, filtre Opération « role »","Onglet Rôles de l'IAM","Azure Policy"],a:0,e:"Le journal d'activité garde l'historique, exportable en CSV."},
+  {q:"Le bouton « Ajouter une attribution de rôle » est grisé. Pourquoi ?",o:["Le groupe de ressources est vide","Tu n'es ni Propriétaire ni Admin de l'accès utilisateur","Ta licence Entra P2 est absente"],a:1,e:"Seuls ces rôles peuvent attribuer des rôles."},
+  {q:"Un Administrateur général Entra ne voit aucune VM. Que doit-il faire ?",o:["Rien, c'est impossible","Élever son accès pour les ressources Azure","Acheter Entra P2"],a:1,e:"Rôles Entra et rôles Azure sont séparés ; l'élévation donne Admin de l'accès utilisateur à la racine."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

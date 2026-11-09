@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Initiatives Azure Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.opt3 p{margin:0;font-size:14px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5;margin:0}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.sync{background:var(--onprem-soft);color:var(--onprem)}
+.async{background:var(--cloud-soft);color:var(--cloud)}
+.man{background:var(--tf-soft);color:var(--tf)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Identités et gouvernance</span><span class="sep">›</span><span class="here">Azure Policy</span></nav>
+  <h1>Azure Policy et les initiatives</h1>
+  <p class="lede">Des règles écrites en JSON qui vérifient, bloquent ou corrigent tes ressources Azure, appliquées à grande échelle grâce à l'héritage.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 10 min · module complet</span>
+    <span class="chip">🎯 Très présent à l'examen (effets, portée, scan)</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> une <b>définition</b> = une règle (condition <code>if</code> + effet <code>then</code>). Une <b>initiative</b> = un paquet de règles. Une <b>affectation</b> = on applique la règle ou le paquet à une <b>portée</b> (groupe d'administration, abonnement, groupe de ressources). <b>RBAC</b> décide <i>qui</i> peut agir, <b>Policy</b> décide <i>ce qui</i> est permis.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la conformité routière 🚛</h2>
+  <p>C'est exactement ton nouveau poste de responsable sécurité et conformité, appliqué à Azure.</p>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>📘 Les règles</h3>
+      <ul>
+        <li><b>Définition</b> = un article du règlement : « aucune remorque hors Canada »</li>
+        <li><b>Initiative</b> = le <b>cahier de conformité</b> complet (heures de service, ronde de sécurité, poids…) qu'on applique d'un bloc</li>
+        <li><b>Affectation</b> = « ce cahier s'applique à la <b>division Québec</b> » (et donc à tous ses camions, par héritage)</li>
+        <li><b>Exemption</b> = une <b>dérogation</b> écrite pour un camion précis</li>
+        <li><b>RBAC</b> = qui a le permis de conduire. <b>Policy</b> = le code de la route</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🚨 Les effets</h3>
+      <ul>
+        <li><b>deny</b> = la <b>balance routière</b> refuse le camion en surcharge : il ne passe pas</li>
+        <li><b>audit</b> = le contrôleur <b>note l'infraction au dossier</b>, mais le camion repart</li>
+        <li><b>modify</b> = on <b>pose l'autocollant manquant</b> au moment de l'inspection</li>
+        <li><b>deployIfNotExists</b> = le camion n'a pas d'ELD ? on <b>en installe un</b></li>
+        <li><b>denyAction</b> = <b>interdit de mettre au rancart</b> (bloque la suppression)</li>
+        <li><b>manual</b> = <b>attestation signée</b> par toi sur papier</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CAF -->
+  <h2 id="caf">1 · Pourquoi : la gouvernance du Cloud Adoption Framework</h2>
+  <p>Le <b>CAF</b> est le guide Microsoft pour adopter le cloud. Sa méthode <b>Gouverner</b> tient en 5 étapes, et Azure Policy en est l'outil principal (étape 4).</p>
+  <div class="card">
+    <ol class="steps">
+      <li><span><b>Créer une équipe de gouvernance</b> qui définit et suit les règles</span></li>
+      <li><span><b>Évaluer les risques</b> : conformité, sécurité, opérations, coûts, données, ressources, IA</span></li>
+      <li><span><b>Documenter les stratégies</b> : ce qui est permis et ce qui ne l'est pas</span></li>
+      <li><span><b>Appliquer les stratégies</b> avec des outils automatiques (Azure Policy) et un contrôle humain</span></li>
+      <li><span><b>Surveiller</b> en continu. On répète les étapes 2 à 5</span></li>
+    </ol>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Exemples typiques : régions autorisées seulement, tailles de VM permises, étiquettes obligatoires, journaux de diagnostic envoyés à Log Analytics. <b>Souveraineté :</b> les secteurs régulés (gouvernement, finance, comme Desjardins) utilisent des initiatives toutes faites, par exemple le portfolio <b>Microsoft for Sovereignty</b> (dépôt GitHub <code>Azure/industry-policy-portfolio</code>).</p>
+
+  <!-- FLUX -->
+  <h2 id="flux">2 · Comment une requête est évaluée</h2>
+  <div class="card diagram">
+    <svg viewBox="0 65 960 215" role="img" aria-label="Flux d'une requête : portail ou CLI vers Azure Resource Manager, contrôle RBAC, puis Azure Policy avec effets synchrones avant la création et effets asynchrones après">
+      <defs><marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="100" width="150" height="70" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="85" y="130" text-anchor="middle" class="svg-text">Requête</text>
+      <text x="85" y="150" text-anchor="middle" class="svg-small">portail · CLI · PS · ARM</text>
+      <path d="M160 135 H200" class="svg-line-c" stroke-width="2" marker-end="url(#ap)"/>
+      <rect x="205" y="100" width="150" height="70" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="280" y="130" text-anchor="middle" class="svg-text">① RBAC</text>
+      <text x="280" y="150" text-anchor="middle" class="svg-small">as-tu le droit ?</text>
+      <path d="M280 170 V215" class="svg-line-c" stroke-width="2" marker-end="url(#ap)"/>
+      <text x="290" y="200" class="svg-small">non → refus, Policy</text>
+      <text x="290" y="214" class="svg-small">n'est même pas évaluée</text>
+      <path d="M355 135 H395" class="svg-line-c" stroke-width="2" marker-end="url(#ap)"/>
+      <rect x="400" y="80" width="230" height="110" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="515" y="108" text-anchor="middle" class="svg-title-o">② Policy synchrone</text>
+      <text x="515" y="132" text-anchor="middle" class="svg-small">disabled · append · modify</text>
+      <text x="515" y="150" text-anchor="middle" class="svg-small">deny · denyAction</text>
+      <text x="515" y="174" text-anchor="middle" class="svg-small">avant la création</text>
+      <path d="M630 135 H670" class="svg-line-c" stroke-width="2" marker-end="url(#ap)"/>
+      <rect x="675" y="80" width="275" height="110" rx="12" class="svg-cloud" stroke-width="1.6"/>
+      <text x="812" y="108" text-anchor="middle" class="svg-title-c">③ Ressource créée</text>
+      <text x="812" y="132" text-anchor="middle" class="svg-small">puis Policy asynchrone :</text>
+      <text x="812" y="150" text-anchor="middle" class="svg-small">audit · auditIfNotExists</text>
+      <text x="812" y="168" text-anchor="middle" class="svg-small">deployIfNotExists</text>
+      <text x="480" y="260" text-anchor="middle" class="svg-small">Scan de conformité complet automatique toutes les 24 h · nouvelle affectation : jusqu'à 30 min avant effet</text>
+    </svg>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>🌱 Greenfield (la règle d'abord)</h3>
+      <p style="margin:0;font-size:14px">La stratégie existe avant la ressource. Chaque création ou modification passe par RBAC puis par Policy. Pour une mise à jour, Policy fusionne le changement avec l'état actuel et évalue le résultat.</p>
+    </div>
+    <div class="card">
+      <h3>🏚️ Brownfield (les ressources d'abord)</h3>
+      <p style="margin:0;font-size:14px">On affecte une stratégie sur des ressources existantes. Elles sont <b>marquées non conformes, jamais supprimées</b>. Le scan tourne toutes les <b>24 h</b>, ou à la demande avec <code>az policy state trigger-scan</code>. Durée imprévisible (basse priorité).</p>
+    </div>
+  </div>
+
+  <!-- RESSOURCES -->
+  <h2 id="ressources">3 · Les 6 objets d'Azure Policy</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Objet</th><th class="c">Ce qu'il fait</th></tr></thead>
+      <tbody>
+        <tr><td>Définition</td><td>Condition + effet. Stockée dans un <b>groupe d'administration ou un abonnement</b> : cet endroit limite où on peut l'affecter. <b>Intégrée</b> (BuiltIn, Microsoft) ou <b>personnalisée</b> (Custom)</td></tr>
+        <tr><td>Initiative</td><td>Aussi appelée <b>policy set</b>. Groupe de définitions affecté et géré comme une seule unité (ex. toutes les règles d'étiquetage)</td></tr>
+        <tr><td>Affectation</td><td>Applique une définition ou une initiative à une portée. Options : <b>étendues exclues</b>, <b>paramètres</b>, <b>message de non-conformité</b>, <b>sélecteurs de ressources</b> (déploiement par vagues), <b>overrides</b> (changer l'effet sans toucher la définition), <b>enforcementMode</b>, <b>identité managée</b> (obligatoire pour <code>deployIfNotExists</code> et <code>modify</code>)</td></tr>
+        <tr><td>Exemption</td><td>Retire une ressource ou une portée de l'évaluation. Deux catégories : <b>Mitigated</b> (objectif atteint autrement) et <b>Waiver</b> (non-conformité acceptée temporairement)</td></tr>
+        <tr><td>Attestation</td><td>Pour l'effet <b>manual</b> : tu déclares toi-même l'état de conformité</td></tr>
+        <tr><td>Correction</td><td><b>Tâche de correction</b> (remediation task) pour remettre en conformité les ressources <b>existantes</b> avec <code>modify</code> ou <code>deployIfNotExists</code>. Les nouvelles ressources sont corrigées automatiquement</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DEFINITION -->
+  <h2 id="definition">4 · Anatomie d'une définition</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📄 « Allowed locations » (intégrée)</h3>
+<pre class="json">{
+  "displayName": "Allowed locations",
+  "policyType": "BuiltIn",
+  "mode": "Indexed",
+  "parameters": {
+    "listOfAllowedLocations": {
+      "type": "Array",
+      "metadata": { "strongType": "location" }
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        { "field": "location",
+          "notIn": "[parameters('listOfAllowedLocations')]" },
+        { "field": "location", "notEquals": "global" },
+        { "field": "type",
+          "notEquals": "Microsoft.AzureActiveDirectory/b2cDirectories" }
+      ]
+    },
+    "then": { "effect": "deny" }
+  }
+}</pre>
+    </div>
+    <div class="card">
+      <h3>🔍 Les morceaux à connaître</h3>
+      <ul style="font-size:14px">
+        <li><b>policyType</b> : BuiltIn, Custom ou Static (conformité réglementaire Microsoft)</li>
+        <li><b>mode</b> : <b>All</b> = tous les types de ressources. <b>Indexed</b> = seulement ceux qui ont des <b>étiquettes et un emplacement</b> (à utiliser pour les règles sur tags/location). Modes fournisseur : <code>Microsoft.Kubernetes.Data</code>, <code>Microsoft.KeyVault.Data</code>…</li>
+        <li><b>parameters</b> : une seule définition réutilisable avec des valeurs différentes</li>
+        <li><b>policyRule</b> : <code>if</code> (conditions) + <code>then</code> (effet)</li>
+        <li><b>Opérateurs logiques</b> : <code>allOf</code> = ET, <code>anyOf</code> = OU, <code>not</code> = inverse</li>
+        <li><b>Conditions</b> : <code>field</code> (propriété de la ressource), <code>value</code>, <code>count</code>. Critères : equals, like, in/notIn, contains, containsKey, exists, greater…</li>
+        <li><b>Fonctions propres à Policy</b> : <code>field()</code>, <code>utcNow()</code>, <code>addDays()</code>, <code>ipRangeContains()</code>, <code>current()</code></li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">« global » est exclu car certains services mondiaux n'ont pas de région. Une fonction en erreur donne un <b>deny</b>.</p>
+    </div>
+  </div>
+
+  <!-- EFFETS -->
+  <h2 id="effets">5 · Les effets</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Effet</th><th class="c">Ce qu'il fait</th><th>Quand</th></tr></thead>
+      <tbody>
+        <tr><td><b>disabled</b></td><td>Désactive la stratégie (vérifié en premier)</td><td><span class="pill sync">synchrone</span></td></tr>
+        <tr><td><b>append</b></td><td>Ajoute des champs à la création ou la mise à jour. Presque remplacé par modify</td><td><span class="pill sync">synchrone</span></td></tr>
+        <tr><td><b>modify</b></td><td>Ajoute, modifie ou retire des propriétés ou des <b>étiquettes</b> (ex. ajoute <code>AppName=SpecialOrders</code> si manquant)</td><td><span class="pill sync">synchrone</span></td></tr>
+        <tr><td><b>deny</b></td><td><b>Bloque</b> la requête non conforme</td><td><span class="pill sync">synchrone</span></td></tr>
+        <tr><td><b>denyAction</b></td><td>Bloque une action précise. Aujourd'hui seulement <b>DELETE</b></td><td><span class="pill sync">synchrone</span></td></tr>
+        <tr><td><b>audit</b></td><td>Avertissement dans le <b>journal d'activité</b>, ne bloque rien</td><td><span class="pill async">asynchrone</span></td></tr>
+        <tr><td><b>auditIfNotExists</b></td><td>Audite si une <b>ressource liée</b> manque (ex. VM sans extension antivirus)</td><td><span class="pill async">asynchrone</span></td></tr>
+        <tr><td><b>deployIfNotExists</b></td><td><b>Déploie</b> la ressource liée manquante via un modèle ARM</td><td><span class="pill async">asynchrone</span></td></tr>
+        <tr><td><b>manual</b></td><td>Conformité déclarée par <b>attestation</b></td><td><span class="pill man">manuel</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Cumul :</b> plusieurs stratégies sur une même ressource sont évaluées séparément, et <b>la plus restrictive l'emporte</b>. Un <b>deny</b> à n'importe quel niveau bloque.</div>
+
+  <!-- CONFORMITE -->
+  <h2 id="conformite">6 · Évaluation et états de conformité</h2>
+  <div class="opt3">
+    <div class="card"><span class="num">Déclencheurs</span><h3>⚡ Quand ça évalue</h3><ul><li>Nouvelle affectation ou mise à jour</li><li>Création ou modification d'une ressource</li><li>Abonnement créé ou déplacé dans un groupe d'administration</li><li>Exemption créée, modifiée ou supprimée</li><li>Cycle de <b>24 h</b> ou scan à la demande</li></ul></div>
+    <div class="card"><span class="num">États (priorité)</span><h3>🚦 Du plus fort au plus faible</h3><ul><li>Non conforme</li><li>Conforme</li><li>Erreur</li><li>Conflit (deux affectations contradictoires)</li><li>Protégé (denyAction)</li><li>Exempté / Inconnu (manual)</li></ul></div>
+    <div class="card"><span class="num">Calcul</span><h3>📊 Pourcentage</h3><p>(conformes + exemptées + inconnues) ÷ total des ressources.</p><p style="margin-top:6px">Tu veux réagir à un changement d'état ? Azure Policy publie des événements dans <b>Event Grid</b> (vers Functions, Logic Apps, webhook).</p></div>
+  </div>
+
+  <!-- DEPLOIEMENT -->
+  <h2 id="deploiement">7 · Déployer une stratégie sans tout casser</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🧪 enforcementMode</h3>
+      <div class="tablewrap" style="margin:0">
+        <table>
+          <thead><tr><th>Mode</th><th>JSON</th><th class="c">Effet appliqué</th><th class="c">Journal</th></tr></thead>
+          <tbody>
+            <tr><td>Activé</td><td><code>Default</code></td><td class="c">✅</td><td class="c">✅</td></tr>
+            <tr><td>Désactivé</td><td><code>DoNotEnforce</code></td><td class="c">❌</td><td class="c">❌</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:14px;margin:10px 0 0">C'est un <b>« what if »</b> : les ressources sont <b>quand même évaluées</b> et la conformité s'affiche, mais rien n'est bloqué. Différent de l'effet <b>disabled</b>, qui arrête toute évaluation. Les tâches de correction restent possibles.</p>
+    </div>
+    <div class="card">
+      <h3>🎯 Déploiement en anneaux</h3>
+      <ol class="steps">
+        <li><span>Définition créée à la <b>racine</b></span></li>
+        <li><span>Affectation sur un petit anneau de test, <b>enforcementMode désactivé</b></span></li>
+        <li><span>Vérifier la <b>conformité</b> et la <b>santé des applis</b></span></li>
+        <li><span>Ajuster, puis réaffecter avec enforcementMode <b>activé</b></span></li>
+        <li><span>Revérifier, puis élargir anneau par anneau jusqu'à la <b>production</b></span></li>
+      </ol>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">🚛 Comme une nouvelle règle de flotte : on la teste sur 2 camions pilotes avant de l'imposer aux 200.</p>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Bonne pratique : <b>policy as code</b>. Les définitions vivent dans Git, sont testées et déployées par pipeline (Azure DevOps ou GitHub Actions).</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'affecte une stratégie "régions autorisées" : les ressources hors région sont supprimées. »</span><span class="right"><b>Non.</b> Elles sont seulement <b>marquées non conformes</b>. Seules les <b>nouvelles</b> créations hors région sont bloquées.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour empêcher quelqu'un de créer une VM, j'utilise Azure Policy. »</span><span class="right"><b>Ça dépend.</b> Empêcher <b>une personne</b> d'agir = <b>RBAC</b>. Empêcher <b>tout le monde</b> de créer une ressource non conforme = <b>Policy</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour ajouter une étiquette manquante automatiquement, j'utilise audit. »</span><span class="right"><b>Non</b>, audit ne fait que signaler. Il faut <b>modify</b> (et une <b>tâche de correction</b> pour les ressources déjà là).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une règle sur les étiquettes doit être en mode All. »</span><span class="right">Utilise <b>Indexed</b> : il ne regarde que les types qui supportent étiquettes et emplacement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je viens d'affecter la stratégie, elle s'applique tout de suite. »</span><span class="right">Jusqu'à <b>30 min</b> de délai. Le scan des ressources existantes : toutes les <b>24 h</b>, ou <code>az policy state trigger-scan</code>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« deployIfNotExists fonctionne sans rien configurer de plus. »</span><span class="right">L'affectation a besoin d'une <b>identité managée</b> avec les bons rôles pour déployer.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une définition stockée dans l'abonnement A peut être affectée à l'abonnement B. »</span><span class="right"><b>Non.</b> Pour la réutiliser partout, stocke-la dans un <b>groupe d'administration</b> parent.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Affecter « Allowed locations » en mode test</h3>
+<pre><span class="c-k">data</span> <span class="c-s">"azurerm_subscription"</span> <span class="c-s">"current"</span> {}
+
+<span class="c-c"># Définition intégrée « Allowed locations » (par son nom d'affichage)</span>
+<span class="c-k">data</span> <span class="c-s">"azurerm_policy_definition"</span> <span class="c-s">"allowed_locations"</span> {
+  display_name = <span class="c-s">"Allowed locations"</span>
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_subscription_policy_assignment"</span> <span class="c-s">"canada_only"</span> {
+  name                 = <span class="c-s">"canada-only"</span>
+  subscription_id      = data.azurerm_subscription.current.id
+  policy_definition_id = data.azurerm_policy_definition.allowed_locations.id
+  enforce              = <span class="c-k">false</span>   <span class="c-c"># = enforcementMode DoNotEnforce (what-if)</span>
+
+  parameters = jsonencode({
+    listOfAllowedLocations = { value = [<span class="c-s">"canadacentral"</span>, <span class="c-s">"canadaeast"</span>] }
+  })
+
+  non_compliance_message {
+    content = <span class="c-s">"Seules les régions canadiennes sont permises."</span>
+  }
+}
+
+<span class="c-c"># Initiative perso : azurerm_policy_set_definition</span>
+<span class="c-c"># Exemption : azurerm_resource_group_policy_exemption (exemption_category = "Waiver" ou "Mitigated")</span></pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>CAF</td><td>Cloud Adoption Framework</td><td>Guide Microsoft pour adopter le cloud (méthode Gouverner)</td></tr>
+        <tr><td>Définition de stratégie</td><td>Policy definition</td><td>Une règle JSON : condition + effet</td></tr>
+        <tr><td>Initiative</td><td>Initiative / policy set</td><td>Groupe de définitions géré comme une seule unité</td></tr>
+        <tr><td>Affectation</td><td>Assignment</td><td>Application d'une règle à une portée</td></tr>
+        <tr><td>Portée</td><td>Scope</td><td>Groupe d'administration, abonnement, groupe de ressources ou ressource</td></tr>
+        <tr><td>Exemption</td><td>Exemption (Waiver / Mitigated)</td><td>Dérogation pour une ressource ou une portée</td></tr>
+        <tr><td>Correction</td><td>Remediation</td><td>Remise en conformité des ressources existantes</td></tr>
+        <tr><td>DINE / AINE</td><td>deployIfNotExists / auditIfNotExists</td><td>Effets qui regardent une ressource liée</td></tr>
+        <tr><td>RBAC</td><td>Role-Based Access Control</td><td>Contrôle d'accès par rôle : qui peut faire quoi</td></tr>
+        <tr><td>ARM</td><td>Azure Resource Manager</td><td>Service par lequel passent toutes les requêtes de gestion (plan de contrôle)</td></tr>
+        <tr><td>Plan de contrôle / de données</td><td>Control / data plane</td><td>Gérer la ressource vs toucher les données dedans</td></tr>
+        <tr><td>Greenfield / Brownfield</td><td>—</td><td>Règle avant les ressources / ressources déjà existantes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="architecture.html"><span class="lbl">← Précédent</span><span class="ttl">Architecture Azure</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Initiatives de la politique Azure ».</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Tu veux que toute nouvelle ressource sans étiquette « CostCenter » reçoive automatiquement cette étiquette. Quel effet ?",o:["audit","modify","deny"],a:1,e:"modify ajoute ou change les étiquettes à la création ou la mise à jour."},
+  {q:"Tu affectes « Allowed locations » (Canada seulement). Qu'arrive-t-il à une VM existante en West Europe ?",o:["Elle est supprimée","Elle est déplacée au Canada","Elle est marquée non conforme"],a:2,e:"Brownfield : marquée non conforme, jamais supprimée."},
+  {q:"Comment appelle-t-on un groupe de définitions de stratégie affecté comme une seule unité ?",o:["Une initiative","Un plan","Un groupe d'administration"],a:0,e:"Initiative = policy set."},
+  {q:"Tu veux voir l'impact d'un deny sur la prod sans rien bloquer. Que fais-tu ?",o:["Effet disabled","enforcementMode = DoNotEnforce","Une exemption Waiver"],a:1,e:"DoNotEnforce évalue et affiche la conformité sans appliquer l'effet."},
+  {q:"Quel effet empêche la suppression d'une ressource ?",o:["deny","denyAction","audit"],a:1,e:"denyAction bloque une action ; aujourd'hui seulement DELETE."},
+  {q:"Tous les combien un scan de conformité complet tourne-t-il automatiquement ?",o:["Toutes les heures","Toutes les 24 h","Toutes les semaines"],a:1,e:"24 h, ou à la demande avec az policy state trigger-scan."},
+  {q:"Que faut-il ajouter à une affectation deployIfNotExists pour qu'elle puisse corriger ?",o:["Une identité managée","Une clé de stockage","Un groupe Entra"],a:0,e:"L'identité managée déploie la ressource manquante en ton nom."},
+  {q:"Deux stratégies s'appliquent : audit au niveau abonnement, deny au niveau groupe de ressources. Résultat pour une ressource non conforme du groupe ?",o:["Audit seulement","Bloquée (deny)","Conflit, rien ne se passe"],a:1,e:"Effets cumulés : la plus restrictive l'emporte."},
+  {q:"Un utilisateur sans droit Contributeur crée une VM. Qui la refuse en premier ?",o:["Azure Policy","RBAC","Microsoft Defender"],a:1,e:"RBAC est vérifié d'abord ; s'il refuse, Policy n'est même pas évaluée."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

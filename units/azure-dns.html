@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Azure DNS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:13px;line-height:1.5;margin:8px 0 0}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Azure DNS</span></nav>
+  <h1>Héberger votre domaine sur Azure DNS</h1>
+  <p class="lede">Faire en sorte que <code>www.monsite.com</code> mène à ton serveur dans Azure : la zone DNS, la délégation chez le registraire, les enregistrements, les alias, et les zones privées pour tes VNet.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Zones publiques et privées : souvent à l'examen</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> Azure DNS <b>héberge</b> ta zone, il <b>ne vend pas</b> le nom de domaine. Tu achètes le nom chez un <b>registraire</b>, tu crées la <b>zone</b> dans Azure, puis tu remplaces les serveurs de noms chez le registraire par les <b>4 serveurs NS d'Azure</b> : c'est la <b>délégation</b>.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le répertoire des expéditions 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>📒 Le DNS</h3>
+      <ul>
+        <li><b>DNS</b> = le <b>répertoire</b> qui traduit « Terminal Laval » en <b>adresse civique</b> (le nom en IP)</li>
+        <li><b>Registraire</b> = le bureau qui t'<b>enregistre le nom</b> de ta compagnie (GoDaddy, Namecheap…)</li>
+        <li><b>Zone DNS</b> = <b>ton cahier d'adresses</b> pour ce nom, rangé chez Azure</li>
+        <li><b>Délégation (NS)</b> = le registraire dit « pour toutes les adresses de cette compagnie, appelez <b>le répartiteur Azure</b> »</li>
+        <li><b>TTL</b> = combien de temps un chauffeur peut <b>garder l'adresse en mémoire</b> avant de rappeler</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🏷️ Les enregistrements</h3>
+      <ul>
+        <li><b>A</b> = « Terminal Laval → 123 rue X » (nom → IPv4)</li>
+        <li><b>CNAME</b> = « Entrepôt nord → voir Terminal Laval » (un surnom qui renvoie à un autre nom)</li>
+        <li><b>MX</b> = où livrer le <b>courrier</b> (les courriels)</li>
+        <li><b>Alias</b> = « l'adresse du quai principal, <b>quelle qu'elle soit aujourd'hui</b> » : si le quai déménage, le répertoire se met à jour tout seul</li>
+        <li><b>Zone privée</b> = le <b>répertoire interne</b> affiché dans la cour, invisible de la rue</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- QUOI -->
+  <h2 id="quoi">1 · Ce qu'est Azure DNS</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>✅ Ce qu'il fait</h3>
+      <ul style="font-size:14px">
+        <li>Héberge tes zones sur le <b>réseau mondial de serveurs de noms</b> de Microsoft (rapide et très disponible)</li>
+        <li>Même portail, mêmes identifiants, même facture que le reste d'Azure</li>
+        <li>Sécurité Azure : <b>RBAC</b>, <b>journal d'activité</b>, <b>verrous</b> sur la zone</li>
+        <li><b>Enregistrements d'alias</b> vers des ressources Azure</li>
+        <li><b>Zones privées</b> pour la résolution de noms dans tes VNet</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>❌ Ce qu'il ne fait pas</h3>
+      <ul style="font-size:14px">
+        <li><b>Acheter ou enregistrer un nom de domaine</b> : ça se fait chez un registraire (ou via « Domaines App Service », un autre service)</li>
+        <li>Remplacer ton registraire : il reste propriétaire de l'enregistrement du nom</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Scénario du module : Wide World Importers a acheté <code>wideworldimports.com</code> chez un registraire externe et veut le faire pointer vers son site hébergé dans Azure.</p>
+    </div>
+  </div>
+
+  <!-- DELEGATION -->
+  <h2 id="delegation">2 · Héberger un domaine public : les étapes</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 250" role="img" aria-label="Un internaute demande www.wideworldimports.com : le registraire délègue aux 4 serveurs NS d'Azure, qui répondent avec l'adresse IP du serveur web">
+      <defs><marker id="dn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="80" width="150" height="90" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="85" y="115" text-anchor="middle" class="svg-text">🧑‍💻 Internaute</text>
+      <text x="85" y="140" text-anchor="middle" class="svg-small">www.wideworld</text>
+      <text x="85" y="156" text-anchor="middle" class="svg-small">imports.com ?</text>
+      <path d="M160 125 H225" class="svg-line-c" stroke-width="2" marker-end="url(#dn)"/>
+      <rect x="230" y="60" width="200" height="130" rx="14" class="svg-onprem" stroke-width="1.6"/>
+      <text x="330" y="92" text-anchor="middle" class="svg-title-o">Registraire</text>
+      <text x="330" y="116" text-anchor="middle" class="svg-small">possède le nom</text>
+      <text x="330" y="140" text-anchor="middle" class="svg-small">NS = serveurs Azure</text>
+      <text x="330" y="164" text-anchor="middle" class="svg-small">(délégation)</text>
+      <path d="M430 125 H495" class="svg-line-c" stroke-width="2" marker-end="url(#dn)"/>
+      <rect x="500" y="30" width="250" height="190" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="625" y="60" text-anchor="middle" class="svg-title-c">Zone Azure DNS</text>
+      <text x="625" y="86" text-anchor="middle" class="svg-small">NS ×4 · SOA (créés tout seuls)</text>
+      <rect x="520" y="100" width="210" height="34" rx="8" class="svg-node" stroke-width="1"/>
+      <text x="625" y="122" text-anchor="middle" class="svg-small">www · A · 20.48.12.7</text>
+      <rect x="520" y="142" width="210" height="34" rx="8" class="svg-node" stroke-width="1"/>
+      <text x="625" y="164" text-anchor="middle" class="svg-small">@ · A alias → IP publique</text>
+      <text x="625" y="204" text-anchor="middle" class="svg-small">ns1-04.azure-dns.com …</text>
+      <path d="M750 125 H815" class="svg-line-c" stroke-width="2" marker-end="url(#dn)"/>
+      <rect x="820" y="80" width="130" height="90" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="885" y="118" text-anchor="middle" class="svg-text">🖥️ Serveur</text>
+      <text x="885" y="142" text-anchor="middle" class="svg-small">20.48.12.7</text>
+    </svg>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <ol class="numl">
+      <li><span><b>Créer la zone DNS</b> : abonnement, groupe de ressources, nom (<code>wideworldimports.com</code>). Les enregistrements <b>NS</b> et <b>SOA</b> sont créés automatiquement</span></li>
+      <li><span><b>Noter les 4 serveurs de noms</b> dans le jeu d'enregistrements NS (ex. <code>ns1-04.azure-dns.com</code>)</span></li>
+      <li><span><b>Chez le registraire</b>, remplacer les serveurs de noms par <b>les 4</b> serveurs Azure : c'est la <b>délégation</b></span></li>
+      <li><span><b>Vérifier</b> (10 min ou plus) en interrogeant le SOA : <code>nslookup -type=SOA wideworldimports.com</code></span></li>
+      <li><span><b>Ajouter tes enregistrements</b> : un <b>A</b> pour le serveur web, un <b>CNAME</b> <code>www</code> si besoin</span></li>
+    </ol>
+  </div>
+
+  <!-- ENREGISTREMENTS -->
+  <h2 id="types">3 · Les types d'enregistrements</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Type</th><th class="c">Rôle</th><th>Exemple</th></tr></thead>
+      <tbody>
+        <tr><td><b>A</b></td><td>Nom → adresse <b>IPv4</b> (le plus courant)</td><td><code>www → 20.48.12.7</code></td></tr>
+        <tr><td><b>AAAA</b></td><td>Nom → adresse <b>IPv6</b></td><td><code>www → 2001:db8::7</code></td></tr>
+        <tr><td><b>CNAME</b></td><td>Nom → <b>autre nom</b> (surnom). <b>Interdit à l'apex</b></td><td><code>boutique → www.wideworldimports.com</code></td></tr>
+        <tr><td><b>NS</b></td><td>Les serveurs de noms qui font autorité (4 chez Azure)</td><td><code>ns1-04.azure-dns.com</code></td></tr>
+        <tr><td><b>SOA</b></td><td>Fiche d'identité de la zone (un seul, à l'apex)</td><td>créé automatiquement</td></tr>
+        <tr><td>➕ <b>MX</b></td><td>Serveur de <b>courriel</b> du domaine</td><td><code>@ → mail.contoso.com</code></td></tr>
+        <tr><td>➕ <b>TXT</b></td><td>Texte libre : preuve de propriété, SPF anti-pourriel</td><td><code>MS=ms123456</code></td></tr>
+        <tr><td>➕ <b>PTR</b></td><td>Recherche <b>inverse</b> : IP → nom</td><td><code>7.12.48.20 → www…</code></td></tr>
+        <tr><td>➕ <b>SRV</b></td><td>Emplacement d'un service (port + hôte)</td><td><code>_sip._tcp</code></td></tr>
+        <tr><td>➕ <b>CAA</b></td><td>Quelles autorités peuvent émettre un certificat TLS</td><td><code>0 issue "digicert.com"</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>📦 Jeu d'enregistrements</h3>
+      <p style="font-size:14px;margin:0">Azure regroupe les enregistrements de <b>même nom et même type</b> dans un <b>jeu</b>. Ex. le jeu A <code>www</code> peut contenir plusieurs IP. Le <b>TTL</b> est défini par jeu (en secondes, minutes, heures…).</p>
+    </div>
+    <div class="card">
+      <h3>🔝 L'apex <code>@</code></h3>
+      <p style="font-size:14px;margin:0">Le sommet de la zone : <code>wideworldimports.com</code> tout court, sans <code>www</code>. Dans le portail, on laisse le <b>nom vide</b>. On y trouve NS et SOA. On ne peut pas y mettre de <b>CNAME</b> : d'où les alias.</p>
+    </div>
+  </div>
+
+  <!-- ALIAS -->
+  <h2 id="alias">4 · Les enregistrements d'alias</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔗 Le principe</h3>
+      <p style="font-size:14px;margin:0 0 8px">Au lieu d'écrire une IP en dur, l'enregistrement <b>pointe vers une ressource Azure</b>. Si l'IP de la ressource change, l'enregistrement <b>suit tout seul</b>. Si la ressource est supprimée, l'enregistrement se vide (pas d'enregistrement « orphelin » qui pointe vers une IP donnée à quelqu'un d'autre).</p>
+      <ul style="font-size:14px">
+        <li>Types possibles : <b>A</b>, <b>AAAA</b>, <b>CNAME</b></li>
+        <li>Fonctionne <b>à l'apex</b> (là où CNAME est interdit)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🎯 Cibles possibles</h3>
+      <ul style="font-size:14px">
+        <li><b>Adresse IP publique</b> Azure (ex. celle d'un équilibreur de charge)</li>
+        <li>Profil <b>Traffic Manager</b></li>
+        <li>Point de terminaison <b>Azure CDN</b></li>
+        <li>Profil <b>Front Door</b></li>
+        <li>Un autre jeu d'enregistrements de la même zone</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Exercice du module : nom vide (apex), type A, alias <b>Oui</b>, ressource <b>myPublicIP</b> de l'équilibreur de charge.</p>
+    </div>
+  </div>
+
+  <!-- PRIVE -->
+  <h2 id="prive">5 · Zones DNS privées</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔒 Pour tes VNet</h3>
+      <ul style="font-size:14px">
+        <li><b>Invisibles sur Internet</b>, pas de registraire</li>
+        <li>Donnent des noms à tes VM : <code>vm1.private.contoso.com</code></li>
+        <li>Créer la zone (« Zones DNS privées »), puis <b>Liaisons de réseau virtuel › Ajouter</b> pour chaque VNet qui doit résoudre ces noms</li>
+        <li>C'est le « Virtual network link » de ton schéma du labo (private.contoso.com)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>➕ examen : l'inscription automatique</h3>
+      <ul style="font-size:14px">
+        <li>En cochant <b>Activer l'inscription automatique</b> sur la liaison, chaque VM du VNet reçoit <b>son enregistrement A tout seul</b> (et il disparaît quand la VM est supprimée)</li>
+        <li>Un VNet peut être lié à <b>plusieurs</b> zones privées, mais l'inscription automatique n'est possible que vers <b>une seule</b></li>
+        <li>Sans zone privée, Azure fournit déjà une résolution de base dans un VNet (noms des VM), mais pas entre VNet</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- COMMANDES -->
+  <h2 id="commandes">6 · Les commandes</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Commande</th><th class="c">Rôle</th></tr></thead>
+      <tbody>
+        <tr><td><code>nslookup -type=SOA wideworldimports.com</code></td><td>Vérifier la délégation</td></tr>
+        <tr><td><code>nslookup www.wideworldimports.com ns1-04.azure-dns.com</code></td><td>Interroger directement un serveur Azure (avant délégation)</td></tr>
+        <tr><td><code>az network dns zone create -g rg-dns -n wideworldimports.com</code></td><td>Créer une zone publique</td></tr>
+        <tr><td><code>az network dns record-set a add-record -g rg-dns -z wideworldimports.com -n www -a 20.48.12.7</code></td><td>Ajouter un enregistrement A</td></tr>
+        <tr><td><code>az network private-dns zone create -g rg-dns -n private.contoso.com</code></td><td>Créer une zone privée</td></tr>
+        <tr><td><code>az network private-dns link vnet create -g rg-dns -z private.contoso.com -n lien-app -v app-vnet -e true</code></td><td>Lier un VNet (<code>-e true</code> = inscription automatique)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">PowerShell : <code>New-AzDnsZone</code>, <code>New-AzDnsRecordSet</code>, <code>New-AzPrivateDnsZone</code>, <code>New-AzPrivateDnsVirtualNetworkLink</code>. 💸 Une zone coûte environ 0,50 $US par mois : supprime le groupe de ressources après le labo (et l'équilibreur de charge et les VM de l'exercice d'alias).</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'achète mon nom de domaine dans Azure DNS. »</span><span class="right"><b>Non.</b> Azure DNS héberge la zone. L'achat se fait chez un <b>registraire</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai créé la zone dans Azure, mon site répond déjà sur Internet. »</span><span class="right">Pas tant que tu n'as pas <b>délégué</b> : remplacer les NS chez le registraire par les <b>4</b> serveurs Azure.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets un CNAME à l'apex pour pointer contoso.com vers mon CDN. »</span><span class="right">CNAME <b>interdit</b> à l'apex. Utilise un <b>enregistrement d'alias</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour que mes VM se trouvent par leur nom dans une zone privée, je crée chaque enregistrement A à la main. »</span><span class="right">Active l'<b>inscription automatique</b> sur la liaison de réseau virtuel.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon VNet a l'inscription automatique sur deux zones privées. »</span><span class="right">Une <b>seule</b> zone avec inscription automatique par VNet (les autres liaisons en résolution seulement).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« L'IP de mon équilibreur a changé, je dois corriger mon enregistrement A. »</span><span class="right">Pas si c'est un <b>alias</b> vers l'IP publique : il suit automatiquement.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Zone publique, alias à l'apex, zone privée liée</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_dns_zone"</span> <span class="c-s">"pub"</span> {
+  name                = <span class="c-s">"wideworldimports.com"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+}
+
+<span class="c-c"># Les 4 serveurs à donner au registraire</span>
+<span class="c-k">output</span> <span class="c-s">"name_servers"</span> { value = azurerm_dns_zone.pub.name_servers }
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_dns_a_record"</span> <span class="c-s">"www"</span> {
+  name                = <span class="c-s">"www"</span>
+  zone_name           = azurerm_dns_zone.pub.name
+  resource_group_name = azurerm_resource_group.labo.name
+  ttl                 = 3600
+  records             = [<span class="c-s">"20.48.12.7"</span>]
+}
+
+<span class="c-c"># Alias à l'apex (@) vers une IP publique</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_dns_a_record"</span> <span class="c-s">"apex"</span> {
+  name                = <span class="c-s">"@"</span>
+  zone_name           = azurerm_dns_zone.pub.name
+  resource_group_name = azurerm_resource_group.labo.name
+  ttl                 = 300
+  target_resource_id  = azurerm_public_ip.lb.id
+}
+
+<span class="c-c"># Zone privée + liaison avec inscription automatique</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_private_dns_zone"</span> <span class="c-s">"priv"</span> {
+  name                = <span class="c-s">"private.contoso.com"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_private_dns_zone_virtual_network_link"</span> <span class="c-s">"app"</span> {
+  name                  = <span class="c-s">"lien-app-vnet"</span>
+  resource_group_name   = azurerm_resource_group.labo.name
+  private_dns_zone_name = azurerm_private_dns_zone.priv.name
+  virtual_network_id    = azurerm_virtual_network.app.id
+  registration_enabled  = <span class="c-k">true</span>
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>DNS</td><td>Domain Name System</td><td>Annuaire qui traduit un nom en adresse IP</td></tr>
+        <tr><td>Zone DNS</td><td>DNS zone</td><td>Ensemble des enregistrements d'un domaine</td></tr>
+        <tr><td>Registraire</td><td>Registrar</td><td>Entreprise qui vend et enregistre les noms de domaine</td></tr>
+        <tr><td>Délégation</td><td>Delegation</td><td>Dire au registraire quels serveurs de noms font autorité</td></tr>
+        <tr><td>NS</td><td>Name Server</td><td>Serveur de noms qui fait autorité pour la zone</td></tr>
+        <tr><td>SOA</td><td>Start of Authority</td><td>Fiche d'identité de la zone</td></tr>
+        <tr><td>TTL</td><td>Time To Live</td><td>Durée de mise en cache d'une réponse</td></tr>
+        <tr><td>Apex</td><td>Zone apex / root</td><td>Le domaine nu, noté <code>@</code></td></tr>
+        <tr><td>CNAME</td><td>Canonical Name</td><td>Surnom qui renvoie vers un autre nom</td></tr>
+        <tr><td>MX</td><td>Mail Exchange</td><td>Serveur de courriel du domaine</td></tr>
+        <tr><td>PTR</td><td>Pointer</td><td>Résolution inverse IP → nom</td></tr>
+        <tr><td>CDN</td><td>Content Delivery Network</td><td>Réseau de cache pour servir le contenu près des utilisateurs</td></tr>
+        <tr><td>nslookup</td><td>—</td><td>Commande pour interroger un serveur DNS</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="nsg.html"><span class="lbl">← Précédent</span><span class="ttl">Groupes de sécurité réseau</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Héberger votre domaine sur Azure DNS », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Tu as créé la zone contoso.com dans Azure DNS. Que faut-il faire pour qu'Internet l'utilise ?",o:["Rien, c'est automatique","Remplacer les serveurs de noms chez le registraire par ceux d'Azure","Créer un enregistrement MX"],a:1,e:"C'est la délégation : les 4 NS d'Azure chez le registraire."},
+  {q:"Quels enregistrements sont créés automatiquement avec une zone ?",o:["A et CNAME","NS et SOA","MX et TXT"],a:1,e:"NS (4 serveurs) et SOA, à l'apex."},
+  {q:"Tu veux que contoso.com (sans www) pointe vers ton profil Front Door. Quoi utiliser ?",o:["Un CNAME à l'apex","Un enregistrement d'alias","Un enregistrement PTR"],a:1,e:"CNAME interdit à l'apex ; l'alias y est permis."},
+  {q:"Quel type d'enregistrement associe un nom à une adresse IPv6 ?",o:["A","AAAA","CNAME"],a:1,e:"AAAA = IPv6, A = IPv4."},
+  {q:"Les VM d'app-vnet doivent s'inscrire toutes seules dans private.contoso.com. Que configures-tu ?",o:["Un enregistrement A par VM","Une liaison de réseau virtuel avec inscription automatique","Une délégation chez le registraire"],a:1,e:"Liaison VNet + inscription automatique."},
+  {q:"Peut-on acheter un nom de domaine avec Azure DNS ?",o:["Oui","Non, il faut un registraire","Seulement les .com"],a:1,e:"Azure DNS héberge les zones, il ne vend pas de noms."},
+  {q:"Que représente le TTL d'un jeu d'enregistrements ?",o:["La durée de vie de la zone","Combien de temps les serveurs DNS gardent la réponse en cache","Le délai de délégation"],a:1,e:"Time To Live = durée de mise en cache."},
+  {q:"L'IP publique de ton équilibreur change. Quel enregistrement suit automatiquement ?",o:["Un A classique avec l'IP en dur","Un A en mode alias vers la ressource IP publique","Un TXT"],a:1,e:"L'alias est lié au cycle de vie de la ressource Azure."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

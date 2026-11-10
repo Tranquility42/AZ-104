@@ -182,3 +182,5 @@ h2.fold{margin:14px 0 4px}
 .optifuel li{margin:6px 0}
 .optifuel .why{font-size:14px;color:var(--muted);margin-top:8px}
 .optifuel code{overflow-wrap:anywhere}
+main p code,.note code,.card li code{overflow-wrap:anywhere}
+.card.diagram + .tablewrap{margin-top:14px}

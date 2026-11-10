@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Stockage Blob</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Stockage</span><span class="sep">›</span><span class="here">Stockage Blob</span></nav>
+  <h1>Configurer le Stockage Blob</h1>
+  <p class="lede">Conteneurs, accès anonyme, niveaux chaud → archive, règles de cycle de vie, réplication d'objets, types de blobs et outils d'envoi. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 9 min · module complet</span>
+    <span class="chip">🎯 Durées 30 / 90 / 180 jours : à savoir par cœur</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> <b>compte → conteneur → blob</b>. 4 niveaux : <b>Hot</b> (accès fréquent), <b>Cool</b> (30 j min), <b>Cold</b> (90 j min), <b>Archive</b> (180 j min, hors ligne, <b>heures</b> pour relire). Les <b>règles de cycle de vie</b> déplacent ou suppriment selon l'âge. La <b>réplication d'objets</b> exige le <b>contrôle de version</b> des deux côtés.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la cour de remorques 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>📦 Ranger</h3>
+      <ul>
+        <li><b>Compte</b> = la cour · <b>conteneur</b> = une <b>remorque</b> · <b>blob</b> = une <b>palette</b> dedans</li>
+        <li>Pas de palette par terre : tout blob est <b>dans un conteneur</b></li>
+        <li><b>Blob de blocs</b> = palette ordinaire (photos, PDF, vidéos)</li>
+        <li><b>Blob d'ajout</b> = le <b>carnet de bord</b> : on ajoute des lignes à la fin (journaux)</li>
+        <li><b>Blob de pages</b> = le <b>disque</b> d'une VM, lu et écrit au hasard</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🌡️ Les niveaux</h3>
+      <ul>
+        <li><b>Chaud</b> = le <b>quai de chargement</b> : cher à occuper, rapide à servir</li>
+        <li><b>Froid / sporadique</b> = l'<b>entrepôt</b> du fond : moins cher, sortir coûte plus</li>
+        <li><b>Archive</b> = l'<b>entrepôt hors-ville</b> : presque gratuit, mais des <b>heures</b> pour ramener la palette</li>
+        <li><b>Cycle de vie</b> = la règle du contremaître : « après 30 jours sans bouger, au fond ; après 1 an, hors-ville »</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CONTENEURS -->
+  <h2 id="conteneurs">1 · Conteneurs et accès anonyme</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📛 Règles de nom du conteneur</h3>
+      <ul style="font-size:14px">
+        <li><b>Minuscules, chiffres, tirets</b></li>
+        <li>Commence par une lettre ou un chiffre</li>
+        <li><b>3 à 63</b> caractères</li>
+        <li>Nombre illimité de conteneurs et de blobs</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🔓 Niveau d'accès public</h3>
+      <ul style="font-size:14px">
+        <li><b>Privé</b> (défaut) : aucun accès anonyme</li>
+        <li><b>Blob</b> : lecture anonyme des blobs, <b>sans lister</b></li>
+        <li><b>Conteneur</b> : lecture <b>et liste</b> anonymes</li>
+        <li>⚠️ Ces niveaux ne marchent que si <b>« Autoriser l'accès anonyme aux objets blob »</b> est activé <b>sur le compte</b>. Désactivé = tout reste privé</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- NIVEAUX -->
+  <h2 id="niveaux">2 · Les niveaux d'accès</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 170" role="img" aria-label="Du niveau chaud au niveau archive, le stockage devient moins cher et l'accès plus cher et plus lent">
+      <defs><linearGradient id="temp" x1="0" x2="1"><stop offset="0" stop-color="var(--onprem)"/><stop offset="1" stop-color="var(--cloud)"/></linearGradient></defs>
+      <rect x="20" y="20" width="920" height="16" rx="8" fill="url(#temp)"/>
+      <text x="120" y="70" text-anchor="middle" class="svg-title-o">🔥 Chaud</text>
+      <text x="350" y="70" text-anchor="middle" class="svg-text">Froid (sporadique)</text>
+      <text x="590" y="70" text-anchor="middle" class="svg-text">Froid (cold)</text>
+      <text x="830" y="70" text-anchor="middle" class="svg-title-c">🧊 Archive</text>
+      <text x="120" y="95" text-anchor="middle" class="svg-small">aucun minimum</text>
+      <text x="350" y="95" text-anchor="middle" class="svg-small">30 jours minimum</text>
+      <text x="590" y="95" text-anchor="middle" class="svg-small">90 jours minimum</text>
+      <text x="830" y="95" text-anchor="middle" class="svg-small">180 jours minimum</text>
+      <text x="120" y="118" text-anchor="middle" class="svg-small">millisecondes</text>
+      <text x="350" y="118" text-anchor="middle" class="svg-small">millisecondes</text>
+      <text x="590" y="118" text-anchor="middle" class="svg-small">millisecondes</text>
+      <text x="830" y="118" text-anchor="middle" class="svg-small">des heures (hors ligne)</text>
+      <text x="480" y="155" text-anchor="middle" class="svg-small">← stockage plus cher, accès moins cher · stockage moins cher, accès plus cher →</text>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Chaud</th><th>Froid (cool)</th><th>Froid (cold)</th><th>Archive</th></tr></thead>
+      <tbody>
+        <tr><td>Disponibilité</td><td>99,9 %</td><td>99 %</td><td>99 %</td><td>99 %</td></tr>
+        <tr><td>Disponibilité (lecture RA-GRS)</td><td>99,99 %</td><td>99,9 %</td><td>99,9 %</td><td>99,9 %</td></tr>
+        <tr><td>Premier octet</td><td>ms</td><td>ms</td><td>ms</td><td><b>heures</b></td></tr>
+        <tr><td>Durée minimale</td><td>—</td><td><b>30 j</b></td><td><b>90 j</b></td><td><b>180 j</b></td></tr>
+        <tr><td>Pour</td><td>Données utilisées souvent</td><td>Sauvegardes court terme, vieux médias</td><td>Rarement lu, mais disponible tout de suite</td><td>Sauvegardes secondaires, données légales</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Supprimer ou déplacer avant la durée minimale</b> = frais de <b>suppression anticipée</b>. <b>Réhydrater</b> un blob archivé (le ramener en ligne) : <b>Copy Blob</b> (recommandé, crée une copie en ligne) ou <b>Set Blob Tier</b> (change le niveau sur place). Priorité <b>Standard : jusqu'à 15 h</b> · <b>Haute : moins d'1 h</b> pour les blobs de moins de 10 Go, plus cher. ⚠️ La traduction française mélange « froid » et « sporadique » : en anglais, retiens <b>Hot · Cool · Cold · Archive</b>.</div>
+
+  <!-- CYCLE DE VIE -->
+  <h2 id="cycle">3 · Les règles de cycle de vie</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>⚙️ Ce qu'elles font</h3>
+      <ul style="font-size:14px">
+        <li>Comptes <b>GPv2</b> et <b>Premium blobs de blocs</b></li>
+        <li><b>Si</b> « plus de N jours » depuis la <b>dernière modification</b> (ou le dernier accès) <b>alors</b> : déplacer vers cool, cold ou archive, ou <b>supprimer</b></li>
+        <li>Agissent aussi sur les <b>versions précédentes</b> et les <b>instantanés</b></li>
+        <li>Remettre automatiquement en <b>chaud</b> un blob froid qu'on relit</li>
+        <li>Filtres : tout le compte, des conteneurs, un <b>préfixe</b> de nom, des <b>balises d'index</b></li>
+        <li>➕ La règle tourne <b>une fois par jour</b> : jusqu'à 24 h pour voir l'effet</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>➕ La règle en JSON</h3>
+<pre class="cmd">{ "rules": [ {
+  "name": "manifestes-vieillissent",
+  "enabled": true,
+  "type": "Lifecycle",
+  "definition": {
+    "filters": { "blobTypes": ["blockBlob"],
+                 "prefixMatch": ["manifestes/"] },
+    "actions": { "baseBlob": {
+      "tierToCool":    { "daysAfterModificationGreaterThan": 30 },
+      "tierToArchive": { "daysAfterModificationGreaterThan": 365 },
+      "delete":        { "daysAfterModificationGreaterThan": 2555 }
+    } } } } ] }</pre>
+    </div>
+  </div>
+
+  <!-- REPLICATION -->
+  <h2 id="replication">4 · La réplication d'objets</h2>
+  <div class="card">
+    <ul style="font-size:14px;margin:0">
+      <li>Copie <b>asynchrone</b> de blobs d'un conteneur <b>source</b> vers un conteneur <b>destination</b>, souvent dans un autre compte ou une autre région</li>
+      <li>Copie le contenu, les <b>métadonnées</b> et les <b>versions</b>. <b>Pas les instantanés</b></li>
+      <li>Il faut le <b>contrôle de version</b> activé <b>des deux côtés</b>. ➕ Et le <b>flux de modification</b> (change feed) sur la <b>source</b></li>
+      <li>Niveaux chaud, cool ou cold (pas archive), différents de chaque côté si on veut</li>
+      <li>Une <b>stratégie</b> nomme les deux comptes ; elle contient des <b>règles</b> (un conteneur source → un conteneur destination)</li>
+      <li>Pour : lire plus près des clients, traiter les mêmes données dans plusieurs régions, ne copier que les résultats, archiver la copie</li>
+      <li>➕ Différence avec GRS : GRS copie <b>tout le compte</b> vers la région <b>jumelée imposée</b> ; la réplication d'objets copie <b>les conteneurs que tu choisis</b>, vers <b>la région que tu choisis</b></li>
+    </ul>
+  </div>
+
+  <!-- BLOBS ET OUTILS -->
+  <h2 id="outils">5 · Types de blobs et outils d'envoi</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Type de blob</th><th>Pour</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td><b>Blocs</b> (défaut)</td><td>Fichiers, images, vidéos</td><td>Le cas normal</td></tr>
+        <tr><td><b>Ajout</b></td><td>Journaux : on écrit seulement à la fin</td><td>Pas de modification au milieu</td></tr>
+        <tr><td><b>Pages</b></td><td>Disques de VM (OS et données)</td><td>Jusqu'à 8 To, lecture/écriture aléatoire</td></tr>
+      </tbody>
+    </table>
+  </div>  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Outil</th><th>Quand</th></tr></thead>
+      <tbody>
+        <tr><td><b>Portail</b></td><td>Quelques fichiers</td></tr>
+        <tr><td><b>Explorateur Stockage Azure</b></td><td>Appli graphique (Windows, macOS, Linux) : blobs, fichiers, files, tables, disques</td></tr>
+        <tr><td><b>AzCopy</b></td><td>Ligne de commande : copier vers, depuis et entre comptes. <b>Le plus fréquent à l'examen</b></td></tr>
+        <tr><td><b>Data Box Disk</b></td><td>Hors ligne : Microsoft t'envoie des SSD, tu les remplis, tu les renvoies. Réseau trop lent ou trop de données</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">⚠️ Le type de blob <b>ne change plus</b> après la création. 💸 Prix : volume stocké + nombre et type d'opérations + transfert sortant + redondance choisie + réplication géo. Plus c'est froid, moins le Go stocké coûte, plus la lecture et les transactions coûtent. Changer un blob vers un niveau plus chaud = on paie la <b>lecture</b> de toutes les données.</p>
+
+  <!-- EXERCICE -->
+  <h2 id="exercice">6 · L'exercice : site web public</h2>
+  <div class="card">
+    <ol class="numl">
+      <li><span>Créer un compte <b>hautement disponible</b> (RA-GRS)</span></li>
+      <li><span>Autoriser l'<b>accès anonyme</b> sur le compte</span></li>
+      <li><span>Créer un conteneur <code>public</code> avec le niveau <b>Blob</b> (lecture anonyme)</span></li>
+      <li><span>Activer la <b>suppression réversible</b> (soft delete) pour restaurer un fichier effacé</span></li>
+      <li><span>Activer le <b>contrôle de version</b> des blobs</span></li>
+    </ol>
+  </div>
+<pre class="cmd" style="margin-top:14px">az storage account create -g rg-labo -n sitepublic123 --sku Standard_RAGRS --allow-blob-public-access true
+az storage container create --account-name sitepublic123 -n public --public-access blob --auth-mode login
+az storage blob upload --account-name sitepublic123 -c public -f logo.png -n logo.png --auth-mode login
+az storage blob service-properties delete-policy update --account-name sitepublic123 --enable true --days-retained 7
+az storage account blob-service-properties update -g rg-labo -n sitepublic123 --enable-versioning true
+azcopy copy './images/*' 'https://sitepublic123.blob.core.windows.net/public?&lt;SAS&gt;' --recursive</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Le vieillissement des manifestes, réglé une fois pour toutes.</b></p>
+    <ul>
+      <li>Conteneur <code>manifestes</code> en <b>Privé</b> : jamais d'accès anonyme pour des documents de douane.</li>
+      <li>Règle de cycle de vie : <b>chaud</b> le premier mois (le chauffeur et le répartiteur les consultent), <b>cool</b> ensuite, <b>archive</b> après un an. La durée de conservation légale, c'est à toi de la vérifier : ta nouvelle job de conformité tombe pile là.</li>
+      <li>Activer <b>contrôle de version</b> + <b>suppression réversible</b> : un manifeste écrasé ou effacé par erreur se récupère.</li>
+      <li>Les PDF de rapports de voyage : blobs de <b>blocs</b>. Les journaux de l'app : blobs d'<b>ajout</b>.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux récupérer un blob archivé dans la minute. »</span><span class="right">Archive = <b>des heures</b>. Même en priorité <b>haute</b>, compte jusqu'à 1 h. Pour un accès immédiat, garde-le en cool ou cold.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon conteneur est en niveau Blob mais l'URL refuse l'accès anonyme. »</span><span class="right">Vérifie le réglage <b>du compte</b> « Autoriser l'accès anonyme aux objets blob ».</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je supprime un blob cool après 10 jours, sans frais. »</span><span class="right">Durée minimale <b>30 jours</b> : frais de suppression anticipée.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La réplication d'objets copie aussi mes instantanés. »</span><span class="right"><b>Non</b> : contenu, métadonnées et versions seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La réplication d'objets marche sans rien activer. »</span><span class="right">Il faut le <b>contrôle de version</b> sur la source <b>et</b> la destination (et le flux de modification sur la source).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je transforme mon blob de blocs en blob d'ajout. »</span><span class="right">Le type est <b>fixé à la création</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« 10 To à envoyer avec une connexion lente : AzCopy. »</span><span class="right">Trop lent : <b>Data Box</b> (envoi de disques par la poste).</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Conteneur privé + règle de cycle de vie</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_storage_container"</span> <span class="c-s">"manifestes"</span> {
+  name                  = <span class="c-s">"manifestes"</span>
+  storage_account_id    = azurerm_storage_account.manifestes.id
+  container_access_type = <span class="c-s">"private"</span>   <span class="c-c"># blob, container</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_storage_management_policy"</span> <span class="c-s">"cycle"</span> {
+  storage_account_id = azurerm_storage_account.manifestes.id
+  rule {
+    name    = <span class="c-s">"vieillissement"</span>
+    enabled = <span class="c-k">true</span>
+    filters {
+      prefix_match = [<span class="c-s">"manifestes/"</span>]
+      blob_types   = [<span class="c-s">"blockBlob"</span>]
+    }
+    actions {
+      base_blob {
+        tier_to_cool_with_days_since_modification_greater_than    = 30
+        tier_to_archive_with_days_since_modification_greater_than = 365
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Blob</td><td>Binary Large Object</td><td>Un fichier quelconque stocké comme objet</td></tr>
+        <tr><td>Conteneur</td><td>Container</td><td>Dossier de premier niveau qui contient les blobs</td></tr>
+        <tr><td>Niveau d'accès</td><td>Access tier</td><td>Hot, Cool, Cold, Archive : prix de stockage vs prix d'accès</td></tr>
+        <tr><td>Réhydratation</td><td>Rehydration</td><td>Ramener un blob archivé en ligne</td></tr>
+        <tr><td>Cycle de vie</td><td>Lifecycle management</td><td>Règles automatiques de changement de niveau ou de suppression</td></tr>
+        <tr><td>Réplication d'objets</td><td>Object replication</td><td>Copie asynchrone de conteneurs choisis vers un autre compte</td></tr>
+        <tr><td>Contrôle de version</td><td>Versioning</td><td>Garder les versions précédentes d'un blob</td></tr>
+        <tr><td>Flux de modification</td><td>Change feed</td><td>Journal de toutes les modifications des blobs</td></tr>
+        <tr><td>Suppression réversible</td><td>Soft delete</td><td>Corbeille : récupérer un blob supprimé pendant N jours</td></tr>
+        <tr><td>AzCopy</td><td>—</td><td>Outil en ligne de commande pour copier des données</td></tr>
+        <tr><td>Data Box</td><td>—</td><td>Disques physiques envoyés par la poste</td></tr>
+        <tr><td>Balise d'index</td><td>Blob index tag</td><td>Étiquette clé/valeur pour filtrer les blobs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="comptes-stockage.html"><span class="lbl">← Précédent</span><span class="ttl">Comptes de stockage</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="securite-stockage.html"><span class="lbl">Suivant →</span><span class="ttl">Sécurité du stockage</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer Stockage Blob Azure », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Des données doivent être gardées 7 ans, presque jamais lues, et quelques heures d'attente sont acceptables. Quel niveau ?",o:["Cool","Cold","Archive"],a:2,e:"Le moins cher, lecture en heures."},
+  {q:"Quelle est la durée minimale du niveau Cold ?",o:["30 jours","90 jours","180 jours"],a:1,e:"Cool 30, Cold 90, Archive 180."},
+  {q:"Ton conteneur doit permettre de lire les blobs anonymement, sans pouvoir lister son contenu. Quel niveau ?",o:["Privé","Blob","Conteneur"],a:1,e:"Conteneur = lecture + liste."},
+  {q:"Quel prérequis pour la réplication d'objets ?",o:["Le contrôle de version sur les deux comptes","Le niveau Archive sur la destination","Un compte Premium blobs de pages"],a:0,e:"Et le flux de modification sur la source."},
+  {q:"Quel type de blob pour des journaux qu'on complète sans cesse ?",o:["Blocs","Ajout","Pages"],a:1,e:"Optimisé pour écrire à la fin."},
+  {q:"Quel outil en ligne de commande copie des données entre deux comptes de stockage ?",o:["AzCopy","Data Box Disk","Azure File Sync"],a:0,e:"Windows et Linux."},
+  {q:"Tu veux déplacer automatiquement les blobs vers Cool après 30 jours. Quoi ?",o:["Une règle de cycle de vie","La réplication d'objets","Un basculement de compte"],a:0,e:"Gestion du cycle de vie."},
+  {q:"Comment réhydrater un blob archivé en gardant l'original en archive ?",o:["Set Blob Tier","Copy Blob vers un niveau en ligne","Changer la redondance"],a:1,e:"Copy Blob = méthode recommandée."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

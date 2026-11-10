@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Sécurité du stockage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Stockage</span><span class="sep">›</span><span class="here">Sécurité</span></nav>
+  <h1>Sécuriser le Stockage Azure</h1>
+  <p class="lede">Les façons d'autoriser l'accès, les signatures d'accès partagé (SAS) et leur URI, le chiffrement et les clés gérées par le client, la surveillance. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Lire une URI SAS : question classique</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> préfère <b>Entra ID + RBAC</b> (identités managées) à la <b>clé du compte</b>. Une <b>SAS</b> donne un accès <b>limité et daté</b> ; la plus sûre est la <b>délégation d'utilisateur</b>. Une <b>stratégie d'accès stockée</b> permet de <b>révoquer</b> des SAS sans changer les clés. Tout est <b>chiffré au repos</b> (AES 256) ; la <b>clé gérée par le client</b> vit dans <b>Key Vault</b>.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : les clés de l'entrepôt 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🔑 Qui entre</h3>
+      <ul>
+        <li><b>Clé d'accès du compte</b> = le <b>passe-partout</b> du propriétaire : ouvre tout, pour toujours. On ne le prête jamais</li>
+        <li><b>SAS</b> = le <b>laissez-passer daté</b> remis au transporteur : « remorque 12, lecture seule, de 8 h à 10 h, depuis ton IP »</li>
+        <li><b>Stratégie d'accès stockée</b> = le <b>registre au poste de garde</b> : on raye une ligne et tous les laissez-passer liés sont annulés</li>
+        <li><b>Entra ID + RBAC</b> = la <b>carte d'employé</b> nominative : le meilleur choix</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🔐 Comment c'est protégé</h3>
+      <ul>
+        <li><b>Chiffrement au repos</b> = toutes les remorques sont <b>verrouillées</b> d'office (AES 256), sans frais</li>
+        <li><b>Clé gérée par Microsoft</b> = Microsoft garde le cadenas et sa clé</li>
+        <li><b>Clé gérée par le client</b> = <b>ton propre cadenas</b>, rangé dans ton coffre (Key Vault) : tu peux le changer ou le retirer</li>
+        <li><b>Defender for Storage</b> = le <b>chien renifleur</b> qui fouille les palettes entrantes (logiciels malveillants)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STRATEGIES -->
+  <h2 id="autorisation">1 · Les 4 façons d'autoriser l'accès</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Méthode</th><th>Comment</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><b>Microsoft Entra ID</b></td><td>Utilisateurs, groupes, applis et <b>identités managées</b> + rôles RBAC (ex. « Lecteur des données Blob du stockage »)</td><td>✅ <b>Recommandé</b></td></tr>
+        <tr><td><b>Clé partagée</b></td><td>Clé du compte (2 clés : key1 et key2). Accès <b>total</b></td><td>⚠️ À éviter ; on peut la <b>désactiver</b> sur le compte</td></tr>
+        <tr><td><b>SAS</b></td><td>URI avec des droits limités, sur une ressource, pour une durée</td><td>👍 Pour un accès ponctuel et limité</td></tr>
+        <tr><td><b>Accès anonyme</b></td><td>Lecture publique des conteneurs/blobs</td><td>🚫 Désactivé par défaut sur les nouveaux comptes</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Autres mesures : <b>transfert sécurisé obligatoire</b> (HTTPS seulement), <b>TLS 1.2 minimum</b> (1.0 et 1.1 sont dépréciés), <b>Storage Analytics</b> (journaux des requêtes). Chiffrement côté serveur (clé Microsoft ou client) ou <b>côté client</b> (tu chiffres avant d'envoyer).</p>
+
+  <!-- SAS -->
+  <h2 id="sas">2 · Les signatures d'accès partagé (SAS)</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Type de SAS</th><th>Signé avec</th><th>Portée</th></tr></thead>
+      <tbody>
+        <tr><td><b>Délégation d'utilisateur</b></td><td>Identifiants <b>Entra ID</b></td><td>Blob et Data Lake seulement. <b>Le plus sûr</b></td></tr>
+        <tr><td><b>Service</b></td><td>Clé du compte</td><td><b>Un</b> service (Blob, Files, Queue ou Table) et des ressources précises</td></tr>
+        <tr><td><b>Compte</b></td><td>Clé du compte</td><td>Un ou plusieurs services, plus des opérations de niveau service (ex. créer des systèmes de fichiers)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Stratégie d'accès stockée</b> : définie <b>sur le conteneur</b> (ou la file, la table, le partage) ; une SAS de <b>service</b> y fait référence. Avantage : on <b>révoque</b> ou modifie toutes les SAS liées <b>sans régénérer les clés du compte</b>. Sans elle, la seule façon d'annuler une SAS volée est de <b>régénérer la clé</b> qui l'a signée.</div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>✅ Bonnes pratiques SAS</h3>
+      <ul style="font-size:14px">
+        <li>Toujours <b>HTTPS</b> (sinon interception)</li>
+        <li><b>Expiration courte</b>, et le client renouvelle avant la fin</li>
+        <li>Heure de début <b>15 minutes dans le passé</b> (ou aucune) : les horloges diffèrent</li>
+        <li><b>Permissions minimales</b> : lecture seule si c'est assez</li>
+        <li>Préférer une <b>stratégie d'accès stockée</b></li>
+        <li><b>Valider</b> les données écrites avec une SAS avant de les utiliser</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🤔 Pas toujours la bonne idée</h3>
+      <ul style="font-size:14px">
+        <li>Opération risquée : passer par un <b>service intermédiaire</b> qui vérifie, journalise, puis écrit</li>
+        <li>Tous les blobs d'un conteneur doivent être publics ? Mets le conteneur <b>public</b> plutôt que distribuer des SAS</li>
+        <li>Dans ton code : <b>identité managée</b> plutôt que SAS</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- URI -->
+  <h2 id="uri">3 · Lire une URI SAS</h2>
+  <div class="sas"><span class="p1">https://myaccount.blob.core.windows.net/?restype=service&amp;comp=properties</span>&amp;<span class="p2">sv=2015-04-05</span>&amp;<span class="p2">ss=bf</span>&amp;<span class="p3">st=2015-04-29T22%3A18%3A26Z</span>&amp;<span class="p3">se=2015-04-30T02%3A23%3A26Z</span>&amp;<span class="p2">sr=b</span>&amp;<span class="p4">sp=rw</span>&amp;<span class="p4">sip=168.1.5.60-168.1.5.70</span>&amp;<span class="p4">spr=https</span>&amp;<span class="p1">sig=F%6GRVAZ5Cdj2Pw4tgU7IlSTkWgn7bUkkAg8P6HESXwmf%4B</span></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Paramètre</th><th>Veut dire</th><th>Dans l'exemple</th></tr></thead>
+      <tbody>
+        <tr><td>URI de la ressource</td><td>Le point de terminaison visé</td><td>Service Blob, propriétés du service</td></tr>
+        <tr><td><code>sv</code></td><td><b>s</b>torage <b>v</b>ersion : version de l'API</td><td>2015-04-05</td></tr>
+        <tr><td><code>ss</code></td><td><b>s</b>torage <b>s</b>ervices (SAS de compte)</td><td><code>b</code> Blob + <code>f</code> Files</td></tr>
+        <tr><td><code>st</code></td><td><b>s</b>tart <b>t</b>ime, en UTC (facultatif)</td><td>29 avril 2015, 22 h 18</td></tr>
+        <tr><td><code>se</code></td><td><b>s</b>ignature <b>e</b>xpiry, en UTC</td><td>30 avril 2015, 2 h 23</td></tr>
+        <tr><td><code>sr</code></td><td><b>s</b>igned <b>r</b>esource</td><td><code>b</code> = blob</td></tr>
+        <tr><td><code>sp</code></td><td><b>s</b>igned <b>p</b>ermissions</td><td><code>rw</code> = lecture + écriture</td></tr>
+        <tr><td><code>sip</code></td><td><b>s</b>igned <b>IP</b> : plage d'adresses autorisées</td><td>168.1.5.60 à .70</td></tr>
+        <tr><td><code>spr</code></td><td><b>s</b>igned <b>pr</b>otocol</td><td>HTTPS seulement</td></tr>
+        <tr><td><code>sig</code></td><td><b>sig</b>nature HMAC-SHA256 en Base64</td><td>Prouve que la SAS n'a pas été modifiée</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">➕ Lettres de <code>sp</code> à reconnaître : <b>r</b> read · <b>w</b> write · <b>d</b> delete · <b>l</b> list · <b>a</b> add · <b>c</b> create. ➕ <code>ss</code> : <b>b</b> blob · <b>f</b> file · <b>q</b> queue · <b>t</b> table. ➕ <code>srt</code> (SAS de compte) : <b>s</b> service · <b>c</b> conteneur · <b>o</b> objet. Si quelqu'un modifie un seul caractère, <code>sig</code> ne correspond plus : refusé.</p>
+
+  <!-- CHIFFREMENT -->
+  <h2 id="chiffrement">4 · Le chiffrement</h2>
+  <div class="opt3">
+    <div class="card"><span class="num">Toujours actif</span><p><b>SSE</b>, AES <b>256 bits</b>, sur Blob, Files, Queue, Table et disques managés. Chiffre à l'écriture, déchiffre à la lecture, <b>ne se désactive pas</b>, gratuit, sans perte de performance.</p></div>
+    <div class="card"><span class="num">Clé Microsoft (défaut)</span><p>Rien à gérer. Microsoft fait la rotation.</p></div>
+    <div class="card"><span class="num">Clé client</span><p>Dans <b>Key Vault</b> ou un <b>HSM managé</b> (FIPS 140-2 niveau 3). Tu crées, désactives, fais tourner et audites la clé. Coffre et compte dans la <b>même région</b>, abonnements différents possibles.</p></div>
+  </div>
+  <div class="note" style="margin-top:14px">➕ examen : le Key Vault d'une clé client doit avoir la <b>suppression réversible</b> et la <b>protection contre le vidage</b> activées, et le compte doit avoir une <b>identité managée</b> avec le droit de lire la clé. ➕ <b>Chiffrement d'infrastructure</b> = un 2<sup>e</sup> chiffrement, choisi <b>à la création</b> du compte seulement. ➕ <b>Azure Disk Encryption</b> (BitLocker / dm-crypt) chiffre <b>dans</b> la VM : c'est autre chose que SSE.</div>
+
+  <!-- SURVEILLANCE -->
+  <h2 id="surveillance">5 · Surveiller et détecter</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📊 Storage Insights</h3>
+      <p style="font-size:14px;margin:0">Vue unifiée <b>performance, capacité, disponibilité</b> : latence, débit, transactions. Journaux d'activité pour l'audit. <b>Passif</b> : il montre ce qui s'est passé.</p>
+    </div>
+    <div class="card">
+      <h3>🛡️ Microsoft Defender for Storage</h3>
+      <p style="font-size:14px;margin:0"><b>Actif</b> : analyse les blobs envoyés (<b>logiciels malveillants</b>), repère les <b>données sensibles</b> mal rangées, alerte sur les accès <b>anormaux</b> (volume d'envoi suspect, IP inhabituelle).</p>
+    </div>
+  </div>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az storage container generate-sas --account-name stock1 -n manifestes \
+  --permissions r --expiry 2026-11-11T12:00Z --https-only --as-user --auth-mode login
+az storage container policy create --account-name stock1 -c manifestes -n lecture-1j \
+  --permissions rl --expiry 2026-11-12T00:00Z
+az storage account keys renew -g rg-labo -n stock1 --key key1
+az storage account update -g rg-labo -n stock1 --allow-shared-key-access false</pre>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px"><code>--as-user --auth-mode login</code> = SAS de <b>délégation d'utilisateur</b>. <code>keys renew</code> = régénérer une clé (invalide toutes les SAS signées avec). L'exercice du module : créer un compte, un conteneur Blob sécurisé et un partage Files, puis les gérer avec le <b>navigateur de stockage</b> du portail.</p>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Comment l'app et les chauffeurs touchent aux manifestes sans jamais voir une clé.</b></p>
+    <ul>
+      <li>L'app (sur AKS ou k3s) lit et écrit avec une <b>identité managée</b> + le rôle <b>Contributeur aux données Blob du stockage</b> sur le seul compte. <b>Clé partagée désactivée</b>.</li>
+      <li>Le chauffeur envoie son scan <b>directement</b> depuis la PWA : le serveur lui génère une <b>SAS de délégation d'utilisateur</b> en écriture seule (<code>sp=cw</code>), valable 10 minutes, sur un seul blob. Le fichier ne transite pas par ton serveur.</li>
+      <li>Pour montrer un manifeste au répartiteur : une SAS en <b>lecture seule</b> de quelques minutes.</li>
+      <li><b>Defender for Storage</b> analyse les fichiers envoyés : utile quand des chauffeurs téléversent depuis leur téléphone.</li>
+    </ul>
+    <p class="why">💡 C'est exactement ce que demandent les banques : aucun secret stocké, accès minimal, durée courte.</p>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une SAS a fuité ; je la supprime dans le portail. »</span><span class="right">Une SAS ne se « supprime » pas. Si elle utilise une <b>stratégie d'accès stockée</b>, modifie ou supprime la stratégie ; sinon <b>régénère la clé</b> qui l'a signée.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La SAS la plus sûre est la SAS de compte. »</span><span class="right">La plus sûre est la <b>délégation d'utilisateur</b> (signée avec Entra ID), mais pour <b>Blob</b> seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je désactive le chiffrement au repos pour gagner en performance. »</span><span class="right">SSE <b>ne se désactive pas</b> et ne coûte rien en performance.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Ma SAS commence « maintenant » et échoue les premières minutes. »</span><span class="right">Décalage d'horloge : mets le début <b>15 min dans le passé</b> ou aucun.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets ma clé gérée par le client dans un Key Vault d'une autre région. »</span><span class="right">Même <b>région</b> obligatoire (l'abonnement peut différer).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« sp=rwdl donne seulement la lecture. »</span><span class="right">r lecture, w écriture, d suppression, l liste : c'est presque tout.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Accès sans clé : identité managée + rôle de données</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_user_assigned_identity"</span> <span class="c-s">"app"</span> {
+  name                = <span class="c-s">"id-optifuel-app"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"canadacentral"</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_role_assignment"</span> <span class="c-s">"blob"</span> {
+  scope                = azurerm_storage_account.manifestes.id
+  role_definition_name = <span class="c-s">"Storage Blob Data Contributor"</span>
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+<span class="c-c"># Clé gérée par le client : bloc customer_managed_key dans azurerm_storage_account</span>
+<span class="c-c"># (Key Vault avec purge_protection_enabled = true)</span></pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>SAS</td><td>Shared Access Signature</td><td>Jeton dans l'URL qui donne un accès limité et daté</td></tr>
+        <tr><td>Stratégie d'accès stockée</td><td>Stored access policy</td><td>Règle sur le conteneur qui permet de révoquer des SAS</td></tr>
+        <tr><td>Clé partagée</td><td>Shared Key</td><td>Clé du compte (key1, key2) : accès total</td></tr>
+        <tr><td>Identité managée</td><td>Managed identity</td><td>Identité Entra ID d'une ressource Azure, sans mot de passe à gérer</td></tr>
+        <tr><td>SSE</td><td>Storage Service Encryption</td><td>Chiffrement automatique au repos</td></tr>
+        <tr><td>AES</td><td>Advanced Encryption Standard</td><td>Algorithme de chiffrement (256 bits)</td></tr>
+        <tr><td>CMK</td><td>Customer-Managed Key</td><td>Clé de chiffrement que tu gères dans Key Vault</td></tr>
+        <tr><td>HSM</td><td>Hardware Security Module</td><td>Boîtier matériel qui garde les clés</td></tr>
+        <tr><td>FIPS 140-2</td><td>Federal Information Processing Standard</td><td>Norme américaine de sécurité des modules de chiffrement</td></tr>
+        <tr><td>HMAC</td><td>Hash-based Message Authentication Code</td><td>Signature qui prouve qu'un message n'a pas été modifié</td></tr>
+        <tr><td>TLS</td><td>Transport Layer Security</td><td>Chiffrement des connexions (le S de HTTPS)</td></tr>
+        <tr><td>UTC</td><td>Coordinated Universal Time</td><td>Heure de référence mondiale (Montréal = UTC−5 en hiver)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="stockage-blob.html"><span class="lbl">← Précédent</span><span class="ttl">Stockage Blob</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="azure-files.html"><span class="lbl">Suivant →</span><span class="ttl">Azure Files</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer la sécurité du Stockage Azure », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Quelle méthode d'autorisation Microsoft recommande-t-il pour les blobs ?",o:["Clé partagée","Microsoft Entra ID avec RBAC","SAS de compte"],a:1,e:"Avec des identités managées si possible."},
+  {q:"Quel type de SAS est signé avec des identifiants Entra ID ?",o:["Délégation d'utilisateur","Service","Compte"],a:0,e:"Blob et Data Lake seulement."},
+  {q:"Comment révoquer d'un coup plusieurs SAS de service sans toucher aux clés du compte ?",o:["Les supprimer dans le portail","Modifier la stratégie d'accès stockée qu'elles utilisent","Changer la redondance"],a:1,e:"C'est tout l'intérêt de la stratégie stockée."},
+  {q:"Dans une URI SAS, quel paramètre donne la date d'expiration ?",o:["st","sp","se"],a:2,e:"se = signature expiry."},
+  {q:"Que veut dire spr=https ?",o:["Seules les requêtes HTTPS sont acceptées","La SAS sert au protocole SFTP","La signature est en SHA256"],a:0,e:"spr = signed protocol."},
+  {q:"Avec quel algorithme Azure Storage chiffre-t-il les données au repos ?",o:["AES 128 bits","AES 256 bits","RSA 2048"],a:1,e:"SSE, toujours actif."},
+  {q:"Ta clé gérée par le client doit être dans…",o:["Un Key Vault ou un HSM managé de la même région","N'importe quel Key Vault du monde","Le compte de stockage lui-même"],a:0,e:"Abonnement différent possible, région identique."},
+  {q:"Quel service analyse les blobs envoyés à la recherche de logiciels malveillants ?",o:["Storage Insights","Microsoft Defender for Storage","Azure Advisor"],a:1,e:"Détection active des menaces."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

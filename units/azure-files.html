@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Azure Files</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Stockage</span><span class="sep">›</span><span class="here">Azure Files</span></nav>
+  <h1>Configurer Azure Files et File Sync</h1>
+  <p class="lede">Partages de fichiers SMB/NFS, différence avec Blob, niveaux, authentification, instantanés, suppression réversible, Explorateur Stockage et Azure File Sync. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Limites File Sync (1 cloud, 50 serveurs, 100 groupes) : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> <b>Azure Files</b> = un <b>lecteur réseau</b> dans le cloud (SMB port <b>445</b>, NFS), monté par plusieurs machines. <b>Instantanés</b> : lecture seule, incrémentiels, <b>200</b> max. <b>Suppression réversible</b> : partage récupérable <b>1 à 365 jours</b>. <b>Azure File Sync</b> garde une copie locale sur des serveurs Windows : <b>1 point cloud</b> par groupe, jusqu'à <b>50 points serveur</b>.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le classeur du bureau de répartition 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🗂️ Azure Files</h3>
+      <ul>
+        <li><b>Partage de fichiers</b> = le <b>classeur partagé</b> du bureau, ouvert comme un lecteur <code>Z:</code> sur chaque poste</li>
+        <li><b>Port 445 (SMB)</b> = la <b>porte du bureau</b> : beaucoup de fournisseurs Internet la bloquent depuis la maison</li>
+        <li><b>Instantané</b> = la <b>photocopie datée</b> du classeur entier, en lecture seule</li>
+        <li><b>Suppression réversible</b> = la <b>boîte de récupération</b> : un classeur jeté y reste 1 à 365 jours</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🔄 Azure File Sync</h3>
+      <ul>
+        <li>Le <b>classeur central</b> est dans Azure ; chaque <b>terminal régional</b> (serveur Windows) en garde une <b>copie de travail</b></li>
+        <li><b>Hiérarchisation cloud</b> = on garde au terminal seulement les dossiers <b>récents</b>, les vieux restent au siège et reviennent sur demande</li>
+        <li><b>Agent</b> = le <b>commis</b> installé à chaque terminal qui fait la navette</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FILES VS BLOB -->
+  <h2 id="comparaison">1 · Azure Files ou Blob ?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Azure Files</th><th>Stockage Blob</th></tr></thead>
+      <tbody>
+        <tr><td>Accès</td><td><b>SMB, NFS</b>, REST</td><td>REST, SDK (HTTP)</td></tr>
+        <tr><td>Organisation</td><td><b>Vrais dossiers</b></td><td>Espace de noms <b>plat</b> dans un conteneur</td></tr>
+        <tr><td>Utilisé par</td><td>Plusieurs VM <b>montent</b> le même partage</td><td>Applis qui lisent/écrivent des objets</td></tr>
+        <tr><td>Idéal pour</td><td><b>Lift-and-shift</b> d'une appli qui utilise déjà un lecteur réseau, outils partagés, configs</td><td><b>Streaming</b>, accès aléatoire, données accessibles de partout</td></tr>
+        <tr><td>Taille</td><td>Partage jusqu'à <b>100 Tio</b>, fichier jusqu'à <b>4 Tio</b></td><td>Énorme (blob de blocs ~190 Tio)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Azure Files = <b>PaaS sans serveur</b> : pas de VM ni de correctifs. Clients Windows, Linux et macOS. Chiffré au repos et en transit. Redondance = celle du compte. Sauvegarde avec <b>Azure Backup</b>. Les instantanés apparaissent dans les <b>« Versions précédentes »</b> de Windows.</p>
+
+  <!-- PARTAGES -->
+  <h2 id="partages">2 · Administrer les partages</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Niveau</th><th>Disque</th><th>Compte</th><th>Redondance</th><th>Facturation</th><th>Pour</th></tr></thead>
+      <tbody>
+        <tr><td><b>Premium</b></td><td>SSD</td><td><b>FileStorage</b></td><td>LRS, ZRS</td><td>Provisionnée (capacité réservée)</td><td>Haute performance, faible latence</td></tr>
+        <tr><td><b>Optimisé pour les transactions</b></td><td>HDD</td><td>GPv2</td><td>Les 6</td><td>À l'usage</td><td>Beaucoup de transactions</td></tr>
+        <tr><td><b>Chaud</b></td><td>HDD</td><td>GPv2</td><td>Les 6</td><td>À l'usage</td><td>Partages d'équipe</td></tr>
+        <tr><td><b>Froid (cool)</b></td><td>HDD</td><td>GPv2</td><td>Les 6</td><td>À l'usage</td><td>Archives et sauvegardes en ligne</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>🔌 Protocoles</h3>
+      <ul style="font-size:14px">
+        <li><b>SMB</b> (Windows surtout) sur le <b>port 445</b> : bloqué par beaucoup de FAI → cause n°1 des échecs de montage depuis chez soi. Solutions ➕ : VPN, ExpressRoute ou File Sync</li>
+        <li><b>NFS</b> (Linux) : ➕ partages <b>Premium</b> seulement, accès par réseau privé</li>
+        <li>Un partage = <b>un seul</b> protocole ; un compte peut avoir des partages SMB <b>et</b> NFS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🔐 Authentification</h3>
+      <ul style="font-size:14px">
+        <li><b>Identité via SMB</b> : AD DS local, <b>Entra Domain Services</b> ou <b>Entra Kerberos</b>, puis des <b>rôles RBAC</b> sur le partage (ex. « Contributeur de partage SMB de données de fichier de stockage »)</li>
+        <li><b>Clé d'accès</b> : accès total, à ne pas partager</li>
+        <li><b>SAS</b> : pour Azure Files, seulement par l'<b>API REST</b> depuis du code (pas pour monter un lecteur)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PROTECTION -->
+  <h2 id="protection">3 · Instantanés et suppression réversible</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📸 Instantanés de partage</h3>
+      <ul style="font-size:14px">
+        <li>Copie <b>en lecture seule</b>, <b>incrémentielle</b>, du <b>partage entier</b> à un instant donné</li>
+        <li>Jusqu'à <b>200</b> instantanés par partage</li>
+        <li>Restaurer <b>un fichier, un dossier ou tout le partage</b></li>
+        <li>⚠️ Supprimer le partage <b>supprime ses instantanés</b> (sauf protection par Azure Backup)</li>
+        <li>Bon réflexe : un instantané <b>avant chaque mise en production</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🗑️ Suppression réversible</h3>
+      <ul style="font-size:14px">
+        <li>Activée au niveau du <b>compte de stockage</b></li>
+        <li>Un <b>partage supprimé</b> reste récupérable <b>1 à 365 jours</b></li>
+        <li>Protège contre l'erreur humaine et les <b>rançongiciels</b></li>
+        <li>➕ Elle protège le <b>partage</b> ; pour un <b>fichier</b> effacé, on passe par un <b>instantané</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- EXPLORER -->
+  <h2 id="explorateur">4 · L'Explorateur Stockage Azure</h2>
+  <div class="card">
+    <ul style="font-size:14px;margin:0">
+      <li>Appli de bureau <b>Windows, macOS, Linux</b> : blobs, fichiers, files d'attente, tables, disques, plusieurs comptes et abonnements</li>
+      <li>Se connecter : avec son <b>abonnement</b>, avec <b>nom + clé</b> d'un compte (attacher un stockage externe ou un cloud national : domaine « Autre »), avec une <b>SAS</b> de compte ou de service, ou à l'<b>émulateur local</b> (Azurite)</li>
+      <li>Il faut des droits <b>ARM</b> (voir le compte) <b>et</b> des droits sur les <b>données</b></li>
+      <li>Les <b>2 clés</b> servent à la rotation : tu bascules les applis sur key2, tu régénères key1, puis l'inverse</li>
+    </ul>
+  </div>
+
+  <!-- FILE SYNC -->
+  <h2 id="filesync">5 · Azure File Sync</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 300" role="img" aria-label="Un service de synchronisation de stockage contient un groupe de synchronisation avec un point de terminaison cloud (le partage Azure) et des points de terminaison serveur sur des serveurs Windows inscrits qui ont l'agent">
+      <defs><marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="10" width="560" height="280" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">Service de synchronisation de stockage</text>
+      <text x="30" y="60" class="svg-small">1 région · max 100 groupes · max 99 serveurs inscrits</text>
+      <rect x="30" y="80" width="520" height="190" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="50" y="106" class="svg-text">Groupe de synchronisation</text>
+      <text x="50" y="124" class="svg-small">1 point de terminaison cloud · max 50 points de terminaison serveur</text>
+      <rect x="50" y="145" width="220" height="100" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <text x="160" y="175" text-anchor="middle" class="svg-text">☁️ Point de terminaison cloud</text>
+      <text x="160" y="198" text-anchor="middle" class="svg-small">= le partage Azure Files</text>
+      <text x="160" y="218" text-anchor="middle" class="svg-small">(un seul par groupe)</text>
+      <rect x="300" y="145" width="230" height="100" rx="10" class="svg-onprem" stroke-width="1.2"/>
+      <text x="415" y="175" text-anchor="middle" class="svg-title-o">🖥️ Points serveur</text>
+      <text x="415" y="198" text-anchor="middle" class="svg-small">= un dossier D:\Partage</text>
+      <text x="415" y="218" text-anchor="middle" class="svg-small">NTFS, pas le volume système</text>
+      <path d="M270 195 H295" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#fa)"/>
+      <rect x="610" y="40" width="330" height="100" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="775" y="70" text-anchor="middle" class="svg-title-o">Serveur Windows · Montréal</text>
+      <text x="775" y="94" text-anchor="middle" class="svg-small">serveur inscrit + agent File Sync</text>
+      <text x="775" y="116" text-anchor="middle" class="svg-small">cache des fichiers récents</text>
+      <rect x="610" y="170" width="330" height="100" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="775" y="200" text-anchor="middle" class="svg-title-o">Serveur Windows · Toronto</text>
+      <text x="775" y="224" text-anchor="middle" class="svg-small">serveur inscrit + agent File Sync</text>
+      <text x="775" y="246" text-anchor="middle" class="svg-small">hiérarchisation cloud activée</text>
+      <path d="M530 180 L605 95" stroke="var(--cloud)" stroke-width="2" stroke-dasharray="6 4"/>
+      <path d="M530 210 L605 220" stroke="var(--cloud)" stroke-width="2" stroke-dasharray="6 4"/>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Composant</th><th>Rôle</th><th>Limite</th></tr></thead>
+      <tbody>
+        <tr><td><b>Service de synchronisation de stockage</b></td><td>La ressource Azure de base</td><td>1 région, 100 groupes, 99 serveurs</td></tr>
+        <tr><td><b>Groupe de synchronisation</b></td><td>Ce qui est synchronisé ensemble</td><td>1 point cloud + jusqu'à 50 points serveur</td></tr>
+        <tr><td><b>Point de terminaison cloud</b></td><td>Le partage Azure Files</td><td><b>Un seul</b> par groupe</td></tr>
+        <tr><td><b>Serveur inscrit</b></td><td>Lien de confiance serveur ↔ service</td><td>Un serveur = un seul service de synchro</td></tr>
+        <tr><td><b>Point de terminaison serveur</b></td><td>Un chemin sur le serveur (ex. <code>D:\Partage</code>)</td><td>Volume <b>NTFS</b>, <b>pas</b> le volume système</td></tr>
+        <tr><td><b>Agent Azure File Sync</b></td><td>Service Windows qui synchronise</td><td>Installé sur chaque serveur</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Hiérarchisation cloud</b> (cloud tiering) : seuls les fichiers <b>récents</b> restent sur le disque du serveur ; les autres deviennent des <b>pointeurs</b> et sont rapatriés à l'ouverture. Accès local en <b>SMB, NFS ou FTPS</b>, nombre de caches illimité dans le monde. ➕ <b>Ordre de déploiement</b> : 1. créer le partage Azure Files · 2. créer le <b>service de synchronisation</b> · 3. installer l'<b>agent</b> sur le serveur · 4. <b>inscrire</b> le serveur · 5. créer le <b>groupe</b> et le point cloud · 6. ajouter le <b>point serveur</b>.</div>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az storage share-rm create -g rg-labo --storage-account stock1 -n partage --quota 100 --access-tier Hot
+az storage share-rm snapshot -g rg-labo --storage-account stock1 -n partage
+az storage account file-service-properties update -g rg-labo -n stock1 \
+  --enable-delete-retention true --delete-retention-days 14
+# Monter sous Windows (port 445 ouvert) :
+net use Z: \\stock1.file.core.windows.net\partage /u:AZURE\stock1 &lt;clé&gt;</pre>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je ne peux pas monter mon partage depuis la maison : le partage est mal configuré. »</span><span class="right">Cause n°1 : le <b>port 445</b> bloqué par le fournisseur Internet. VPN, ExpressRoute ou File Sync.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je donne une SAS au comptable pour qu'il monte le lecteur Z:. »</span><span class="right">Pour Azure Files, la SAS sert seulement à l'<b>API REST</b>. Pour monter : identité (AD DS, Entra DS, Entra Kerberos) ou clé.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un groupe de synchronisation avec deux partages Azure. »</span><span class="right"><b>Un seul point de terminaison cloud</b> par groupe.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets mon point de terminaison serveur sur C:\. »</span><span class="right">Pas sur le <b>volume système</b>, et il faut du <b>NTFS</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je supprime le partage ; ses instantanés me sauveront. »</span><span class="right">Supprimer le partage <b>supprime les instantanés</b>. C'est la <b>suppression réversible</b> qui le récupère.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un partage NFS sur un compte GPv2 Standard. »</span><span class="right">➕ NFS = partages <b>Premium</b> (compte FileStorage).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Les instantanés sont modifiables pour corriger un fichier. »</span><span class="right">Ils sont en <b>lecture seule</b> : on copie le fichier depuis l'instantané.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Partage de fichiers + suppression réversible</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_storage_account"</span> <span class="c-s">"fichiers"</span> {
+  name                     = <span class="c-s">"stockfichiers123"</span>
+  resource_group_name      = azurerm_resource_group.labo.name
+  location                 = <span class="c-s">"eastus"</span>
+  account_tier             = <span class="c-s">"Standard"</span>
+  account_replication_type = <span class="c-s">"ZRS"</span>
+  share_properties {
+    retention_policy {
+      days = 14                      <span class="c-c"># suppression réversible des partages</span>
+    }
+  }
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_storage_share"</span> <span class="c-s">"equipe"</span> {
+  name               = <span class="c-s">"partage"</span>
+  storage_account_id = azurerm_storage_account.fichiers.id
+  quota              = 100           <span class="c-c"># Gio</span>
+  access_tier        = <span class="c-s">"Hot"</span>         <span class="c-c"># TransactionOptimized, Cool, Premium</span>
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>SMB</td><td>Server Message Block</td><td>Protocole de partage Windows (port 445)</td></tr>
+        <tr><td>NFS</td><td>Network File System</td><td>Protocole de partage Linux</td></tr>
+        <tr><td>Partage de fichiers</td><td>File share</td><td>Dossier réseau dans Azure Files</td></tr>
+        <tr><td>Instantané</td><td>Snapshot</td><td>Copie en lecture seule d'un partage à un instant donné</td></tr>
+        <tr><td>Suppression réversible</td><td>Soft delete</td><td>Corbeille pour les partages supprimés</td></tr>
+        <tr><td>File Sync</td><td>Azure File Sync</td><td>Synchronise un partage Azure avec des serveurs Windows</td></tr>
+        <tr><td>Hiérarchisation cloud</td><td>Cloud tiering</td><td>Garder localement seulement les fichiers récents</td></tr>
+        <tr><td>Point de terminaison</td><td>Endpoint</td><td>Un côté de la synchronisation (cloud ou serveur)</td></tr>
+        <tr><td>NTFS</td><td>New Technology File System</td><td>Système de fichiers Windows</td></tr>
+        <tr><td>Lift-and-shift</td><td>—</td><td>Déplacer une appli vers le cloud sans la réécrire</td></tr>
+        <tr><td>FAI</td><td>Fournisseur d'accès Internet</td><td>Vidéotron, Bell…</td></tr>
+        <tr><td>Tio / Gio</td><td>TiB / GiB</td><td>Unités binaires (1 Tio = 1 024 Gio)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="securite-stockage.html"><span class="lbl">← Précédent</span><span class="ttl">Sécurité du stockage</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer Azure Files », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Une vieille appli écrit dans un lecteur réseau Z:. Tu la migres sans la modifier. Quel service ?",o:["Stockage Blob","Azure Files","Queue Storage"],a:1,e:"Lift-and-shift avec SMB."},
+  {q:"Le montage SMB échoue depuis le domicile d'un employé. Cause la plus probable ?",o:["Le port 445 est bloqué par le FAI","Le partage est en niveau Cool","Il manque un instantané"],a:0,e:"Cause n°1 selon le module."},
+  {q:"Combien d'instantanés maximum par partage ?",o:["50","200","365"],a:1,e:"200 instantanés."},
+  {q:"Combien de points de terminaison cloud dans un groupe de synchronisation ?",o:["Un seul","Jusqu'à 50","Jusqu'à 100"],a:0,e:"50, c'est le maximum de points serveur."},
+  {q:"Où peut-on créer un point de terminaison serveur ?",o:["Sur C:\\ en FAT32","Sur un volume NTFS qui n'est pas le volume système","Dans le partage Azure"],a:1,e:"NTFS, pas le volume système."},
+  {q:"Quelle fonction garde seulement les fichiers récents sur le serveur local ?",o:["La hiérarchisation cloud","La suppression réversible","La réplication d'objets"],a:0,e:"Cloud tiering."},
+  {q:"Un partage a été supprimé par erreur hier. Comment le récupérer ?",o:["Depuis un instantané","Grâce à la suppression réversible","Impossible"],a:1,e:"Les instantanés partent avec le partage."},
+  {q:"Quel niveau de partage exige un compte FileStorage ?",o:["Optimisé pour les transactions","Chaud","Premium"],a:2,e:"SSD, facturation provisionnée."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

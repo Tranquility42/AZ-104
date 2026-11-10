@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Comptes de stockage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Stockage</span><span class="sep">›</span><span class="here">Comptes de stockage</span></nav>
+  <h1>Configurer des comptes de stockage</h1>
+  <p class="lede">Les 4 services de stockage, les types de comptes, la redondance (LRS → RA-GZRS), les adresses et la sécurité réseau. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Redondance : la question la plus fréquente du chapitre</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> un <b>compte de stockage</b> regroupe <b>Blob, Files, Queue, Table</b> sous une adresse unique. Prends <b>Standard v2</b> sauf besoin de vitesse (Premium). La <b>redondance</b> : <b>L</b>ocal (1 bâtiment) → <b>Z</b>one (3 bâtiments) → <b>G</b>éo (+ autre région) → <b>GZ</b> (les deux). <b>RA-</b> = lecture de la copie secondaire à tout moment.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : l'entrepôt de la compagnie 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🏬 Le compte de stockage</h3>
+      <ul>
+        <li><b>Compte de stockage</b> = <b>l'entrepôt</b> de la compagnie, avec une adresse unique au monde (son nom)</li>
+        <li><b>Blob</b> = la <b>zone vrac</b> : n'importe quelle marchandise, rangée par conteneur</li>
+        <li><b>Files</b> = le <b>classeur partagé</b> du bureau, que tous les postes ouvrent comme un lecteur réseau</li>
+        <li><b>Queue</b> = le <b>tableau des bons de livraison</b> à traiter dans l'ordre</li>
+        <li><b>Table</b> = le <b>registre</b> simple : une ligne par camion, des colonnes libres</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📦 La redondance</h3>
+      <ul>
+        <li><b>LRS</b> = 3 copies du dossier <b>dans le même bureau</b> : un feu, et tout part</li>
+        <li><b>ZRS</b> = 3 copies dans <b>3 bureaux de la même ville</b></li>
+        <li><b>GRS</b> = en plus, une copie au <b>terminal d'une autre province</b>, qu'on n'ouvre qu'en cas de sinistre</li>
+        <li><b>RA-</b> = on a <b>le droit de consulter</b> la copie de l'autre province à tout moment</li>
+        <li><b>GZRS</b> = 3 bureaux en ville <b>+</b> l'autre province : le maximum</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <h2 id="services">1 · Les 4 services et les 3 types de données</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Service</th><th>Pour quoi</th><th>Exemple</th></tr></thead>
+      <tbody>
+        <tr><td><b>Blob</b></td><td>Données <b>non structurées</b> en masse (texte, binaire), accès par URL/REST</td><td>Images d'un site, vidéos, sauvegardes, archives</td></tr>
+        <tr><td><b>Files</b></td><td>Partages réseau <b>SMB / NFS</b> montés par plusieurs VM</td><td>Remplacer un serveur de fichiers, fichiers de config partagés</td></tr>
+        <tr><td><b>Queue</b></td><td>Messages de <b>64 Ko</b> max, des millions par file</td><td>Image envoyée → message → une fonction crée la miniature</td></tr>
+        <tr><td><b>Table</b></td><td>NoSQL clé/attributs, <b>sans schéma</b></td><td>Profils, journaux simples (Cosmos DB Table API = version premium)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Les 3 catégories de données : <b>de VM</b> (disques managés = blobs de pages, partages Files), <b>non structurées</b> (Blob, Data Lake Storage) et <b>structurées</b> (Table, Cosmos DB, SQL Database). Accès par HTTP/HTTPS, SDK, PowerShell, CLI, portail ou Explorateur Stockage. ➕ Blob accepte aussi <b>SFTP</b> (il faut l'<b>espace de noms hiérarchique</b>) et <b>NFSv3</b>.</p>
+
+  <!-- TYPES -->
+  <h2 id="types">2 · Les types de comptes</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Type</th><th>Services</th><th>Redondance</th><th>Pour</th></tr></thead>
+      <tbody>
+        <tr><td><b>Standard usage général v2</b> (HDD)</td><td>Blob, Files, Queue, Table</td><td>Les 6 : LRS, ZRS, GRS, RA-GRS, GZRS, RA-GZRS</td><td><b>Presque tout</b> : le choix par défaut</td></tr>
+        <tr><td><b>Premium objets blob de blocs</b> (SSD)</td><td>Blob seulement (blocs et ajout)</td><td>LRS, ZRS</td><td>Beaucoup de transactions, petits objets, faible latence</td></tr>
+        <tr><td><b>Premium partages de fichiers</b> (SSD)</td><td>Files seulement</td><td>LRS, ZRS</td><td>Partages SMB et NFS haute performance</td></tr>
+        <tr><td><b>Premium blobs de pages</b> (SSD)</td><td>Blobs de pages seulement</td><td><b>LRS seulement</b></td><td>Disques de VM, bases de données</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>À retenir :</b> on ne <b>convertit pas</b> Standard ↔ Premium : il faut créer un nouveau compte et copier. Un vieux compte <b>v1</b> ou BlobStorage se met à niveau <b>sur place</b> vers v2. Tous les comptes sont <b>chiffrés au repos</b> (SSE). ➕ examen : le nom du compte fait <b>3 à 24 caractères</b>, <b>minuscules et chiffres seulement</b>, et doit être <b>unique dans tout Azure</b> (c'est un morceau d'URL).</div>
+
+  <!-- REDONDANCE -->
+  <h2 id="redondance">3 · La redondance (réplication)</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 300" role="img" aria-label="LRS : 3 copies dans un centre de données. ZRS : 3 copies dans 3 zones. GRS : 3 copies LRS dans la région principale plus 3 copies LRS dans la région secondaire. GZRS : 3 zones plus la région secondaire">
+      <rect x="10" y="10" width="220" height="280" rx="14" class="svg-node" stroke-width="1.2"/>
+      <text x="120" y="40" text-anchor="middle" class="svg-title-c">LRS</text>
+      <rect x="40" y="60" width="160" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <text x="120" y="82" text-anchor="middle" class="svg-small">1 centre de données</text>
+      <text x="120" y="120" text-anchor="middle" class="svg-text">📄 📄 📄</text>
+      <text x="120" y="210" text-anchor="middle" class="svg-small">3 copies</text>
+      <text x="120" y="230" text-anchor="middle" class="svg-small">le moins cher</text>
+      <text x="120" y="250" text-anchor="middle" class="svg-small">✖ feu du bâtiment</text>
+
+      <rect x="250" y="10" width="220" height="280" rx="14" class="svg-node" stroke-width="1.2"/>
+      <text x="360" y="40" text-anchor="middle" class="svg-title-c">ZRS</text>
+      <rect x="265" y="60" width="60" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <rect x="330" y="60" width="60" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <rect x="395" y="60" width="60" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <text x="295" y="82" text-anchor="middle" class="svg-small">zone 1</text><text x="360" y="82" text-anchor="middle" class="svg-small">zone 2</text><text x="425" y="82" text-anchor="middle" class="svg-small">zone 3</text>
+      <text x="295" y="120" text-anchor="middle" class="svg-text">📄</text><text x="360" y="120" text-anchor="middle" class="svg-text">📄</text><text x="425" y="120" text-anchor="middle" class="svg-text">📄</text>
+      <text x="360" y="210" text-anchor="middle" class="svg-small">3 copies synchrones</text>
+      <text x="360" y="230" text-anchor="middle" class="svg-small">dans 1 région</text>
+      <text x="360" y="250" text-anchor="middle" class="svg-small">✔ perte d'une zone</text>
+
+      <rect x="490" y="10" width="220" height="280" rx="14" class="svg-node" stroke-width="1.2"/>
+      <text x="600" y="40" text-anchor="middle" class="svg-title-c">GRS / RA-GRS</text>
+      <rect x="505" y="60" width="90" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <rect x="605" y="60" width="90" height="110" rx="10" class="svg-onprem" stroke-width="1.2"/>
+      <text x="550" y="82" text-anchor="middle" class="svg-small">principale</text><text x="650" y="82" text-anchor="middle" class="svg-small">secondaire</text>
+      <text x="550" y="120" text-anchor="middle" class="svg-text">📄📄📄</text><text x="650" y="120" text-anchor="middle" class="svg-text">📄📄📄</text>
+      <text x="550" y="150" text-anchor="middle" class="svg-small">LRS</text><text x="650" y="150" text-anchor="middle" class="svg-small">LRS</text>
+      <text x="600" y="210" text-anchor="middle" class="svg-small">6 copies, copie asynchrone</text>
+      <text x="600" y="230" text-anchor="middle" class="svg-small">à des centaines de km</text>
+      <text x="600" y="250" text-anchor="middle" class="svg-small">✔ perte d'une région</text>
+
+      <rect x="730" y="10" width="220" height="280" rx="14" class="svg-node" stroke-width="1.2"/>
+      <text x="840" y="40" text-anchor="middle" class="svg-title-c">GZRS / RA-GZRS</text>
+      <rect x="745" y="60" width="90" height="110" rx="10" class="svg-cloud" stroke-width="1.2"/>
+      <rect x="845" y="60" width="90" height="110" rx="10" class="svg-onprem" stroke-width="1.2"/>
+      <text x="790" y="82" text-anchor="middle" class="svg-small">3 zones</text><text x="890" y="82" text-anchor="middle" class="svg-small">secondaire</text>
+      <text x="790" y="120" text-anchor="middle" class="svg-text">📄📄📄</text><text x="890" y="120" text-anchor="middle" class="svg-text">📄📄📄</text>
+      <text x="790" y="150" text-anchor="middle" class="svg-small">ZRS</text><text x="890" y="150" text-anchor="middle" class="svg-small">LRS</text>
+      <text x="840" y="210" text-anchor="middle" class="svg-small">le plus résistant</text>
+      <text x="840" y="230" text-anchor="middle" class="svg-small">recommandé par Microsoft</text>
+      <text x="840" y="250" text-anchor="middle" class="svg-small">✔ zone + région</text>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Ce qui tombe</th><th>Qui survit</th></tr></thead>
+      <tbody>
+        <tr><td>Un serveur dans le centre de données</td><td>Toutes : LRS, ZRS, GRS, RA-GRS, GZRS, RA-GZRS</td></tr>
+        <tr><td>Le centre de données entier</td><td>ZRS, GRS, RA-GRS, GZRS, RA-GZRS (<b>pas LRS</b>)</td></tr>
+        <tr><td>Toute la région</td><td>GRS, RA-GRS, GZRS, RA-GZRS</td></tr>
+        <tr><td><b>Lire</b> pendant la panne de région</td><td><b>RA-GRS, RA-GZRS seulement</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Avec <b>GRS</b> (sans RA), la copie secondaire n'est lisible <b>qu'après un basculement</b>. Le module dit « initié par Microsoft » ; ➕ tu peux aussi lancer toi-même un <b>basculement de compte</b>. Durabilité GRS/GZRS : au moins <b>16 neuf</b> (99,99999999999999 %) par an. ZRS n'existe pas dans toutes les régions. LRS convient si les données se recréent facilement ou doivent rester à un seul endroit (gouvernance).</p>
+
+  <!-- ACCES -->
+  <h2 id="acces">4 · Les adresses (points de terminaison)</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Service</th><th>Adresse par défaut</th></tr></thead>
+      <tbody>
+        <tr><td>Blob</td><td><code>https://moncompte.blob.core.windows.net</code></td></tr>
+        <tr><td>Files</td><td><code>https://moncompte.file.core.windows.net</code></td></tr>
+        <tr><td>Queue</td><td><code>https://moncompte.queue.core.windows.net</code></td></tr>
+        <tr><td>Table</td><td><code>https://moncompte.table.core.windows.net</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Un objet = adresse + chemin : <code>https://moncompte.blob.core.windows.net/conteneur/photo.jpg</code>. <b>Domaine personnalisé</b> (Blob) : un enregistrement <b>CNAME</b> <code>images.optifuel.cloud</code> → <code>moncompte.blob.core.windows.net</code>.</p>
+
+  <!-- SECURITE RESEAU -->
+  <h2 id="reseau">5 · Sécuriser l'accès réseau</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🚧 Point de terminaison de service</h3>
+      <ul style="font-size:14px">
+        <li>Le compte garde son <b>adresse publique</b></li>
+        <li>Le pare-feu du compte (<b>Pare-feux et réseaux virtuels</b>) n'accepte que certains <b>sous-réseaux</b> et certaines <b>IP publiques</b></li>
+        <li>Le VNet doit être dans la <b>même région</b> (ou sa paire)</li>
+        <li>Simple et gratuit : bon pour le dev</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🔒 Point de terminaison privé</h3>
+      <ul style="font-size:14px">
+        <li>Le compte reçoit une <b>IP privée</b> dans ton VNet</li>
+        <li>Le trafic reste sur le <b>réseau Microsoft</b>, jamais sur Internet</li>
+        <li>On peut ensuite <b>désactiver l'accès public</b></li>
+        <li>➕ Il faut une <b>zone DNS privée</b> <code>privatelink.blob.core.windows.net</code> (vu dans Azure DNS)</li>
+        <li>Recommandé pour la <b>production</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az storage account create -g rg-labo -n optifuelstock123 -l eastus \
+  --sku Standard_ZRS --kind StorageV2 --min-tls-version TLS1_2
+az storage account show -g rg-labo -n optifuelstock123 --query primaryEndpoints
+az storage account update -g rg-labo -n optifuelstock123 --sku Standard_GZRS
+az storage account network-rule add -g rg-labo --account-name optifuelstock123 \
+  --vnet-name vnet --subnet app
+az storage account update -g rg-labo -n optifuelstock123 --default-action Deny</pre>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Le <b>SKU</b> combine performance et redondance : <code>Standard_LRS</code>, <code>Standard_GZRS</code>, <code>Premium_LRS</code>… <code>--default-action Deny</code> = tout est refusé sauf les règles réseau ajoutées. Un compte vide ne coûte presque rien.</p>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Les manifestes scannés d'Optifuel iraient ici.</b></p>
+    <ul>
+      <li>Un compte <b>Standard v2</b> en Canada Central, avec un conteneur <code>manifestes</code> pour les scans ACE/ASFC.</li>
+      <li>Redondance <b>ZRS</b> : les données restent au Canada et survivent à la perte d'un centre de données. <b>GZRS</b> si l'employeur veut une copie en Canada Est (la paire, donc toujours au pays).</li>
+      <li><b>Point de terminaison privé</b> depuis le VNet du cluster, et accès public désactivé : les manifestes ne sont jamais exposés.</li>
+      <li>Tu as déjà noté « Azurite » pour le dev local : c'est l'émulateur de ce même compte de stockage, gratuit sur ton poste.</li>
+    </ul>
+    <p class="why">💡 Pour un recruteur : « données de douane au Canada, redondance zonale, aucun accès public » est une phrase qui parle.</p>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux pouvoir lire mes données pendant une panne de toute la région : GRS. »</span><span class="right">GRS ne permet de lire qu'<b>après un basculement</b>. Il faut <b>RA-GRS</b> ou <b>RA-GZRS</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je passe mon compte Standard en Premium dans les paramètres. »</span><span class="right">Impossible : on <b>crée un nouveau compte</b> Premium et on copie les données.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon compte Premium de blobs de pages en GRS. »</span><span class="right">Premium blobs de pages = <b>LRS seulement</b>. Les autres Premium : LRS ou ZRS.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« ZRS copie les données dans une autre région. »</span><span class="right">Non : 3 <b>zones</b> d'une <b>même région</b>. L'autre région, c'est <b>G</b>RS / <b>G</b>ZRS.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Le nom de compte Optifuel_Stock est valide. »</span><span class="right">Seulement <b>minuscules et chiffres</b>, 3 à 24 caractères, unique dans Azure : <code>optifuelstock</code>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Avec un point de terminaison de service, mon compte n'a plus d'adresse publique. »</span><span class="right">Il la garde (mais filtrée). L'<b>IP privée</b>, c'est le <b>point de terminaison privé</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Compte de stockage + accès réseau limité</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_storage_account"</span> <span class="c-s">"manifestes"</span> {
+  name                            = <span class="c-s">"optifuelstock123"</span>   <span class="c-c"># 3-24, minuscules + chiffres</span>
+  resource_group_name             = azurerm_resource_group.labo.name
+  location                        = <span class="c-s">"canadacentral"</span>
+  account_kind                    = <span class="c-s">"StorageV2"</span>
+  account_tier                    = <span class="c-s">"Standard"</span>           <span class="c-c"># ou Premium</span>
+  account_replication_type        = <span class="c-s">"ZRS"</span>                <span class="c-c"># LRS, GRS, RAGRS, GZRS, RAGZRS</span>
+  min_tls_version                 = <span class="c-s">"TLS1_2"</span>
+  public_network_access_enabled   = <span class="c-k">false</span>                <span class="c-c"># accès par point de terminaison privé</span>
+  shared_access_key_enabled       = <span class="c-k">false</span>                <span class="c-c"># Entra ID seulement</span>
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>LRS</td><td>Locally Redundant Storage</td><td>3 copies dans un centre de données</td></tr>
+        <tr><td>ZRS</td><td>Zone-Redundant Storage</td><td>3 copies dans 3 zones d'une région</td></tr>
+        <tr><td>GRS</td><td>Geo-Redundant Storage</td><td>LRS + copie LRS dans une région secondaire</td></tr>
+        <tr><td>GZRS</td><td>Geo-Zone-Redundant Storage</td><td>ZRS + copie LRS dans une région secondaire</td></tr>
+        <tr><td>RA-</td><td>Read-Access</td><td>Lecture possible dans la région secondaire en tout temps</td></tr>
+        <tr><td>GPv2</td><td>General-Purpose v2</td><td>Type de compte standard recommandé</td></tr>
+        <tr><td>SSE</td><td>Storage Service Encryption</td><td>Chiffrement automatique au repos</td></tr>
+        <tr><td>HNS</td><td>Hierarchical Namespace</td><td>Vrais dossiers dans Blob (Data Lake, SFTP)</td></tr>
+        <tr><td>SMB / NFS</td><td>Server Message Block / Network File System</td><td>Protocoles de partage de fichiers (Windows / Linux)</td></tr>
+        <tr><td>SFTP</td><td>SSH File Transfer Protocol</td><td>Transfert de fichiers sécurisé</td></tr>
+        <tr><td>CNAME</td><td>Canonical Name</td><td>Enregistrement DNS « alias »</td></tr>
+        <tr><td>Point de terminaison</td><td>Endpoint</td><td>Adresse d'un service</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="load-balancer.html"><span class="lbl">← Précédent</span><span class="ttl">Load Balancer</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="stockage-blob.html"><span class="lbl">Suivant →</span><span class="ttl">Stockage Blob</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer des comptes de stockage », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Tu dois pouvoir LIRE les données pendant une panne de toute la région, au moindre coût. Quelle redondance ?",o:["GRS","RA-GRS","ZRS"],a:1,e:"RA = Read-Access : lecture de la secondaire sans attendre un basculement."},
+  {q:"Quelle redondance protège contre la perte d'un centre de données, sans quitter la région ?",o:["LRS","ZRS","GRS"],a:1,e:"3 zones de la même région."},
+  {q:"Quel type de compte prend en charge Blob, Files, Queue et Table ?",o:["Premium blobs de blocs","Premium partages de fichiers","Standard usage général v2"],a:2,e:"GPv2 = le compte à tout faire."},
+  {q:"Tu veux passer un compte Standard en Premium. Que fais-tu ?",o:["Modifier le niveau de performance","Créer un compte Premium et copier les données","Lancer un basculement"],a:1,e:"Pas de conversion possible."},
+  {q:"Quelle est l'adresse du service Files du compte « stock1 » ?",o:["stock1.file.core.windows.net","file.stock1.core.windows.net","stock1.files.azure.com"],a:0,e:"<compte>.<service>.core.windows.net"},
+  {q:"Le compte doit avoir une IP privée dans ton VNet et aucun trafic sur Internet. Quoi ?",o:["Point de terminaison de service","Point de terminaison privé","Règle de pare-feu IP"],a:1,e:"Private endpoint = IP privée du VNet."},
+  {q:"Quelle redondance Microsoft recommande-t-il pour la résilience maximale ?",o:["GZRS","LRS","GRS"],a:0,e:"Zones + région secondaire."},
+  {q:"Messages de 64 Ko max pour du traitement asynchrone : quel service ?",o:["Table","Queue","Blob"],a:1,e:"Queue Storage."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

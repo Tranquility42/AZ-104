@@ -112,6 +112,7 @@ var C=[
 
  {c:'az network vnet create -g rg-labo -n app-vnet --address-prefixes 10.1.0.0/16 --subnet-name frontend --subnet-prefixes 10.1.0.0/24',t:'cli',th:'Réseau',d:"Créer un VNet avec son premier sous-réseau.",eq:'New-AzVirtualNetwork',p:'reseaux-virtuels'},
  {c:'az network vnet subnet create -g rg-labo --vnet-name app-vnet -n backend --address-prefixes 10.1.1.0/24',t:'cli',th:'Réseau',d:"Ajouter un sous-réseau à un VNet existant.",eq:'Add-AzVirtualNetworkSubnetConfig puis Set-AzVirtualNetwork',p:'reseaux-virtuels'},
+ {c:'az network vnet subnet list -g rg-labo --vnet-name app-vnet -o table',t:'cli',th:'Réseau',d:"Lister les sous-réseaux d'un VNet et leurs plages d'adresses.",eq:'(Get-AzVirtualNetwork -Name app-vnet -ResourceGroupName rg-labo).Subnets',p:'reseaux-virtuels'},
  {c:'az network public-ip create -g rg-labo -n pip-web --sku Standard --allocation-method Static',t:'cli',th:'Réseau',d:"Créer une IP publique Standard (toujours statique).",eq:'New-AzPublicIpAddress -Sku Standard -AllocationMethod Static',p:'reseaux-virtuels'},
 
  {c:'az network vnet peering create -g rg-labo -n app-to-hub --vnet-name app-vnet --remote-vnet hub-vnet --allow-vnet-access --allow-forwarded-traffic',t:'cli',th:'Réseau',d:"Créer UN côté d'un peering. À refaire dans l'autre sens pour passer de « Initié » à « Connecté ».",eq:'Add-AzVirtualNetworkPeering -Name app-to-hub -VirtualNetwork $app -RemoteVirtualNetworkId $hub.Id',p:'peering'},

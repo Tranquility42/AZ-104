@@ -125,6 +125,10 @@ var C=[
  {c:'traceroute private --type=icmp',t:'shell',th:'Réseau',d:"Lister chaque saut jusqu'à une machine : prouve que le trafic passe par la NVA.",eq:'tracert private (Windows)',p:'routes'},
  {c:'az network nic show-effective-route-table -g rg-labo -n nic-public -o table',t:'cli',th:'Réseau',d:"Voir les routes réellement appliquées à une carte réseau (système + UDR + BGP).",eq:'Get-AzEffectiveRouteTable -NetworkInterfaceName nic-public -ResourceGroupName rg-labo',p:'routes'},
  {c:'az vm create -g rg-labo -n nva --vnet-name vnet --subnet dmzsubnet --image Ubuntu2204 --admin-username azureuser --admin-password <motdepasse>',t:'cli',th:'Réseau',d:"Créer une VM Ubuntu dans un sous-réseau précis (ajoute --custom-data cloud-init.txt pour un script au démarrage).",eq:'New-AzVM',p:'routes'},
+ {c:'az network lb create -g rg-labo -n lb-web --sku Standard --public-ip-address pip-lb --frontend-ip-name fe-web --backend-pool-name pool-web',t:'cli',th:'Réseau',d:"Créer un équilibreur de charge Standard public avec sa frontale et son pool.",eq:'New-AzLoadBalancer',p:'load-balancer'},
+ {c:'az network lb probe create -g rg-labo --lb-name lb-web -n sonde-http --protocol Http --port 80 --path /',t:'cli',th:'Réseau',d:"Ajouter une sonde d'intégrité HTTP (la VM doit répondre 200).",eq:'Add-AzLoadBalancerProbeConfig',p:'load-balancer'},
+ {c:'az network lb rule create -g rg-labo --lb-name lb-web -n regle-http --protocol Tcp --frontend-port 80 --backend-port 80 --frontend-ip-name fe-web --backend-pool-name pool-web --probe-name sonde-http',t:'cli',th:'Réseau',d:"Créer une règle d'équilibrage : port frontal → port du pool, avec la sonde.",eq:'Add-AzLoadBalancerRuleConfig',p:'load-balancer'},
+ {c:'az network nic ip-config address-pool add -g rg-labo --nic-name nic-web1 --ip-config-name ipconfig1 --lb-name lb-web --address-pool pool-web',t:'cli',th:'Réseau',d:"Ajouter la carte réseau d'une VM au pool principal du LB.",eq:'Set-AzNetworkInterface (LoadBalancerBackendAddressPools)',p:'load-balancer'},
  {c:'Test-NetConnection -ComputerName 10.2.0.4 -Port 3389',t:'ps',th:'Réseau',d:"Tester si un port répond sur une autre machine (ici RDP vers une VM d'un VNet appairé).",eq:'nc -zv 10.2.0.4 3389',p:'peering'},
  {c:'nslookup -type=SOA wideworldimports.com',t:'shell',th:'DNS',d:"Vérifier que la délégation vers Azure DNS fonctionne.",eq:'Resolve-DnsName -Type SOA wideworldimports.com',p:'azure-dns'},
  {c:'nslookup www.wideworldimports.com ns1-04.azure-dns.com',t:'shell',th:'DNS',d:"Interroger directement un serveur de noms Azure (avant la délégation).",eq:'Resolve-DnsName www.wideworldimports.com -Server ns1-04.azure-dns.com',p:'azure-dns'},
@@ -145,7 +149,7 @@ var C=[
  {c:'rm fichier.json',t:'shell',th:'Shell',d:"Supprimer un fichier.",eq:'Remove-Item fichier.json',p:'arm-templates'},
  {c:'cp a.json b.json · mv a.json b.json',t:'shell',th:'Shell',d:"Copier · déplacer ou renommer un fichier.",eq:'Copy-Item · Move-Item',p:'arm-templates'}
 ];
-var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering','routes':'Routes et NVA'};
+var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering','routes':'Routes et NVA','load-balancer':'Load Balancer'};
 
 var state={q:'',tool:'',th:''};
 try{var s=JSON.parse(sessionStorage.getItem('cmd-filtres')||'null');if(s)state=s;}catch(e){}

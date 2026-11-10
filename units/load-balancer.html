@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Azure Load Balancer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Load Balancer</span></nav>
+  <h1>Azure Load Balancer</h1>
+  <p class="lede">Répartir le trafic entrant entre plusieurs VM, éviter celles qui sont en panne, et savoir quand choisir un autre service (Application Gateway, Front Door, Traffic Manager). Les notions marquées <b>➕ examen</b> ne sont pas dans le module mais tombent à l'examen.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 7 min · module complet</span>
+    <span class="chip">🎯 Couche 4 vs couche 7 : question classique</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> Load Balancer travaille en <b>couche 4</b> (IP, port, TCP/UDP) : il ne lit <b>pas</b> le contenu (URL, en-têtes). Il envoie le trafic d'une <b>IP frontale</b> vers un <b>pool principal</b> de VM selon des <b>règles</b>, et une <b>sonde d'intégrité</b> écarte les VM malades. <b>Public</b> = IP publique, face à Internet. <b>Interne</b> = IP privée, seulement dans le VNet (ou via VPN/ExpressRoute).</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le répartiteur au terminal 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🏭 Le terminal</h3>
+      <ul>
+        <li><b>IP frontale</b> = la <b>barrière d'entrée</b> du terminal : tous les camions arrivent au même endroit</li>
+        <li><b>Pool principal</b> = les <b>quais de chargement</b> (les VM) derrière la barrière</li>
+        <li><b>Règle d'équilibrage</b> = la consigne du répartiteur : « camions sur la porte 80 → quais 80 »</li>
+        <li><b>Sonde d'intégrité</b> = le répartiteur qui <b>appelle chaque quai</b> toutes les 15 s : pas de réponse, plus de nouveaux camions</li>
+        <li><b>Couche 4</b> = il lit la <b>plaque et la porte</b>, jamais le <b>contenu de la remorque</b></li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📋 Les options</h3>
+      <ul>
+        <li><b>Affinité de session</b> = le même transporteur <b>retourne toujours au même quai</b></li>
+        <li><b>Règle NAT entrante</b> = une <b>porte réservée</b> au mécanicien pour aller à <b>un</b> quai précis (RDP sur une VM)</li>
+        <li><b>Règle de trafic sortant</b> = le <b>laissez-passer de sortie</b> pour que les quais puissent envoyer des camions dehors (Internet)</li>
+        <li><b>Ports HA</b> = « <b>toutes les portes</b>, tous les types de camions » : utile devant des postes de pesée (NVA)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <h2 id="schema">1 · Le schéma : public et interne</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Internet arrive sur un Load Balancer public qui répartit vers trois VM web ; une VM malade est écartée par la sonde. Les VM web passent par un Load Balancer interne vers deux VM de traitement">
+      <defs><marker id="la" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <text x="80" y="40" text-anchor="middle" class="svg-text">🌐 Internet</text>
+      <path d="M80 50 V90" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#la)"/>
+      <rect x="10" y="95" width="140" height="80" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="80" y="122" text-anchor="middle" class="svg-title-o">LB public</text>
+      <text x="80" y="142" text-anchor="middle" class="svg-small">IP frontale publique</text>
+      <text x="80" y="160" text-anchor="middle" class="svg-small">règle 80 → 80</text>
+      <rect x="200" y="20" width="740" height="300" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="220" y="48" class="svg-title-c">VNet</text>
+      <rect x="230" y="65" width="280" height="235" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="370" y="90" text-anchor="middle" class="svg-text">Pool principal « web »</text>
+      <text x="370" y="130" text-anchor="middle" class="svg-small">🖥️ web1 · sonde ✔</text>
+      <text x="370" y="170" text-anchor="middle" class="svg-small">🖥️ web2 · sonde ✔</text>
+      <text x="370" y="210" text-anchor="middle" class="svg-small">🖥️ web3 · sonde ✖ (écartée)</text>
+      <text x="370" y="260" text-anchor="middle" class="svg-small">sonde HTTP /health</text>
+      <text x="370" y="278" text-anchor="middle" class="svg-small">toutes les 15 s, attend 200</text>
+      <path d="M150 125 L225 125" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#la)"/>
+      <path d="M150 150 L225 170" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#la)"/>
+      <rect x="560" y="135" width="130" height="80" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="625" y="162" text-anchor="middle" class="svg-title-o">LB interne</text>
+      <text x="625" y="182" text-anchor="middle" class="svg-small">IP frontale privée</text>
+      <text x="625" y="200" text-anchor="middle" class="svg-small">10.0.1.10</text>
+      <path d="M510 175 H555" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#la)"/>
+      <rect x="740" y="90" width="180" height="170" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="830" y="115" text-anchor="middle" class="svg-text">Pool « traitement »</text>
+      <text x="830" y="160" text-anchor="middle" class="svg-small">🗄️ app1</text>
+      <text x="830" y="200" text-anchor="middle" class="svg-small">🗄️ app2</text>
+      <text x="830" y="240" text-anchor="middle" class="svg-small">pas d'accès Internet</text>
+      <path d="M690 175 H735" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#la)"/>
+    </svg>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">C'est le scénario <b>multiniveau</b> du module (l'entreprise Adatum) : un LB public devant le niveau web, un LB interne entre le web et le traitement. Une VM écartée par la sonde garde ses connexions <b>déjà ouvertes</b> ; elle ne reçoit juste plus de <b>nouvelles</b> connexions.</p>
+
+  <!-- COMPOSANTS -->
+  <h2 id="composants">2 · Les 7 composants</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Composant</th><th class="c">Rôle</th></tr></thead>
+      <tbody>
+        <tr><td><b>IP frontale</b></td><td>L'adresse que les clients appellent. Publique → LB <b>public</b> ; privée → LB <b>interne</b>. On peut en avoir plusieurs</td></tr>
+        <tr><td><b>Pool principal</b></td><td>Les VM ou les instances d'un groupe de machines virtuelles identiques (VMSS) qui traitent les requêtes. Ajouter des VM = monter en charge ; le LB s'adapte tout seul</td></tr>
+        <tr><td><b>Règle d'équilibrage</b></td><td>IP frontale + port → pool + port. Répartition par <b>hachage à 5 tuples</b></td></tr>
+        <tr><td><b>Sonde d'intégrité</b></td><td>TCP, HTTP ou HTTPS. Une VM malade ne reçoit plus de nouvelles connexions</td></tr>
+        <tr><td><b>Règle NAT entrante</b></td><td>Une porte de l'IP frontale vers <b>une</b> VM précise (ex. RDP 3389 pour l'administration)</td></tr>
+        <tr><td><b>Ports HA</b></td><td>Règle « protocole : tous, port : 0 » sur un LB <b>interne Standard</b> : tous les ports TCP et UDP. Sert surtout devant des <b>NVA</b></td></tr>
+        <tr><td><b>Règle de trafic sortant</b></td><td>NAT source : les VM du pool sortent sur Internet avec l'IP publique du LB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- REPARTITION -->
+  <h2 id="repartition">3 · Comment il répartit</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔢 Hachage et affinité</h3>
+      <p style="font-size:14px;margin-top:0">Par défaut, le LB calcule un <b>hachage à 5 tuples</b> : IP source, port source, IP destination, port destination, protocole. Une même connexion reste sur la même VM, mais une nouvelle peut aller ailleurs.</p>
+      <div class="tablewrap" style="margin:0">
+        <table>
+          <thead><tr><th>Affinité de session</th><th>Même VM tant que…</th></tr></thead>
+          <tbody>
+            <tr><td><b>Aucune</b> (défaut)</td><td>la connexion dure (5 tuples)</td></tr>
+            <tr><td><b>IP client</b> (2 tuples)</td><td>même IP source + IP destination</td></tr>
+            <tr><td><b>IP client et protocole</b> (3 tuples)</td><td>même IP source + destination + protocole</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🩺 Sondes d'intégrité</h3>
+      <ul style="font-size:14px">
+        <li><b>TCP</b> : réussit si une session TCP s'ouvre sur le port</li>
+        <li><b>HTTP / HTTPS</b> : réussit si la VM répond <b>200</b>. Toutes les <b>15 s</b> par défaut, délai d'attente <b>31 s</b></li>
+        <li>Réglables : port, URI (HTTP), intervalle, seuil de défaillance</li>
+        <li>Une sonde qui échoue <b>ne coupe pas</b> les connexions existantes</li>
+        <li>➕ examen : avec un LB <b>Standard</b>, si <b>toutes</b> les sondes échouent, plus rien ne passe. Vérifie aussi que le <b>NSG</b> laisse passer la sonde (étiquette <code>AzureLoadBalancer</code>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SKU -->
+  <h2 id="sku">4 · ➕ examen : les SKU</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Standard</th><th>De base (Basic)</th><th>Passerelle (Gateway)</th></tr></thead>
+      <tbody>
+        <tr><td>Statut</td><td><b>Le seul à choisir</b></td><td>Mis hors service le 30 sept. 2025</td><td>Cas spécial</td></tr>
+        <tr><td>Pool principal</td><td>Toute VM ou VMSS du <b>même VNet</b> (jusqu'à 1 000)</td><td>VM d'un seul groupe à haute disponibilité ou VMSS (300)</td><td>—</td></tr>
+        <tr><td>Zones de disponibilité</td><td>✔ Redondant interzone ou zonal</td><td>✖</td><td>—</td></tr>
+        <tr><td>Sécurité</td><td><b>Fermé par défaut</b> : il faut un NSG qui autorise le trafic</td><td>Ouvert par défaut</td><td>—</td></tr>
+        <tr><td>Ports HA, règles sortantes</td><td>✔</td><td>✖</td><td>—</td></tr>
+        <tr><td>SLA</td><td>99,99 %</td><td>Aucun</td><td>—</td></tr>
+        <tr><td>Usage</td><td>Tout</td><td>—</td><td>Insérer des NVA tierces de façon transparente devant un LB Standard</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">⚠️ Le SKU de l'<b>IP publique</b> doit être le même que celui du LB : LB Standard = IP publique Standard.</p>
+
+  <!-- CHOIX -->
+  <h2 id="choix">5 · Quand l'utiliser, et quoi d'autre</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Service</th><th>Couche</th><th>Portée</th><th class="c">Choisis-le si…</th></tr></thead>
+      <tbody>
+        <tr><td><b>Load Balancer</b></td><td>4 (TCP/UDP)</td><td>Régional</td><td>Latence ultra-faible, tout protocole TCP/UDP, millions de flux, remplacement d'un LB matériel</td></tr>
+        <tr><td><b>Application Gateway</b></td><td>7 (HTTP)</td><td>Régional</td><td>Routage par <b>URL/chemin</b>, terminaison <b>TLS/SSL</b>, pare-feu d'applications web (<b>WAF</b>)</td></tr>
+        <tr><td><b>Front Door</b></td><td>7 (HTTP)</td><td><b>Mondial</b></td><td>Appli web dans <b>plusieurs régions</b> : WAF, cache, basculement rapide</td></tr>
+        <tr><td><b>Traffic Manager</b></td><td>DNS</td><td><b>Mondial</b></td><td>Répartir entre régions par <b>DNS</b>, tout protocole ; basculement plus lent (cache DNS, TTL)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="opt3" style="margin-top:14px">
+    <div class="card"><span class="num">✔ Oui</span><p>Niveau web exposé à Internet (LB public), trafic web → traitement (LB interne), RDP vers une VM précise (NAT entrante).</p></div>
+    <div class="card"><span class="num">✖ Non</span><p>Une seule VM avec peu de trafic : pas besoin d'équilibrer.</p></div>
+    <div class="card"><span class="num">✖ Non</span><p>Besoin de <b>WAF</b> ou de routage selon le <b>contenu</b> (URL) : Application Gateway ou Front Door.</p></div>
+  </div>
+
+  <!-- COMMANDES -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az network public-ip create -g rg-labo -n pip-lb --sku Standard
+az network lb create -g rg-labo -n lb-web --sku Standard \
+  --public-ip-address pip-lb --frontend-ip-name fe-web --backend-pool-name pool-web
+az network lb probe create -g rg-labo --lb-name lb-web -n sonde-http \
+  --protocol Http --port 80 --path /
+az network lb rule create -g rg-labo --lb-name lb-web -n regle-http \
+  --protocol Tcp --frontend-port 80 --backend-port 80 \
+  --frontend-ip-name fe-web --backend-pool-name pool-web --probe-name sonde-http
+az network nic ip-config address-pool add -g rg-labo --nic-name nic-web1 \
+  --ip-config-name ipconfig1 --lb-name lb-web --address-pool pool-web</pre>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">💸 Un LB Standard est facturé à l'heure (quelques sous) plus les données : supprime le groupe après le test.</p>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Tu en utilises déjà un sans le savoir.</b></p>
+    <ul>
+      <li>Sur ton k3s, un <code>Service</code> de type <code>LoadBalancer</code> passe par <b>ServiceLB</b>, l'équilibreur intégré de k3s. Sur AKS, le même fichier crée <b>automatiquement un Azure Load Balancer Standard</b> avec son IP publique.</li>
+      <li>Devant Next.js, on met un <b>contrôleur d'entrée</b> (ingress) derrière ce LB. Ou une <b>Application Gateway</b> si tu veux un WAF devant les manifestes.</li>
+      <li>Donne à l'app une route <code>/api/health</code> qui répond 200 : c'est elle que la sonde appellera.</li>
+      <li>PostgreSQL n'a pas besoin de LB : avec le service géré, Azure s'occupe de la haute disponibilité.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux envoyer /images vers un pool et /api vers un autre : Load Balancer. »</span><span class="right">Routage par <b>URL</b> = couche 7 = <b>Application Gateway</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Il me faut un WAF : j'ajoute un Load Balancer. »</span><span class="right">Le LB n'a <b>pas de WAF</b> : Application Gateway ou Front Door.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon appli tourne dans 3 régions : un Load Balancer public répartit entre elles. »</span><span class="right">Le LB est <b>régional</b>. Entre régions : <b>Front Door</b> (HTTP) ou <b>Traffic Manager</b> (DNS).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La sonde a échoué : les utilisateurs connectés sont coupés. »</span><span class="right">Non, seules les <b>nouvelles</b> connexions évitent la VM.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai créé un LB Standard et rien ne passe : il est en panne. »</span><span class="right">Le Standard est <b>fermé par défaut</b> : il faut un <b>NSG</b> qui autorise le trafic.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Un utilisateur doit toujours tomber sur la même VM : je mets l'affinité Aucune. »</span><span class="right">Il faut l'affinité <b>IP client</b> (2 tuples) ou <b>IP client et protocole</b> (3 tuples).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour RDP sur une seule VM derrière le LB, j'ajoute une règle d'équilibrage 3389. »</span><span class="right">Ça répartirait entre toutes les VM : il faut une <b>règle NAT entrante</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 LB public : frontale, pool, sonde, règle</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_public_ip"</span> <span class="c-s">"lb"</span> {
+  name                = <span class="c-s">"pip-lb"</span>
+  location            = <span class="c-s">"eastus"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  allocation_method   = <span class="c-s">"Static"</span>
+  sku                 = <span class="c-s">"Standard"</span>   <span class="c-c"># même SKU que le LB</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_lb"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"lb-web"</span>
+  location            = <span class="c-s">"eastus"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  sku                 = <span class="c-s">"Standard"</span>
+  frontend_ip_configuration {
+    name                 = <span class="c-s">"fe-web"</span>
+    public_ip_address_id = azurerm_public_ip.lb.id
+  }
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_lb_backend_address_pool"</span> <span class="c-s">"web"</span> {
+  name            = <span class="c-s">"pool-web"</span>
+  loadbalancer_id = azurerm_lb.web.id
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_lb_probe"</span> <span class="c-s">"http"</span> {
+  name            = <span class="c-s">"sonde-http"</span>
+  loadbalancer_id = azurerm_lb.web.id
+  protocol        = <span class="c-s">"Http"</span>
+  port            = 80
+  request_path    = <span class="c-s">"/"</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_lb_rule"</span> <span class="c-s">"http"</span> {
+  name                           = <span class="c-s">"regle-http"</span>
+  loadbalancer_id                = azurerm_lb.web.id
+  protocol                       = <span class="c-s">"Tcp"</span>
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = <span class="c-s">"fe-web"</span>
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.web.id]
+  probe_id                       = azurerm_lb_probe.http.id
+  load_distribution              = <span class="c-s">"Default"</span>   <span class="c-c"># ou SourceIP (2 tuples), SourceIPProtocol (3)</span>
+}
+<span class="c-c"># Brancher une VM : azurerm_network_interface_backend_address_pool_association</span></pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>LB</td><td>Load Balancer</td><td>Équilibreur de charge</td></tr>
+        <tr><td>IP frontale</td><td>Frontend IP</td><td>L'adresse que les clients appellent</td></tr>
+        <tr><td>Pool principal</td><td>Backend pool</td><td>Les VM qui reçoivent le trafic</td></tr>
+        <tr><td>Sonde d'intégrité</td><td>Health probe</td><td>Vérifie qu'une VM répond</td></tr>
+        <tr><td>Affinité de session</td><td>Session persistence</td><td>Garder un client sur la même VM</td></tr>
+        <tr><td>Tuple</td><td>Tuple</td><td>Ensemble de valeurs (IP, port, protocole) utilisées pour le hachage</td></tr>
+        <tr><td>NAT</td><td>Network Address Translation</td><td>Traduire une adresse/port en une autre</td></tr>
+        <tr><td>Ports HA</td><td>High Availability ports</td><td>Règle qui équilibre tous les ports à la fois</td></tr>
+        <tr><td>VMSS</td><td>Virtual Machine Scale Set</td><td>Groupe de VM identiques qui grandit ou rapetisse</td></tr>
+        <tr><td>Couche 4 / 7</td><td>OSI layer 4 / 7</td><td>Transport (IP, port) / application (URL, en-têtes)</td></tr>
+        <tr><td>WAF</td><td>Web Application Firewall</td><td>Pare-feu qui bloque les attaques web</td></tr>
+        <tr><td>SKU</td><td>Stock Keeping Unit</td><td>Le niveau de service (Standard, Basic…)</td></tr>
+        <tr><td>SLA</td><td>Service Level Agreement</td><td>Disponibilité garantie</td></tr>
+        <tr><td>ADC</td><td>Application Delivery Controller</td><td>Équilibreur couche 7 (Application Gateway)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="routes.html"><span class="lbl">← Précédent</span><span class="ttl">Routes et NVA</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Introduction à Azure Load Balancer », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Load Balancer travaille à quelle couche ?",o:["Couche 7 (HTTP)","Couche 4 (TCP/UDP)","DNS"],a:1,e:"Il lit IP, port et protocole, jamais le contenu."},
+  {q:"Tu dois envoyer /api et /images vers deux pools différents. Quel service ?",o:["Azure Load Balancer","Application Gateway","Traffic Manager"],a:1,e:"Routage par chemin d'URL = couche 7 = Application Gateway."},
+  {q:"Une VM échoue à la sonde d'intégrité. Que se passe-t-il ?",o:["Elle ne reçoit plus de nouvelles connexions","Toutes ses connexions sont coupées","Azure la redémarre"],a:0,e:"Les connexions existantes continuent."},
+  {q:"Les VM web doivent parler au niveau traitement, sans exposition Internet. Quel LB ?",o:["LB public","LB interne","Front Door"],a:1,e:"IP frontale privée, accessible seulement dans le VNet ou par VPN."},
+  {q:"Un client doit toujours retomber sur la même VM, quel que soit le port. Quelle affinité ?",o:["Aucune","IP client (2 tuples)","Hachage à 5 tuples"],a:1,e:"IP source + IP destination seulement."},
+  {q:"Tu veux faire du RDP vers UNE VM précise derrière le LB public. Quoi ?",o:["Une règle d'équilibrage 3389","Une sonde TCP 3389","Une règle NAT entrante"],a:2,e:"La NAT entrante vise une seule VM."},
+  {q:"Ton appli tourne dans plusieurs régions et il te faut un WAF et un basculement rapide. Quel service ?",o:["Front Door","Load Balancer Standard","Traffic Manager"],a:0,e:"Mondial, couche 7, WAF et cache."},
+  {q:"Tu mets 2 NVA en haute disponibilité derrière un LB interne Standard. Quelle règle ?",o:["Règle NAT entrante","Ports HA","Règle de trafic sortant"],a:1,e:"Tous les ports et protocoles, décision par flux."},
+  {q:"LB Standard créé, VM saines, mais aucun trafic n'arrive. Cause la plus probable ?",o:["Le SKU Standard ne gère pas HTTP","Aucun NSG n'autorise le trafic","Il faut une passerelle VPN"],a:1,e:"Le Standard est fermé par défaut."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

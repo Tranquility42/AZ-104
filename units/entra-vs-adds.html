@@ -361,12 +361,13 @@ Q.forEach(function(item,i){
   var d=document.createElement('div');d.className='qq';
   d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
   var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
-  item.o.forEach(function(t,j){
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
     var b=document.createElement('button');b.type='button';b.textContent=t;
     b.onclick=function(){
       if(d.dataset.done)return;d.dataset.done=1;done++;
-      opts.children[item.a].classList.add('good');
-      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
       document.getElementById('score').textContent='· '+score+' / '+done;
     };
     opts.appendChild(b);

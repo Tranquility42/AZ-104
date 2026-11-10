@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Peering de réseaux virtuels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Peering de réseaux virtuels</span></nav>
+  <h1>Configurer un peering de réseaux virtuels</h1>
+  <p class="lede">Relier deux VNet en privé, partager une passerelle VPN, et contourner la règle du « pas de transit » avec un hub, des routes et une appliance. Les notions ajoutées pour l'examen sont marquées <b>➕ examen</b>.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Non-transitivité et transit par passerelle : classiques d'examen</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> le peering relie deux VNet <b>sans chevauchement d'adresses</b>, en privé sur le réseau de Microsoft. Il est <b>non transitif</b> : A↔B et B↔C ne donnent <b>pas</b> A↔C. Il doit être <b>Connecté des deux côtés</b>. Un hub peut <b>partager sa passerelle VPN</b> avec ses rayons.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : les chemins privés entre terminaux 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🛣️ Le peering</h3>
+      <ul>
+        <li><b>Peering</b> = un <b>chemin privé</b> entre deux cours, sans sortir sur l'autoroute publique</li>
+        <li><b>Régional</b> = deux terminaux de la <b>même ville</b>. <b>Global</b> = deux villes (Toronto ↔ Québec)</li>
+        <li><b>Initié / Connecté</b> = la <b>poignée de main</b> : tant que les deux terminaux n'ont pas signé, la barrière reste fermée</li>
+        <li><b>Non transitif</b> = un chemin Laval↔Montréal et Montréal↔Longueuil ne permet <b>pas</b> à un camion de Laval de traverser Montréal pour aller à Longueuil</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🛃 Le hub</h3>
+      <ul>
+        <li><b>Hub and spoke</b> = un <b>terminal central</b> relié à toutes les succursales</li>
+        <li><b>Transit par passerelle</b> = le <b>poste frontière</b> (passerelle VPN vers le siège) est au terminal central : les succursales l'utilisent au lieu d'en construire chacune un</li>
+        <li><b>NVA</b> = le <b>répartiteur</b> du terminal central qui redirige les camions d'une succursale à l'autre</li>
+        <li><b>UDR</b> = les <b>panneaux de détour</b> : « pour Longueuil, passez par le répartiteur central »</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <h2 id="topologie">1 · Topologie en étoile et non-transitivité</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Hub avec passerelle VPN et appliance réseau, appairé à deux rayons A et B ; pas de lien direct entre A et B ; la passerelle relie le réseau local">
+      <defs><marker id="pe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="20" y="20" width="230" height="110" rx="14" class="svg-cloud" stroke-width="1.6"/>
+      <text x="135" y="52" text-anchor="middle" class="svg-title-c">Rayon A</text>
+      <text x="135" y="74" text-anchor="middle" class="svg-small">10.1.0.0/16 · prod</text>
+      <text x="135" y="100" text-anchor="middle" class="svg-small">🔁 « Utiliser la passerelle</text>
+      <text x="135" y="116" text-anchor="middle" class="svg-small">distante »</text>
+      <rect x="20" y="200" width="230" height="110" rx="14" class="svg-cloud" stroke-width="1.6"/>
+      <text x="135" y="232" text-anchor="middle" class="svg-title-c">Rayon B</text>
+      <text x="135" y="254" text-anchor="middle" class="svg-small">10.2.0.0/16 · dev</text>
+      <text x="135" y="280" text-anchor="middle" class="svg-small">🔁 « Utiliser la passerelle</text>
+      <text x="135" y="296" text-anchor="middle" class="svg-small">distante »</text>
+      <path d="M135 135 V195" stroke="var(--onprem)" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <text x="150" y="160" class="svg-small" fill="var(--onprem)">✘ pas de lien A↔B</text>
+      <text x="150" y="176" class="svg-small">(non transitif)</text>
+      <rect x="360" y="60" width="300" height="210" rx="16" class="svg-cloud" stroke-width="1.8"/>
+      <text x="510" y="92" text-anchor="middle" class="svg-title-c">Hub · 10.0.0.0/16</text>
+      <rect x="380" y="108" width="260" height="56" rx="10" class="svg-node" stroke-width="1.2"/>
+      <text x="510" y="132" text-anchor="middle" class="svg-text">🛃 Passerelle VPN</text>
+      <text x="510" y="152" text-anchor="middle" class="svg-small">« Autoriser le transit par passerelle »</text>
+      <rect x="380" y="176" width="260" height="76" rx="10" class="svg-node" stroke-width="1.2"/>
+      <text x="510" y="202" text-anchor="middle" class="svg-text">🔥 NVA / pare-feu</text>
+      <text x="510" y="222" text-anchor="middle" class="svg-small">10.0.1.4 · reçoit le trafic A→B</text>
+      <text x="510" y="240" text-anchor="middle" class="svg-small">grâce aux UDR</text>
+      <path d="M255 80 L355 120" class="svg-line-c" stroke-width="2.5" marker-start="url(#pe)" marker-end="url(#pe)"/>
+      <path d="M255 255 L355 220" class="svg-line-c" stroke-width="2.5" marker-start="url(#pe)" marker-end="url(#pe)"/>
+      <text x="300" y="88" text-anchor="middle" class="svg-small">peering</text>
+      <text x="300" y="264" text-anchor="middle" class="svg-small">peering</text>
+      <path d="M665 136 H775" class="svg-line-c" stroke-width="2" marker-end="url(#pe)"/>
+      <text x="720" y="124" text-anchor="middle" class="svg-small">VPN site à site</text>
+      <rect x="780" y="90" width="165" height="96" rx="14" class="svg-onprem" stroke-width="1.6"/>
+      <text x="862" y="128" text-anchor="middle" class="svg-title-o">Siège local</text>
+      <text x="862" y="150" text-anchor="middle" class="svg-small">192.168.0.0/16</text>
+      <text x="862" y="168" text-anchor="middle" class="svg-small">atteint par A et B</text>
+    </svg>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">A et B n'ont <b>pas</b> de passerelle à eux : ils passent par celle du hub. Pour que A parle à B, deux options : un <b>peering direct A↔B</b>, ou faire passer le trafic par la <b>NVA du hub</b> avec des <b>UDR</b> (chaînage de services).</p>
+
+  <!-- TYPES -->
+  <h2 id="types">2 · Régional ou global, avantages et limites</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🌍 Les deux types</h3>
+      <ul style="font-size:14px">
+        <li><b>Régional</b> : VNet dans la <b>même région</b></li>
+        <li><b>Global</b> : VNet dans des <b>régions différentes</b> (pas entre régions Azure Government)</li>
+        <li>Fonctionne entre <b>abonnements</b> et même entre <b>locataires</b> différents</li>
+        <li>Chaque VNet reste une <b>ressource séparée</b></li>
+      </ul>
+      <h3 style="margin-top:12px">✅ Avantages</h3>
+      <ul style="font-size:14px">
+        <li>Trafic <b>privé</b> sur le réseau de Microsoft : ni Internet, ni chiffrement, ni passerelle</li>
+        <li>Faible latence, grande bande passante</li>
+        <li><b>Aucune interruption</b> des ressources pendant la création</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⛔ Limites</h3>
+      <ul style="font-size:14px">
+        <li><b>Pas de chevauchement</b> d'adresses, sinon la création échoue</li>
+        <li><b>Changer l'espace d'adresses</b> : le module dit supprimer le peering, modifier, recréer. ➕ Aujourd'hui Azure permet de modifier puis <b>resynchroniser</b> le peering, mais retiens la réponse du module pour l'examen</li>
+        <li>Équilibreur de charge <b>De base</b> interne pas joignable en peering global : prendre <b>Standard</b></li>
+        <li>La <b>résolution DNS intégrée</b> d'Azure ne traverse pas le peering : utiliser une <b>zone DNS privée</b> liée aux deux VNet</li>
+        <li>Une seule <b>passerelle VPN</b> par VNet</li>
+        <li>➕ examen : le transfert de données en peering est <b>facturé au Go</b>, à l'entrée et à la sortie</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PARAMETRES -->
+  <h2 id="parametres">3 · Créer le peering : les 4 réglages</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Réglage (portail)</th><th class="c">Ce qu'il permet</th><th>Nom CLI</th></tr></thead>
+      <tbody>
+        <tr><td><b>Trafic vers le réseau virtuel distant</b></td><td>Laisser ce VNet communiquer avec l'autre (activé par défaut)</td><td><code>--allow-vnet-access</code></td></tr>
+        <tr><td><b>Trafic transféré depuis le réseau distant</b></td><td>Accepter du trafic qui ne vient pas directement de l'autre VNet (ex. relayé par une NVA)</td><td><code>--allow-forwarded-traffic</code></td></tr>
+        <tr><td><b>Passerelle de réseau virtuel ou Route Server</b> (côté hub)</td><td><b>Autoriser le transit par passerelle</b> : prêter sa passerelle VPN aux VNet appairés</td><td><code>--allow-gateway-transit</code></td></tr>
+        <tr><td><b>Passerelle distante ou Route Server distant</b> (côté rayon)</td><td><b>Utiliser la passerelle distante</b> du hub</td><td><code>--use-remote-gateways</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>🖱️ Dans le portail</h3>
+      <ol class="numl">
+        <li><span>Il faut le rôle <b>Contributeur de réseau</b> sur les deux VNet</span></li>
+        <li><span>VNet 1 › <b>Peerings</b> › <b>Ajouter</b></span></li>
+        <li><span>Nommer les <b>deux liens</b> (ex. app-vnet-to-hub et hub-to-app-vnet), choisir le VNet distant, cocher les réglages</span></li>
+        <li><span>Le portail crée les deux côtés d'un coup. Vérifier l'état : <b>Connecté</b> des deux côtés</span></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>🤝 Les états</h3>
+      <ul style="font-size:14px">
+        <li><b>Initié</b> : un seul côté a été créé (fréquent en CLI ou PowerShell, où l'on crée chaque côté séparément)</li>
+        <li><b>Connecté</b> : les deux côtés existent, le trafic passe</li>
+        <li>➕ <b>Déconnecté</b> : l'autre côté a été supprimé. Il faut supprimer et recréer</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Les <b>NSG</b> s'appliquent toujours : le peering ouvre la route, les NSG décident qui passe.</p>
+    </div>
+  </div>
+
+  <!-- TRANSIT -->
+  <h2 id="transit">4 · Transit par passerelle</h2>
+  <div class="opt3">
+    <div class="card"><span class="num">Côté hub</span><p>Contient la passerelle VPN (dans <code>GatewaySubnet</code>). Sur son peering : <b>Autoriser le transit par passerelle</b>.</p></div>
+    <div class="card"><span class="num">Côté rayon</span><p>Sur son peering : <b>Utiliser la passerelle distante</b>. ➕ Impossible si le rayon a <b>déjà sa propre passerelle</b>.</p></div>
+    <div class="card"><span class="num">Résultat</span><p>Les rayons atteignent le <b>siège</b> (VPN site à site), les clients <b>point à site</b> et d'autres VNet, avec <b>une seule passerelle</b> à payer. Marche en peering régional et global.</p></div>
+  </div>
+
+  <!-- CHAINAGE -->
+  <h2 id="chainage">5 · Étendre le peering : UDR et chaînage de services</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🧭 Les 4 mécanismes</h3>
+      <ul style="font-size:14px">
+        <li><b>Hub and spoke</b> : les rayons sont appairés au hub, qui héberge NVA et passerelle</li>
+        <li><b>UDR</b> (route définie par l'utilisateur) : le prochain saut peut être l'IP d'une VM du VNet appairé ou une passerelle VPN</li>
+        <li><b>Chaînage de services</b> : des UDR qui envoient le trafic vers une appliance ou une passerelle d'un VNet appairé</li>
+        <li><b>Azure Virtual Network Manager</b> : crée automatiquement les peerings en étoile ou en maillage, à grande échelle</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>➕ examen : faire passer A→B par la NVA</h3>
+      <ol class="numl">
+        <li><span>Peering A↔hub et B↔hub, avec <b>Trafic transféré</b> autorisé</span></li>
+        <li><span>Sur la <b>carte réseau</b> de la NVA : activer le <b>transfert IP</b></span></li>
+        <li><span>Table de routage sur le sous-réseau de A : destination <code>10.2.0.0/16</code>, prochain saut <b>Appliance virtuelle</b> <code>10.0.1.4</code></span></li>
+        <li><span>Même chose côté B vers <code>10.1.0.0/16</code></span></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- COMMANDES -->
+  <h2 id="commandes">6 · Les commandes</h2>
+<pre class="cmd"># Un côté du peering (à refaire dans l'autre sens)
+az network vnet peering create -g rg-labo -n app-to-hub \
+  --vnet-name app-vnet --remote-vnet hub-vnet \
+  --allow-vnet-access --allow-forwarded-traffic --use-remote-gateways
+
+az network vnet peering list -g rg-labo --vnet-name app-vnet -o table   # voir l'état
+
+# Route vers la NVA (chaînage de services)
+az network route-table create -g rg-labo -n rt-app
+az network route-table route create -g rg-labo --route-table-name rt-app -n vers-dev \
+  --address-prefix 10.2.0.0/16 --next-hop-type VirtualAppliance --next-hop-ip-address 10.0.1.4
+az network vnet subnet update -g rg-labo --vnet-name app-vnet -n frontend --route-table rt-app
+
+# Tester la connexion depuis une VM Windows (exercice)
+Test-NetConnection -ComputerName 10.2.0.4 -Port 3389</pre>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">PowerShell : <code>Add-AzVirtualNetworkPeering -Name app-to-hub -VirtualNetwork $app -RemoteVirtualNetworkId $hub.Id</code>, <code>Get-AzVirtualNetworkPeering</code>. Dans l'exercice, <b>Network Watcher › Résolution des problèmes de connexion</b> teste aussi le lien entre deux VM. 💸 Le peering est presque gratuit pour un labo, ce sont les <b>VM</b> qui coûtent : supprime le groupe de ressources après.</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« A est appairé à B, B à C : A peut joindre C. »</span><span class="right"><b>Non</b>, le peering est <b>non transitif</b>. Il faut A↔C, ou une NVA dans B avec des UDR.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai créé le peering depuis app-vnet, c'est bon, il est Initié. »</span><span class="right"><b>Pas encore.</b> Il doit être <b>Connecté des deux côtés</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Chaque rayon a besoin de sa passerelle VPN pour joindre le siège. »</span><span class="right"><b>Non</b> : <b>Autoriser le transit par passerelle</b> sur le hub + <b>Utiliser la passerelle distante</b> sur le rayon.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'appaire 10.0.0.0/16 avec 10.0.0.0/24. »</span><span class="right">Échec : les espaces <b>se chevauchent</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Après le peering, mes VM se trouvent par leur nom dans l'autre VNet. »</span><span class="right">La résolution DNS intégrée ne traverse pas le peering : <b>zone DNS privée</b> liée aux deux VNet.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Le peering global passe par Internet, il faut chiffrer. »</span><span class="right">Non, il reste sur le <b>réseau dorsal de Microsoft</b>, privé.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Les deux côtés du peering hub ↔ rayon</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_virtual_network_peering"</span> <span class="c-s">"hub_to_app"</span> {
+  name                      = <span class="c-s">"hub-to-app"</span>
+  resource_group_name       = azurerm_resource_group.labo.name
+  virtual_network_name      = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = azurerm_virtual_network.app.id
+  allow_forwarded_traffic   = <span class="c-k">true</span>
+  allow_gateway_transit     = <span class="c-k">true</span>    <span class="c-c"># le hub prête sa passerelle</span>
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_virtual_network_peering"</span> <span class="c-s">"app_to_hub"</span> {
+  name                      = <span class="c-s">"app-to-hub"</span>
+  resource_group_name       = azurerm_resource_group.labo.name
+  virtual_network_name      = azurerm_virtual_network.app.name
+  remote_virtual_network_id = azurerm_virtual_network.hub.id
+  allow_forwarded_traffic   = <span class="c-k">true</span>
+  use_remote_gateways       = <span class="c-k">true</span>    <span class="c-c"># le rayon utilise celle du hub</span>
+}
+
+<span class="c-c"># UDR vers la NVA du hub</span>
+<span class="c-k">resource</span> <span class="c-s">"azurerm_route_table"</span> <span class="c-s">"app"</span> {
+  name                = <span class="c-s">"rt-app"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  route {
+    name                   = <span class="c-s">"vers-dev"</span>
+    address_prefix         = <span class="c-s">"10.2.0.0/16"</span>
+    next_hop_type          = <span class="c-s">"VirtualAppliance"</span>
+    next_hop_in_ip_address = <span class="c-s">"10.0.1.4"</span>
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Appairage, peering</td><td>VNet peering</td><td>Lien privé entre deux VNet</td></tr>
+        <tr><td>Peering global</td><td>Global VNet peering</td><td>Peering entre deux régions</td></tr>
+        <tr><td>Non transitif</td><td>Non-transitive</td><td>Un lien A↔B ne se prolonge pas vers C</td></tr>
+        <tr><td>Transit par passerelle</td><td>Gateway transit</td><td>Partager la passerelle VPN du hub avec les rayons</td></tr>
+        <tr><td>Hub and spoke</td><td>Hub-spoke</td><td>Topologie en étoile : un VNet central et des VNet rayons</td></tr>
+        <tr><td>UDR</td><td>User-Defined Route</td><td>Route personnalisée dans une table de routage</td></tr>
+        <tr><td>Prochain saut</td><td>Next hop</td><td>Où envoyer le paquet ensuite (appliance, passerelle…)</td></tr>
+        <tr><td>NVA</td><td>Network Virtual Appliance</td><td>VM pare-feu ou routeur</td></tr>
+        <tr><td>Chaînage de services</td><td>Service chaining</td><td>Faire passer le trafic par une appliance d'un VNet appairé</td></tr>
+        <tr><td>VPN S2S / P2S</td><td>Site-to-Site / Point-to-Site</td><td>VPN entre deux réseaux / entre un poste et Azure</td></tr>
+        <tr><td>AVNM</td><td>Azure Virtual Network Manager</td><td>Gestion centralisée des topologies réseau</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="azure-dns.html"><span class="lbl">← Précédent</span><span class="ttl">Azure DNS</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer un peering de réseaux virtuels Azure », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"VNet1 est appairé à VNet2, et VNet2 à VNet3. VNet1 peut-il joindre VNet3 ?",o:["Oui, automatiquement","Non, le peering est non transitif","Oui, si les trois sont dans la même région"],a:1,e:"Il faut un peering VNet1↔VNet3, ou une NVA dans VNet2 avec des UDR."},
+  {q:"Tu as créé le peering depuis app-vnet en CLI. Son état est « Initié ». Que manque-t-il ?",o:["Rien","Créer le peering dans l'autre sens, depuis hub-vnet","Redémarrer les VM"],a:1,e:"Il faut les deux côtés pour être Connecté."},
+  {q:"Les rayons doivent utiliser la passerelle VPN du hub. Quel réglage sur le peering du rayon ?",o:["Autoriser le transit par passerelle","Utiliser la passerelle distante","Autoriser le trafic transféré"],a:1,e:"Hub : autoriser le transit. Rayon : utiliser la passerelle distante."},
+  {q:"Deux VNet dans Canada Central et East US. Quel peering ?",o:["Régional","Global","Impossible"],a:1,e:"Régions différentes = peering global."},
+  {q:"Que faut-il pour que les VM se résolvent par leur nom entre deux VNet appairés ?",o:["Rien, c'est automatique","Une zone DNS privée liée aux deux VNet","Un enregistrement MX"],a:1,e:"La résolution intégrée ne traverse pas le peering."},
+  {q:"Le trafic d'un peering global passe par…",o:["Internet, chiffré en IPsec","Le réseau dorsal privé de Microsoft","Une passerelle VPN obligatoire"],a:1,e:"Toujours sur le réseau de Microsoft, ni Internet ni passerelle."},
+  {q:"Pour faire passer le trafic A→B par une NVA du hub, que configures-tu sur le sous-réseau de A ?",o:["Un NSG","Une table de routage (UDR) avec prochain saut Appliance virtuelle","Une zone DNS privée"],a:1,e:"UDR + transfert IP sur la NVA + trafic transféré autorisé."},
+  {q:"Quel rôle minimum pour créer un peering ?",o:["Lecteur","Contributeur de réseau","Administrateur général Entra"],a:1,e:"Network Contributor (ou rôle personnalisé avec les actions de peering)."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  item.o.forEach(function(t,j){
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[item.a].classList.add('good');
+      if(j===item.a){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

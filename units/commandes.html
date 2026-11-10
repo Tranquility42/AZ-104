@@ -31,7 +31,7 @@
 .t-ps{background:var(--tf-soft);color:var(--tf)}
 .t-shell{background:var(--ok-soft);color:var(--ok)}
 .t-arm{background:var(--onprem-soft);color:var(--onprem)}
-.cmd .eq code{font-size:12.5px}
+.cmd .eq{min-width:0;max-width:100%}.cmd .eq code{font-size:12.5px;word-break:break-word;overflow-wrap:anywhere}
 .empty{text-align:center;color:var(--muted);padding:30px 0}
 mark{background:#ffe58a;color:inherit;border-radius:3px;padding:0 1px}
 </style>
@@ -114,6 +114,11 @@ var C=[
  {c:'az network vnet subnet create -g rg-labo --vnet-name app-vnet -n backend --address-prefixes 10.1.1.0/24',t:'cli',th:'Réseau',d:"Ajouter un sous-réseau à un VNet existant.",eq:'Add-AzVirtualNetworkSubnetConfig puis Set-AzVirtualNetwork',p:'reseaux-virtuels'},
  {c:'az network public-ip create -g rg-labo -n pip-web --sku Standard --allocation-method Static',t:'cli',th:'Réseau',d:"Créer une IP publique Standard (toujours statique).",eq:'New-AzPublicIpAddress -Sku Standard -AllocationMethod Static',p:'reseaux-virtuels'},
 
+ {c:'az network vnet peering create -g rg-labo -n app-to-hub --vnet-name app-vnet --remote-vnet hub-vnet --allow-vnet-access --allow-forwarded-traffic',t:'cli',th:'Réseau',d:"Créer UN côté d'un peering. À refaire dans l'autre sens pour passer de « Initié » à « Connecté ».",eq:'Add-AzVirtualNetworkPeering -Name app-to-hub -VirtualNetwork $app -RemoteVirtualNetworkId $hub.Id',p:'peering'},
+ {c:'az network vnet peering list -g rg-labo --vnet-name app-vnet -o table',t:'cli',th:'Réseau',d:"Voir les peerings d'un VNet et leur état.",eq:'Get-AzVirtualNetworkPeering -VirtualNetworkName app-vnet -ResourceGroupName rg-labo',p:'peering'},
+ {c:'az network route-table route create -g rg-labo --route-table-name rt-app -n vers-dev --address-prefix 10.2.0.0/16 --next-hop-type VirtualAppliance --next-hop-ip-address 10.0.1.4',t:'cli',th:'Réseau',d:"Ajouter une route (UDR) qui envoie le trafic vers une appliance (NVA).",eq:'Add-AzRouteConfig … -NextHopType VirtualAppliance',p:'peering'},
+ {c:'az network vnet subnet update -g rg-labo --vnet-name app-vnet -n frontend --route-table rt-app',t:'cli',th:'Réseau',d:"Associer une table de routage à un sous-réseau.",eq:'Set-AzVirtualNetworkSubnetConfig -RouteTable $rt',p:'peering'},
+ {c:'Test-NetConnection -ComputerName 10.2.0.4 -Port 3389',t:'ps',th:'Réseau',d:"Tester si un port répond sur une autre machine (ici RDP vers une VM d'un VNet appairé).",eq:'nc -zv 10.2.0.4 3389',p:'peering'},
  {c:'nslookup -type=SOA wideworldimports.com',t:'shell',th:'DNS',d:"Vérifier que la délégation vers Azure DNS fonctionne.",eq:'Resolve-DnsName -Type SOA wideworldimports.com',p:'azure-dns'},
  {c:'nslookup www.wideworldimports.com ns1-04.azure-dns.com',t:'shell',th:'DNS',d:"Interroger directement un serveur de noms Azure (avant la délégation).",eq:'Resolve-DnsName www.wideworldimports.com -Server ns1-04.azure-dns.com',p:'azure-dns'},
  {c:'az network dns zone create -g rg-labo -n wideworldimports.com',t:'cli',th:'DNS',d:"Créer une zone DNS publique.",eq:'New-AzDnsZone -Name wideworldimports.com -ResourceGroupName rg-labo',p:'azure-dns'},
@@ -133,7 +138,7 @@ var C=[
  {c:'rm fichier.json',t:'shell',th:'Shell',d:"Supprimer un fichier.",eq:'Remove-Item fichier.json',p:'arm-templates'},
  {c:'cp a.json b.json · mv a.json b.json',t:'shell',th:'Shell',d:"Copier · déplacer ou renommer un fichier.",eq:'Copy-Item · Move-Item',p:'arm-templates'}
 ];
-var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS'};
+var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering'};
 
 var state={q:'',tool:'',th:''};
 try{var s=JSON.parse(sessionStorage.getItem('cmd-filtres')||'null');if(s)state=s;}catch(e){}

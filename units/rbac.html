@@ -208,6 +208,19 @@ pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12
     </table>
   </div>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Donner à chaque acteur d'Optifuel juste les droits dont il a besoin.</b></p>
+    <ul>
+      <li><b>GitHub Actions</b> se connecte à Azure par OIDC (aucun mot de passe stocké) avec le rôle <b>Contributeur</b> sur <code>rg-optifuel-dev</code> seulement, pas sur tout l'abonnement.</li>
+      <li>Le pipeline qui pousse les images reçoit <b>AcrPush</b> ; le cluster qui les tire reçoit <b>AcrPull</b>.</li>
+      <li>L'app lit ses secrets avec <b>Key Vault Secrets User</b> via une identité managée : aucun secret dans le code.</li>
+      <li>Toi : Propriétaire ; un développeur invité : Lecteur.</li>
+    </ul>
+    <p class="why">💡 Ça, c'est exactement le genre de détail qu'un recruteur bancaire regarde dans un portfolio.</p>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Alain est Contributeur sur l'abonnement, il peut donc donner l'accès à son collègue. »</span><span class="right"><b>Non.</b> Contributeur ne peut pas attribuer de rôles. Il faut <b>Propriétaire</b> ou <b>Admin de l'accès utilisateur</b>.</span></div>
@@ -309,5 +322,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

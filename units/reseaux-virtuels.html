@@ -249,6 +249,17 @@ az network public-ip create -g rg-labo-reseau \
     </div>
   </div>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Le réseau privé où vivraient les morceaux d'Optifuel.</b></p>
+    <ul>
+      <li>Un VNet <code>vnet-optifuel</code> en <code>10.20.0.0/16</code> (choisis une plage qui ne chevauche pas tes labos en 10.0 / 10.1).</li>
+      <li>Sous-réseaux : <code>snet-aks</code> (/22, le cluster a besoin de beaucoup d'adresses), <code>snet-db</code> (/24, PostgreSQL), <code>snet-pe</code> (/24, points de terminaison privés pour le stockage des manifestes et Key Vault).</li>
+      <li>Une seule IP publique : celle de l'entrée (ingress) du site. La base de données n'en a <b>aucune</b>.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Un sous-réseau /24 me donne 256 adresses pour mes VM. »</span><span class="right"><b>251.</b> Azure en réserve 5 (les 4 premières et la dernière).</span></div>
@@ -381,5 +392,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

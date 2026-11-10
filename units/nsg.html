@@ -222,6 +222,18 @@ tr.def td{color:var(--muted)}
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">💸 VNet, NSG et ASG sont <b>gratuits</b>. Seules les VM coûtent : prends une petite taille (B1s) et supprime le groupe de ressources à la fin. Les zones DNS (optionnelles) coûtent quelques sous par mois.</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Les barrières de sécurité autour d'Optifuel.</b></p>
+    <ul>
+      <li>Sur l'entrée web : autoriser seulement <b>443</b> (HTTPS) depuis Internet, tout le reste est refusé par défaut.</li>
+      <li>Sur <code>snet-db</code> : autoriser le port <b>5432</b> (PostgreSQL) seulement depuis le sous-réseau du cluster. Personne d'autre ne parle à la base.</li>
+      <li>Pas de RDP/SSH ouvert sur Internet : si tu dois entrer dans une VM, utilise Bastion ou <code>az vm run-command</code> comme dans ton labo.</li>
+      <li>Un ASG <code>asg-web</code> évite de réécrire les règles quand tu ajoutes un serveur.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Priorité 4000 passe avant priorité 200, c'est le plus gros chiffre qui gagne. »</span><span class="right"><b>Inverse.</b> Le <b>plus petit</b> chiffre est lu en premier.</span></div>
@@ -342,5 +354,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

@@ -221,6 +221,17 @@
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">Si le système RH ne parle pas SCIM, on utilise le <b>provisionnement entrant piloté par API</b> (disponible depuis mars 2024) : un script lit les données RH et les pousse vers l'API de provisionnement d'Entra.</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Organiser les accès de l'équipe Optifuel avec des groupes plutôt que personne par personne.</b></p>
+    <ul>
+      <li>Groupes Entra ID : <code>grp-optifuel-admins</code>, <code>grp-optifuel-dev</code>, <code>grp-optifuel-lecture</code>. On donne les droits au groupe, jamais à la personne.</li>
+      <li>Le comptable de l'employeur qui doit voir les factures Azure : <b>utilisateur invité</b> (B2B) dans ton locataire, sans créer de compte.</li>
+      <li>Avec Terraform : le fournisseur <code>azuread</code> crée ces groupes dans le même dépôt.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Je crée un groupe Microsoft 365 avec appartenance <b>appareil dynamique</b>. »</span><span class="right"><b>Impossible.</b> Appareil dynamique = <b>groupe de sécurité seulement</b>.</span></div>
@@ -337,5 +348,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

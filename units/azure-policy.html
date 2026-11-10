@@ -246,6 +246,18 @@ pre.json{background:var(--surface);border:1px solid var(--line);border-radius:12
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">Bonne pratique : <b>policy as code</b>. Les définitions vivent dans Git, sont testées et déployées par pipeline (Azure DevOps ou GitHub Actions).</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Faire respecter les règles d'Optifuel automatiquement, comme un poste de pesée.</b></p>
+    <ul>
+      <li><b>Emplacements autorisés</b> = Canada seulement : les manifestes ACE/ASFC scannés restent au pays (argument conformité pour l'employeur).</li>
+      <li><b>Exiger l'étiquette</b> <code>env</code> et <code>owner</code> sur chaque ressource : tu sais qui paie quoi.</li>
+      <li>Refuser les tailles de VM trop chères dans le groupe dev : ton crédit ne part pas en fumée.</li>
+      <li>Tout ça regroupé dans une initiative « Optifuel-gouvernance », assignée au groupe d'administration.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« J'affecte une stratégie "régions autorisées" : les ressources hors région sont supprimées. »</span><span class="right"><b>Non.</b> Elles sont seulement <b>marquées non conformes</b>. Seules les <b>nouvelles</b> créations hors région sont bloquées.</span></div>
@@ -358,5 +370,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

@@ -228,6 +228,18 @@
     <button class="fc" type="button"><div class="in"><div class="f"><span class="q">Nomme les 4 autres services de la suite Active Directory.</span><span class="hint">↻ retourner</span></div><div class="b"><span class="a"><b>AD CS</b>, <b>AD LDS</b>, <b>AD FS</b>, <b>AD RMS</b></span></div></div></button>
   </div>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Qui se connecte à Optifuel, et avec quel annuaire ?</b></p>
+    <ul>
+      <li>Ton employeur a sûrement déjà <b>Entra ID</b> (Microsoft 365) : les répartiteurs et gestionnaires pourraient se connecter à Optifuel avec leur compte de travail (SSO, protocole OIDC).</li>
+      <li>Les chauffeurs gardent la connexion propre à l'app : pas besoin de les mettre dans l'annuaire de l'entreprise.</li>
+      <li>AD DS (contrôleurs de domaine, GPO) : rien à faire pour Optifuel, c'est une app web.</li>
+    </ul>
+    <p class="why">💡 Un départ d'employé désactivé dans Entra ID lui coupe aussi l'accès à Optifuel. C'est un argument de vente pour la licence.</p>
+  </div>
+
   <!-- TRAPS -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Entra ID, c'est AD DS hébergé dans le cloud. »</span><span class="right"><b>Faux.</b> Structure, protocoles et gestion sont différents. C'est un service d'identité, pas un contrôleur de domaine.</span></div>
@@ -376,5 +388,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

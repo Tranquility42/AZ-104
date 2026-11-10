@@ -180,6 +180,18 @@
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">Hiérarchie de base : un <b>compte Azure</b> peut avoir <b>plusieurs abonnements</b>, et chaque abonnement contient des groupes de ressources.</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Comment ranger les ressources d'Optifuel dans Azure.</b></p>
+    <ul>
+      <li>Région <b>Canada Central</b> (et Canada Est en secours) : proches des camions et des données canadiennes.</li>
+      <li>Un groupe de ressources par environnement : <code>rg-optifuel-dev</code> et <code>rg-optifuel-prod</code>. Supprimer le groupe dev efface tout le labo d'un coup.</li>
+      <li>Plus tard, deux abonnements (dev / prod) sous un groupe d'administration « Optifuel » pour séparer les factures et les règles.</li>
+      <li>Zones de disponibilité : utiles seulement pour la prod (base de données et cluster).</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets un groupe de ressources dans un autre groupe de ressources. »</span><span class="right"><b>Impossible.</b> Pas d'imbrication. Pour une hiérarchie, ce sont les <b>groupes d'administration</b> qui s'imbriquent.</span></div>
@@ -292,5 +304,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

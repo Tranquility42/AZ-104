@@ -184,6 +184,17 @@ ssh azureuser@&lt;ip-publique-vm-public&gt; 'traceroute private --type=icmp'
 az network nic show-effective-route-table -g rg-labo -n &lt;nom-carte&gt; -o table   # ➕ routes effectives</pre>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">💸 3 VM Ubuntu : supprime le groupe de ressources dès la fin du test. 🔍 Pour vérifier quelle route s'applique : <b>carte réseau › Routes effectives</b> dans le portail, ou <b>Network Watcher › Prochain tronçon</b>.</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Honnêtement : pas nécessaire pour Optifuel au début.</b></p>
+    <ul>
+      <li>Les routes système suffisent pour un seul VNet : rien à configurer.</li>
+      <li>Une route définie par l'utilisateur (<code>0.0.0.0/0</code> → pare-feu) devient utile si l'employeur exige que toute sortie Internet passe par un pare-feu inspecté.</li>
+      <li>Azure Firewall coûte environ 1,25 $ US de l’heure : à tester une heure puis <code>destroy</code>, pas à laisser tourner sur ton crédit.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai mis la route vers la NVA, mais le trafic n'arrive pas : la route est mauvaise. »</span><span class="right">Vérifie le <b>transfert IP</b> sur la carte réseau de la NVA (et dans son OS).</span></div>
@@ -301,5 +312,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

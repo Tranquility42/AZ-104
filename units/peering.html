@@ -219,6 +219,17 @@ az network vnet subnet update -g rg-labo --vnet-name app-vnet -n frontend --rout
 Test-NetConnection -ComputerName 10.2.0.4 -Port 3389</pre>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">PowerShell : <code>Add-AzVirtualNetworkPeering -Name app-to-hub -VirtualNetwork $app -RemoteVirtualNetworkId $hub.Id</code>, <code>Get-AzVirtualNetworkPeering</code>. Dans l'exercice, <b>Network Watcher › Résolution des problèmes de connexion</b> teste aussi le lien entre deux VM. 💸 Le peering est presque gratuit pour un labo, ce sont les <b>VM</b> qui coûtent : supprime le groupe de ressources après.</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Utile seulement si Optifuel grossit.</b></p>
+    <ul>
+      <li>Aujourd'hui, un seul VNet suffit : pas de peering nécessaire.</li>
+      <li>Plus tard, modèle <b>hub-spoke</b> : un hub avec les services partagés (pare-feu, VPN vers le bureau de l'employeur) et un spoke par environnement (dev, prod), reliés par peering.</li>
+      <li>Si l'employeur veut se brancher depuis son bureau : passerelle VPN dans le hub + « transit par passerelle » pour que les spokes en profitent.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« A est appairé à B, B à C : A peut joindre C. »</span><span class="right"><b>Non</b>, le peering est <b>non transitif</b>. Il faut A↔C, ou une NVA dans B avec des UDR.</span></div>
@@ -334,5 +345,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

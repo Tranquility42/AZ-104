@@ -245,6 +245,18 @@ New-AzResourceGroupDeployment `
     <p style="margin:8px 0 0;font-size:14px">💡 Dans VS Code, <b>Alt+Maj+F</b> formate le JSON. Les modèles ARM acceptent les commentaires <code>//</code> et <code>/* */</code>.</p>
   </div>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Décrire toute l'infra d'Optifuel dans des fichiers plutôt qu'à la main dans le portail.</b></p>
+    <ul>
+      <li>Même idée qu'un modèle ARM, mais en <b>Terraform</b> (ce que demandent les offres) dans le dépôt <code>optifuel-platform</code>.</li>
+      <li>Un seul fichier de variables par environnement (<code>dev</code>, <code>prod</code>) : tu recrées tout avec <code>apply</code> et tu effaces avec <code>destroy</code>, parfait pour ton crédit limité.</li>
+      <li>Si un jour tu dois lire un export du portail, c'est du JSON ARM : savoir le lire suffit.</li>
+    </ul>
+    <p class="why">💡 C'est la base du portfolio : un recruteur voit le code au lieu de captures d'écran.</p>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong"><code>az group deployment create --resource-group …</code></span><span class="right"><b>Ancienne commande, déconseillée.</b> La bonne est <code>az deployment <b>group</b> create</code> : d'abord « deployment », puis l'étendue.</span></div>
@@ -365,5 +377,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

@@ -216,6 +216,17 @@ pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12p
   </div>
   <p style="font-size:14px;color:var(--muted);margin-top:8px">PowerShell : <code>New-AzDnsZone</code>, <code>New-AzDnsRecordSet</code>, <code>New-AzPrivateDnsZone</code>, <code>New-AzPrivateDnsVirtualNetworkLink</code>. 💸 Une zone coûte environ 0,50 $US par mois : supprime le groupe de ressources après le labo (et l'équilibreur de charge et les VM de l'exercice d'alias).</p>
 
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Faire pointer optifuel.cloud vers Azure… le jour où tu migres pour vrai.</b></p>
+    <ul>
+      <li>Zone publique <code>optifuel.cloud</code> dans Azure DNS, avec un <b>enregistrement alias</b> vers l'IP publique de l'entrée : si l'IP change, le DNS suit tout seul.</li>
+      <li>Zone <b>privée</b> pour que le cluster trouve PostgreSQL par son nom (<code>privatelink.postgres.database.azure.com</code>).</li>
+      <li>⚠️ Pour les labos, n'utilise pas le vrai domaine : changer ses serveurs de noms chez le registraire couperait le site actuel. Un sous-domaine délégué (<code>lab.optifuel.cloud</code>) est la voie sûre.</li>
+    </ul>
+  </div>
+
   <!-- PIEGES -->
   <h2>Pièges d'examen</h2>
   <div class="trap"><span class="x">🪤</span><span class="wrong">« J'achète mon nom de domaine dans Azure DNS. »</span><span class="right"><b>Non.</b> Azure DNS héberge la zone. L'achat se fait chez un <b>registraire</b>.</span></div>
@@ -341,5 +352,6 @@ Q.forEach(function(item,i){
 });
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../fold.js"></script>
 </body>
 </html>

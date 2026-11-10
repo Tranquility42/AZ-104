@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Mes commandes Azure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.search{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 6px;margin-top:8px}
+.search input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:12px 14px 12px 40px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface) no-repeat 12px center;color:var(--text)}
+.search input:focus{outline:none;border-color:var(--cloud)}
+.search .ico{position:absolute;left:14px;top:24px;font-size:16px;pointer-events:none}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.f{all:unset;cursor:pointer;font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.f[aria-pressed="true"]{background:var(--cloud);border-color:var(--cloud);color:#fff}
+.f:focus-visible{outline:2px solid var(--cloud);outline-offset:2px}
+.count{font-size:13px;color:var(--muted);margin:8px 0 0}
+.list{display:grid;gap:10px;margin-top:10px}
+.cmd{padding:14px 16px}
+.cmd .top{display:flex;gap:8px;align-items:flex-start}
+.cmd pre{flex:1;min-width:0;margin:0;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.copy{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--cloud);white-space:nowrap}
+.copy:focus-visible{outline:2px solid var(--cloud)}
+.cmd .d{font-size:14.5px;margin:8px 0 0}
+.cmd .meta2{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.tool{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px}
+.t-cli{background:var(--cloud-soft);color:var(--cloud)}
+.t-ps{background:var(--tf-soft);color:var(--tf)}
+.t-shell{background:var(--ok-soft);color:var(--ok)}
+.t-arm{background:var(--onprem-soft);color:var(--onprem)}
+.cmd .eq code{font-size:12.5px}
+.empty{text-align:center;color:var(--muted);padding:30px 0}
+mark{background:#ffe58a;color:inherit;border-radius:3px;padding:0 1px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span class="here">Mes commandes</span></nav>
+  <h1>Mes commandes Azure</h1>
+  <p class="lede">Toutes les commandes croisées pendant le parcours, avec leur équivalent CLI ↔ PowerShell. Tape un mot (ex. « groupe », « dns », « rôle ») ou filtre par outil.</p>
+
+  <div class="note" style="margin-top:14px"><b>Rappels :</b> <b>Azure CLI</b> (<code>az …</code>) = tout en minuscules, sensible à la casse. <b>PowerShell</b> = <code>Verbe-Nom</code> (Get, New, Remove, Set…), insensible à la casse, et le tube <code>|</code> passe des <b>objets</b>, pas du texte. Dans Cloud Shell, tu changes avec <code>pwsh</code> ou <code>bash</code>.</div>
+
+  <div class="search" role="search">
+    <span class="ico" aria-hidden="true">🔎</span>
+    <input id="q" type="search" placeholder="Chercher une commande ou une action…" autocomplete="off" aria-label="Chercher une commande">
+  </div>
+  <div>
+    <div class="filters" id="tools" aria-label="Filtrer par outil"></div>
+    <div class="filters" id="themes" aria-label="Filtrer par thème"></div>
+    <p class="count" id="count" aria-live="polite"></p>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <footer>Liste tenue à jour au fil des modules. Les exemples utilisent rg-labo et canadacentral.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+
+var TOOLS={cli:'Azure CLI',ps:'PowerShell',shell:'Shell / Linux',arm:'Fonction ARM'};
+// c: commande · t: outil · th: thème · d: ce que ça fait · eq: équivalent · p: page où on l'a vue
+var C=[
+ {c:'az login',t:'cli',th:'Compte',d:"Se connecter à Azure. Inutile dans Cloud Shell, tu y es déjà connecté.",eq:'Connect-AzAccount',p:'arm-templates'},
+ {c:'Connect-AzAccount',t:'ps',th:'Compte',d:"Se connecter à Azure depuis PowerShell (ouvre le navigateur).",eq:'az login',p:'arm-templates'},
+ {c:'Connect-AzAccount -UseDeviceAuthentication',t:'ps',th:'Compte',d:"Se connecter avec un code à saisir sur microsoft.com/devicelogin, quand il n'y a pas de navigateur.",eq:'az login --use-device-code',p:'arm-templates'},
+ {c:'Get-AzContext',t:'ps',th:'Compte',d:"Voir avec quel compte, quel locataire et quel abonnement tu travailles en ce moment.",eq:'az account show',p:'arm-templates'},
+ {c:'az account show -o table',t:'cli',th:'Compte',d:"Voir l'abonnement actif.",eq:'Get-AzContext',p:'arm-templates'},
+ {c:'az account list -o table',t:'cli',th:'Compte',d:"Lister tes abonnements et leur état (Enabled, Disabled…).",eq:'Get-AzSubscription',p:'arm-templates'},
+ {c:'az account list-locations -o table',t:'cli',th:'Compte',d:"Lister toutes les régions Azure. « canada » est une géographie : on déploie dans canadacentral ou canadaeast.",eq:'Get-AzLocation',p:'architecture'},
+ {c:'Get-AzLocation | Where-Object Location -like "canada*" | Format-Table Location, DisplayName',t:'ps',th:'Compte',d:"Lister seulement les régions canadiennes, en tableau. Where-Object filtre, Format-Table met en forme.",eq:"az account list-locations --query \"[?contains(name,'canada')]\" -o table",p:'architecture'},
+ {c:'az configure --defaults location=canadacentral group=rg-labo',t:'cli',th:'Compte',d:"Définir une région et un groupe de ressources par défaut pour ne plus les retaper.",eq:'Set-AzDefault -ResourceGroupName rg-labo',p:'arm-templates'},
+
+ {c:'az group create -n rg-labo -l canadacentral',t:'cli',th:'Groupes de ressources',d:"Créer un groupe de ressources (la « remorque »).",eq:'New-AzResourceGroup -Name rg-labo -Location canadacentral',p:'architecture'},
+ {c:'New-AzResourceGroup -Name rg-labo -Location canadacentral',t:'ps',th:'Groupes de ressources',d:"Créer un groupe de ressources.",eq:'az group create -n rg-labo -l canadacentral',p:'architecture'},
+ {c:'az group delete -n rg-labo --yes --no-wait',t:'cli',th:'Groupes de ressources',d:"Supprimer le groupe et TOUT ce qu'il contient. À faire après chaque labo pour ne pas payer.",eq:'Remove-AzResourceGroup -Name rg-labo -Force',p:'architecture'},
+ {c:'Remove-AzResourceGroup -Name rg-labo -Force',t:'ps',th:'Groupes de ressources',d:"Supprimer le groupe et tout son contenu.",eq:'az group delete -n rg-labo --yes',p:'architecture'},
+
+ {c:'az deployment group create -g rg-labo --template-file azuredeploy.json',t:'cli',th:'Déploiement ARM',d:"Déployer un modèle ARM dans un groupe de ressources.",eq:'New-AzResourceGroupDeployment',p:'arm-templates'},
+ {c:'New-AzResourceGroupDeployment -Name dep1 -ResourceGroupName rg-labo -TemplateFile azuredeploy.json -storageName stlearn123',t:'ps',th:'Déploiement ARM',d:"Déployer un modèle ARM. Les paramètres du modèle deviennent des paramètres de la commande (-storageName).",eq:'az deployment group create … --parameters storageName=stlearn123',p:'arm-templates'},
+ {c:'az deployment group what-if -g rg-labo --template-file azuredeploy.json',t:'cli',th:'Déploiement ARM',d:"Aperçu de ce qui serait créé, modifié ou supprimé, sans rien toucher (≈ terraform plan).",eq:'New-AzResourceGroupDeployment … -WhatIf',p:'arm-templates'},
+ {c:'az deployment sub create -l canadacentral --template-file sub.json',t:'cli',th:'Déploiement ARM',d:"Déployer à la portée de l'abonnement, par exemple pour créer un groupe de ressources dans un modèle.",eq:'New-AzSubscriptionDeployment -Location canadacentral -TemplateFile sub.json',p:'arm-templates'},
+ {c:'az group deployment create',t:'cli',th:'Déploiement ARM',d:"⚠️ Ancienne syntaxe, obsolète. Piège d'examen : la bonne est az deployment group create.",eq:'—',p:'arm-templates'},
+ {c:"uniqueString(resourceGroup().id)",t:'arm',th:'Déploiement ARM',d:"Génère une chaîne de 13 caractères stable pour ce groupe : parfait pour un nom de stockage unique au monde.",eq:'Terraform : random_string',p:'arm-templates'},
+ {c:"concat('stlearn', uniqueString(resourceGroup().id))",t:'arm',th:'Déploiement ARM',d:"Colle des morceaux de texte. Ici : un nom de compte de stockage unique (évite StorageAccountAlreadyTaken).",eq:'Terraform : "${var.a}${var.b}"',p:'arm-templates'},
+ {c:"[parameters('storageName')]",t:'arm',th:'Déploiement ARM',d:"Lire la valeur d'un paramètre du modèle.",eq:'Terraform : var.storage_name',p:'arm-templates'},
+ {c:"[reference(parameters('storageName')).primaryEndpoints]",t:'arm',th:'Déploiement ARM',d:"Lire une propriété d'une ressource déployée (utile dans outputs).",eq:'Terraform : azurerm_storage_account.x.primary_blob_endpoint',p:'arm-templates'},
+
+ {c:'az policy state trigger-scan -g rg-labo',t:'cli',th:'Gouvernance',d:"Forcer un scan de conformité Azure Policy maintenant, au lieu d'attendre le cycle de 24 h.",eq:'Start-AzPolicyComplianceScan -ResourceGroupName rg-labo',p:'azure-policy'},
+ {c:'az role assignment list --assignee alain@contoso.com -o table',t:'cli',th:'Gouvernance',d:"Voir les rôles RBAC d'une personne.",eq:'Get-AzRoleAssignment -SignInName alain@contoso.com',p:'rbac'},
+ {c:'az role assignment create --assignee alain@contoso.com --role "Virtual Machine Contributor" --resource-group rg-labo',t:'cli',th:'Gouvernance',d:"Donner un rôle (qui + quoi + où).",eq:'New-AzRoleAssignment -SignInName alain@contoso.com -RoleDefinitionName "Virtual Machine Contributor" -ResourceGroupName rg-labo',p:'rbac'},
+ {c:'az role assignment delete --assignee alain@contoso.com --role "Virtual Machine Contributor" --resource-group rg-labo',t:'cli',th:'Gouvernance',d:"Retirer un rôle.",eq:'Remove-AzRoleAssignment …',p:'rbac'},
+ {c:'az role definition list --name "Contributor"',t:'cli',th:'Gouvernance',d:"Voir le contenu d'un rôle : Actions, NotActions, DataActions.",eq:'Get-AzRoleDefinition -Name "Contributor"',p:'rbac'},
+
+ {c:'az network vnet create -g rg-labo -n app-vnet --address-prefixes 10.1.0.0/16 --subnet-name frontend --subnet-prefixes 10.1.0.0/24',t:'cli',th:'Réseau',d:"Créer un VNet avec son premier sous-réseau.",eq:'New-AzVirtualNetwork',p:'reseaux-virtuels'},
+ {c:'az network vnet subnet create -g rg-labo --vnet-name app-vnet -n backend --address-prefixes 10.1.1.0/24',t:'cli',th:'Réseau',d:"Ajouter un sous-réseau à un VNet existant.",eq:'Add-AzVirtualNetworkSubnetConfig puis Set-AzVirtualNetwork',p:'reseaux-virtuels'},
+ {c:'az network public-ip create -g rg-labo -n pip-web --sku Standard --allocation-method Static',t:'cli',th:'Réseau',d:"Créer une IP publique Standard (toujours statique).",eq:'New-AzPublicIpAddress -Sku Standard -AllocationMethod Static',p:'reseaux-virtuels'},
+
+ {c:'nslookup -type=SOA wideworldimports.com',t:'shell',th:'DNS',d:"Vérifier que la délégation vers Azure DNS fonctionne.",eq:'Resolve-DnsName -Type SOA wideworldimports.com',p:'azure-dns'},
+ {c:'nslookup www.wideworldimports.com ns1-04.azure-dns.com',t:'shell',th:'DNS',d:"Interroger directement un serveur de noms Azure (avant la délégation).",eq:'Resolve-DnsName www.wideworldimports.com -Server ns1-04.azure-dns.com',p:'azure-dns'},
+ {c:'az network dns zone create -g rg-labo -n wideworldimports.com',t:'cli',th:'DNS',d:"Créer une zone DNS publique.",eq:'New-AzDnsZone -Name wideworldimports.com -ResourceGroupName rg-labo',p:'azure-dns'},
+ {c:'az network dns record-set a add-record -g rg-labo -z wideworldimports.com -n www -a 20.48.12.7',t:'cli',th:'DNS',d:"Ajouter un enregistrement A (nom → IP).",eq:'New-AzDnsRecordSet -RecordType A …',p:'azure-dns'},
+ {c:'az network private-dns zone create -g rg-labo -n private.contoso.com',t:'cli',th:'DNS',d:"Créer une zone DNS privée pour tes VNet.",eq:'New-AzPrivateDnsZone',p:'azure-dns'},
+ {c:'az network private-dns link vnet create -g rg-labo -z private.contoso.com -n lien-app -v app-vnet -e true',t:'cli',th:'DNS',d:"Lier un VNet à la zone privée ; -e true active l'inscription automatique des VM.",eq:'New-AzPrivateDnsVirtualNetworkLink -EnableRegistration',p:'azure-dns'},
+
+ {c:'sudo snap install powershell --classic',t:'shell',th:'Installation',d:"Installer PowerShell sur Ubuntu.",eq:'—',p:'arm-templates'},
+ {c:'Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force',t:'ps',th:'Installation',d:"Installer le module Azure PowerShell pour ton utilisateur, sans confirmation.",eq:'(CLI : installer azure-cli)',p:'arm-templates'},
+ {c:'pwsh',t:'shell',th:'Installation',d:"Lancer PowerShell (dans Cloud Shell ou sur Ubuntu). Taper bash pour revenir.",eq:'bash',p:'arm-templates'},
+ {c:'nano azuredeploy.json',t:'shell',th:'Shell',d:"Éditer un fichier dans le terminal. Ctrl+O enregistre, Ctrl+X quitte. (Dans Cloud Shell, code ouvre maintenant un tunnel VS Code.)",eq:'—',p:'arm-templates'},
+ {c:'ls',t:'shell',th:'Shell',d:"Lister les fichiers du dossier.",eq:'Get-ChildItem',p:'arm-templates'},
+ {c:'cat fichier.json',t:'shell',th:'Shell',d:"Afficher le contenu d'un fichier.",eq:'Get-Content fichier.json',p:'arm-templates'},
+ {c:'cd dossier',t:'shell',th:'Shell',d:"Changer de dossier.",eq:'Set-Location dossier',p:'arm-templates'},
+ {c:'pwd',t:'shell',th:'Shell',d:"Afficher le dossier courant.",eq:'Get-Location',p:'arm-templates'},
+ {c:'touch fichier.json',t:'shell',th:'Shell',d:"Créer un fichier vide.",eq:'New-Item fichier.json',p:'arm-templates'},
+ {c:'rm fichier.json',t:'shell',th:'Shell',d:"Supprimer un fichier.",eq:'Remove-Item fichier.json',p:'arm-templates'},
+ {c:'cp a.json b.json · mv a.json b.json',t:'shell',th:'Shell',d:"Copier · déplacer ou renommer un fichier.",eq:'Copy-Item · Move-Item',p:'arm-templates'}
+];
+var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS'};
+
+var state={q:'',tool:'',th:''};
+try{var s=JSON.parse(sessionStorage.getItem('cmd-filtres')||'null');if(s)state=s;}catch(e){}
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function hl(text,words){var h=esc(text);if(!words.length)return h;
+  words.forEach(function(w){if(w.length<2)return;var re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');h=h.replace(re,'<mark>$1</mark>');});return h;}
+
+function chips(el,items,key){
+  el.innerHTML='';
+  [['','Tous']].concat(items).forEach(function(it){
+    var b=document.createElement('button');b.type='button';b.className='f';b.textContent=it[1];
+    b.setAttribute('aria-pressed',state[key]===it[0]);
+    b.onclick=function(){state[key]=it[0];render();};
+    el.appendChild(b);
+  });
+}
+var themes=[];C.forEach(function(x){if(themes.indexOf(x.th)<0)themes.push(x.th);});
+
+var list=document.getElementById('list'),q=document.getElementById('q');
+function render(){
+  try{sessionStorage.setItem('cmd-filtres',JSON.stringify(state));}catch(e){}
+  chips(document.getElementById('tools'),Object.keys(TOOLS).map(function(k){return [k,TOOLS[k]];}),'tool');
+  chips(document.getElementById('themes'),themes.map(function(t){return [t,t];}),'th');
+  var words=norm(state.q).split(/\s+/).filter(Boolean);
+  var res=C.filter(function(x){
+    if(state.tool&&x.t!==state.tool)return false;
+    if(state.th&&x.th!==state.th)return false;
+    var hay=norm([x.c,x.d,x.eq,x.th,TOOLS[x.t]].join(' '));
+    return words.every(function(w){return hay.indexOf(w)>=0;});
+  });
+  document.getElementById('count').textContent=res.length+' commande'+(res.length>1?'s':'')+' sur '+C.length;
+  var raw=state.q.split(/\s+/).filter(Boolean);
+  list.innerHTML=res.length?'':'<div class="empty">Aucune commande trouvée. Essaie un autre mot.</div>';
+  res.forEach(function(x){
+    var d=document.createElement('div');d.className='card cmd';
+    d.innerHTML='<div class="top"><pre>'+hl(x.c,raw)+'</pre><button class="copy" type="button">Copier</button></div>'+
+      '<p class="d">'+hl(x.d,raw)+'</p>'+
+      '<div class="meta2"><span class="tool t-'+x.t+'">'+TOOLS[x.t]+'</span><span>'+esc(x.th)+'</span>'+
+      (x.eq&&x.eq!=='—'?'<span class="eq">↔ <code>'+hl(x.eq,raw)+'</code></span>':'')+
+      (x.p?'<a href="'+x.p+'.html">vue dans : '+PAGES[x.p]+'</a>':'')+'</div>';
+    var btn=d.querySelector('.copy');
+    btn.onclick=function(){
+      function ok(){btn.textContent='Copié ✓';setTimeout(function(){btn.textContent='Copier';},1500);}
+      try{navigator.clipboard.writeText(x.c).then(ok,function(){});}catch(e){}
+    };
+    list.appendChild(d);
+  });
+}
+q.value=state.q;
+q.addEventListener('input',function(){state.q=q.value;render();});
+document.addEventListener('keydown',function(e){if(e.key==='/'&&document.activeElement!==q){e.preventDefault();q.focus();}});
+render();
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

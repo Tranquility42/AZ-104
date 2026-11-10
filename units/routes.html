@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Routes et appliances réseau</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Réseaux</span><span class="sep">›</span><span class="here">Routes et NVA</span></nav>
+  <h1>Contrôler le trafic avec des routes</h1>
+  <p class="lede">Comment Azure décide où envoyer chaque paquet, et comment forcer le trafic à passer par une appliance de sécurité (NVA) avec des routes personnalisées. Les notions marquées <b>➕ examen</b> complètent les unités théoriques.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 8 min · module complet</span>
+    <span class="chip">🎯 Prochain saut et préfixe le plus long : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> Azure crée des <b>routes système</b> automatiques. Tu peux les remplacer par des <b>routes définies par l'utilisateur (UDR)</b> dans une <b>table de routage</b> associée à un <b>sous-réseau</b>. Azure choisit la route au <b>préfixe le plus long</b> (le plus précis). Pour une NVA : prochain saut <b>Appliance virtuelle</b> + <b>transfert IP</b> activé sur sa carte réseau <b>et</b> dans son système.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la répartition et la balance routière 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🗺️ Les routes</h3>
+      <ul>
+        <li><b>Routes système</b> = le <b>GPS par défaut</b> : il connaît les rues du terminal et la sortie vers l'autoroute</li>
+        <li><b>Table de routage</b> = la <b>feuille de route</b> affichée à la sortie d'une zone (sous-réseau)</li>
+        <li><b>UDR</b> = la consigne du répartiteur : « pour aller à l'entrepôt privé, <b>passe d'abord par la balance</b> »</li>
+        <li><b>Préfixe le plus long</b> = la consigne la plus <b>précise</b> gagne : « quai 12 » bat « Montréal »</li>
+        <li><b>Prochain saut « Aucun »</b> = <b>route barrée</b> : le camion est refusé</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>⚖️ La NVA</h3>
+      <ul>
+        <li><b>NVA</b> = la <b>balance routière / poste d'inspection</b> installé dans la DMZ</li>
+        <li><b>Transfert IP</b> = l'inspecteur a le droit de <b>laisser repartir</b> un camion qui ne lui était pas destiné. Sans ça, il le garde et la livraison n'arrive jamais</li>
+        <li>Il faut le permis <b>à deux endroits</b> : sur la carte réseau (Azure) <b>et</b> dans le système de la VM (Linux)</li>
+        <li><b>traceroute</b> = le <b>carnet de route</b> qui liste chaque arrêt du trajet</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <h2 id="exercice">1 · Le scénario de l'exercice</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 300" role="img" aria-label="VNet 10.0.0.0/16 avec trois sous-réseaux : public, dmz avec la NVA 10.0.2.4, et privé. La table publictable force le trafic public vers privé à passer par la NVA ; le retour est direct">
+      <defs>
+        <marker id="ro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker>
+        <marker id="ro2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--muted)"/></marker>
+      </defs>
+      <rect x="10" y="10" width="940" height="280" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">vnet · 10.0.0.0/16</text>
+      <rect x="30" y="70" width="250" height="150" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="155" y="98" text-anchor="middle" class="svg-text">publicsubnet</text>
+      <text x="155" y="116" text-anchor="middle" class="svg-small">10.0.0.0/24</text>
+      <text x="155" y="150" text-anchor="middle" class="svg-small">🖥️ public · 10.0.0.4</text>
+      <text x="155" y="182" text-anchor="middle" class="svg-small">📋 publictable :</text>
+      <text x="155" y="200" text-anchor="middle" class="svg-small">10.0.1.0/24 → 10.0.2.4</text>
+      <rect x="355" y="70" width="250" height="150" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="480" y="98" text-anchor="middle" class="svg-title-o">dmzsubnet</text>
+      <text x="480" y="116" text-anchor="middle" class="svg-small">10.0.2.0/24</text>
+      <text x="480" y="150" text-anchor="middle" class="svg-small">⚖️ nva · 10.0.2.4</text>
+      <text x="480" y="176" text-anchor="middle" class="svg-small">transfert IP ✔ carte réseau</text>
+      <text x="480" y="194" text-anchor="middle" class="svg-small">transfert IP ✔ Linux (sysctl)</text>
+      <rect x="680" y="70" width="250" height="150" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="805" y="98" text-anchor="middle" class="svg-text">privatesubnet</text>
+      <text x="805" y="116" text-anchor="middle" class="svg-small">10.0.1.0/24</text>
+      <text x="805" y="150" text-anchor="middle" class="svg-small">🗄️ private · 10.0.1.4</text>
+      <text x="805" y="182" text-anchor="middle" class="svg-small">pas de table perso</text>
+      <path d="M280 120 H350" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ro)"/>
+      <path d="M605 120 H675" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ro)"/>
+      <text x="315" y="110" text-anchor="middle" class="svg-small">①</text>
+      <text x="640" y="110" text-anchor="middle" class="svg-small">②</text>
+      <path d="M805 225 V255 H155 V225" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ro2)"/>
+      <text x="480" y="275" text-anchor="middle" class="svg-small">retour privé → public : direct (routes système, sans NVA)</text>
+    </svg>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Le <code>traceroute</code> de public vers private montre <b>deux sauts</b> : 10.0.2.4 (la NVA) puis 10.0.1.4. Dans l'autre sens, <b>un seul</b> : la route ne s'applique qu'au <b>trafic qui sort</b> du sous-réseau associé.</p>
+
+  <!-- SYSTEME -->
+  <h2 id="systeme">2 · ➕ examen : les routes système</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Préfixe</th><th>Prochain saut</th><th class="c">Effet</th></tr></thead>
+      <tbody>
+        <tr><td>Espace d'adresses du VNet</td><td>Réseau virtuel</td><td>Tous les sous-réseaux d'un VNet se parlent directement</td></tr>
+        <tr><td><code>0.0.0.0/0</code></td><td>Internet</td><td>Tout le reste sort vers Internet</td></tr>
+        <tr><td><code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>, <code>100.64.0.0/10</code></td><td>Aucun</td><td>Les plages privées hors de ton VNet sont <b>abandonnées</b></td></tr>
+        <tr><td>Ajoutées au besoin</td><td>Peering de réseaux virtuels · Passerelle de réseau virtuel · Point de terminaison de service</td><td>Créées quand tu fais un peering, une passerelle VPN ou un point de terminaison de service</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- UDR -->
+  <h2 id="udr">3 · Les routes personnalisées (UDR)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🎯 Types de prochain saut</h3>
+      <div class="tablewrap" style="margin:0">
+        <table>
+          <thead><tr><th>Type</th><th>Pour</th></tr></thead>
+          <tbody>
+            <tr><td><b>Appliance virtuelle</b></td><td>Envoyer vers une NVA : il faut donner son <b>IP</b></td></tr>
+            <tr><td><b>Passerelle de réseau virtuel</b></td><td>Envoyer vers la passerelle VPN</td></tr>
+            <tr><td><b>Réseau virtuel</b></td><td>Garder dans le VNet</td></tr>
+            <tr><td><b>Internet</b></td><td>Sortir vers Internet</td></tr>
+            <tr><td><b>Aucun</b></td><td><b>Bloquer</b> (abandonner le trafic)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📏 Règles</h3>
+      <ul style="font-size:14px">
+        <li>Une table de routage est associée à <b>0 ou plusieurs sous-réseaux</b>, et un sous-réseau a <b>au maximum une</b> table</li>
+        <li>La table doit être dans la <b>même région et le même abonnement</b> que le VNet</li>
+        <li>Elle agit sur le trafic qui <b>sort</b> du sous-réseau</li>
+        <li><b>Choix de la route</b> : le <b>préfixe le plus long</b> gagne (un /24 bat un /16)</li>
+        <li>À préfixe égal : <b>UDR</b> &gt; <b>BGP</b> &gt; <b>système</b></li>
+        <li><b>BGP</b> : routes apprises de ton réseau local via VPN ou ExpressRoute. L'option <b>Propager les routes de passerelle</b> de la table (<code>--disable-bgp-route-propagation false</code>) les accepte ou non</li>
+        <li><b>Tunneling forcé</b> : UDR <code>0.0.0.0/0</code> → NVA ou passerelle pour inspecter <b>toute</b> la sortie Internet</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- NVA -->
+  <h2 id="nva">4 · Les appliances virtuelles réseau (NVA)</h2>
+  <div class="opt3">
+    <div class="card"><span class="num">C'est quoi</span><p>Une <b>VM</b> qui fait pare-feu, filtrage, inspection de paquets, optimisation WAN ou routage. Souvent une image du Marketplace (Palo Alto, Fortinet, Check Point…), ici un simple Ubuntu.</p></div>
+    <div class="card"><span class="num">Où</span><p>Dans un sous-réseau <b>DMZ</b> (périmètre) entre la zone publique et la zone privée, ou dans le <b>hub</b> d'une topologie en étoile.</p></div>
+    <div class="card"><span class="num">Haute dispo</span><p>Une seule NVA = point de défaillance unique. En production : <b>deux NVA</b> ou plus derrière un <b>équilibreur de charge</b>. Alternative gérée : <b>Azure Firewall</b>.</p></div>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Le double transfert IP :</b> sur la <b>carte réseau</b> Azure (<code>az network nic update --ip-forwarding true</code>), sinon Azure jette les paquets qui ne sont pas destinés à la VM. <b>Et</b> dans le système (<code>sudo sysctl -w net.ipv4.ip_forward=1</code>), sinon Linux les jette. ➕ Cette commande sysctl ne survit pas à un redémarrage : en vrai, on l'écrit dans <code>/etc/sysctl.conf</code>.</div>
+
+  <!-- ETAPES -->
+  <h2 id="etapes">5 · Les étapes de l'exercice</h2>
+  <div class="card">
+    <ol class="numl">
+      <li><span>Créer la table <b>publictable</b> et la route <b>productionsubnet</b> : 10.0.1.0/24 → Appliance virtuelle 10.0.2.4</span></li>
+      <li><span>Créer le VNet et les 3 sous-réseaux (public, private, dmz)</span></li>
+      <li><span>Associer publictable à <b>publicsubnet</b></span></li>
+      <li><span>Créer la VM <b>nva</b> dans dmzsubnet (elle reçoit 10.0.2.4, la première adresse libre)</span></li>
+      <li><span>Activer le transfert IP sur sa carte réseau, puis dans Linux</span></li>
+      <li><span>Créer les VM <b>public</b> et <b>private</b> avec cloud-init (installe traceroute)</span></li>
+      <li><span>Tester avec <code>traceroute</code> dans les deux sens</span></li>
+    </ol>
+  </div>
+<pre class="cmd" style="margin-top:14px">az network route-table create -g rg-labo -n publictable --disable-bgp-route-propagation false
+
+az network route-table route create -g rg-labo --route-table-name publictable \
+  -n productionsubnet --address-prefix 10.0.1.0/24 \
+  --next-hop-type VirtualAppliance --next-hop-ip-address 10.0.2.4
+
+az network vnet subnet update -g rg-labo --vnet-name vnet -n publicsubnet --route-table publictable
+
+az network nic update -g rg-labo -n &lt;nom-carte-nva&gt; --ip-forwarding true
+ssh azureuser@&lt;ip-publique-nva&gt; 'sudo sysctl -w net.ipv4.ip_forward=1'
+
+ssh azureuser@&lt;ip-publique-vm-public&gt; 'traceroute private --type=icmp'
+az network nic show-effective-route-table -g rg-labo -n &lt;nom-carte&gt; -o table   # ➕ routes effectives</pre>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">💸 3 VM Ubuntu : supprime le groupe de ressources dès la fin du test. 🔍 Pour vérifier quelle route s'applique : <b>carte réseau › Routes effectives</b> dans le portail, ou <b>Network Watcher › Prochain tronçon</b>.</p>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai mis la route vers la NVA, mais le trafic n'arrive pas : la route est mauvaise. »</span><span class="right">Vérifie le <b>transfert IP</b> sur la carte réseau de la NVA (et dans son OS).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une route 10.0.0.0/16 → Internet et une 10.0.1.0/24 → NVA : le trafic vers 10.0.1.5 sort sur Internet. »</span><span class="right">Non, le <b>/24 est plus précis</b> : il va à la NVA.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'associe la table de routage au VNet. »</span><span class="right">On l'associe à des <b>sous-réseaux</b>, pas au VNet.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour bloquer le trafic vers un réseau, je mets le prochain saut Internet. »</span><span class="right">Prochain saut <b>Aucun</b> = abandon du trafic.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Ma route sur publicsubnet fait aussi passer le retour privé → public par la NVA. »</span><span class="right">Non, elle ne vise que le trafic qui <b>sort</b> de publicsubnet. Pour un trajet symétrique, il faut aussi une table sur privatesubnet.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Prochain saut Appliance virtuelle, sans adresse IP. »</span><span class="right">L'<b>IP de la NVA est obligatoire</b> pour ce type.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Table de routage + NVA avec transfert IP</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_route_table"</span> <span class="c-s">"public"</span> {
+  name                = <span class="c-s">"publictable"</span>
+  location            = <span class="c-s">"canadacentral"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+
+  route {
+    name                   = <span class="c-s">"productionsubnet"</span>
+    address_prefix         = <span class="c-s">"10.0.1.0/24"</span>
+    next_hop_type          = <span class="c-s">"VirtualAppliance"</span>
+    next_hop_in_ip_address = <span class="c-s">"10.0.2.4"</span>
+  }
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_subnet_route_table_association"</span> <span class="c-s">"public"</span> {
+  subnet_id      = azurerm_subnet.public.id
+  route_table_id = azurerm_route_table.public.id
+}
+
+<span class="c-k">resource</span> <span class="c-s">"azurerm_network_interface"</span> <span class="c-s">"nva"</span> {
+  name                  = <span class="c-s">"nic-nva"</span>
+  location              = <span class="c-s">"canadacentral"</span>
+  resource_group_name   = azurerm_resource_group.labo.name
+  ip_forwarding_enabled = <span class="c-k">true</span>   <span class="c-c"># transfert IP côté Azure</span>
+  ip_configuration {
+    name                          = <span class="c-s">"ipconfig1"</span>
+    subnet_id                     = azurerm_subnet.dmz.id
+    private_ip_address_allocation = <span class="c-s">"Static"</span>
+    private_ip_address            = <span class="c-s">"10.0.2.4"</span>
+  }
+}
+<span class="c-c"># Côté Linux : custom_data (cloud-init) avec net.ipv4.ip_forward=1</span></pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Route système</td><td>System route</td><td>Route créée automatiquement par Azure</td></tr>
+        <tr><td>UDR</td><td>User-Defined Route</td><td>Route personnalisée</td></tr>
+        <tr><td>Table de routage</td><td>Route table</td><td>Liste d'UDR associée à des sous-réseaux</td></tr>
+        <tr><td>Prochain saut</td><td>Next hop</td><td>Où envoyer le paquet ensuite</td></tr>
+        <tr><td>Préfixe le plus long</td><td>Longest prefix match</td><td>La route la plus précise gagne</td></tr>
+        <tr><td>BGP</td><td>Border Gateway Protocol</td><td>Protocole qui échange des routes avec ton réseau local</td></tr>
+        <tr><td>NVA</td><td>Network Virtual Appliance</td><td>VM pare-feu ou routeur</td></tr>
+        <tr><td>Transfert IP</td><td>IP forwarding</td><td>Permettre à une VM de relayer des paquets qui ne lui sont pas destinés</td></tr>
+        <tr><td>DMZ</td><td>Perimeter network</td><td>Zone tampon entre public et privé</td></tr>
+        <tr><td>Tunneling forcé</td><td>Forced tunneling</td><td>Envoyer toute la sortie Internet vers une NVA ou le réseau local</td></tr>
+        <tr><td>cloud-init</td><td>—</td><td>Script exécuté au premier démarrage d'une VM Linux</td></tr>
+        <tr><td>traceroute</td><td>—</td><td>Liste chaque saut entre deux machines</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="peering.html"><span class="lbl">← Précédent</span><span class="ttl">Peering</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Gérer et contrôler le flux de trafic dans votre déploiement Azure à l'aide de routes », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Deux routes : 10.0.0.0/16 → Réseau virtuel et 10.0.1.0/24 → Appliance virtuelle. Où va un paquet pour 10.0.1.8 ?",o:["Vers l'appliance virtuelle","Directement dans le VNet","Il est abandonné"],a:0,e:"Le préfixe le plus long (/24) gagne."},
+  {q:"Ta route vers la NVA est correcte mais rien ne passe. Le réglage le plus probablement oublié ?",o:["Le NSG du VNet","Le transfert IP sur la carte réseau de la NVA","Une zone DNS privée"],a:1,e:"Sans transfert IP, Azure jette les paquets non destinés à la VM."},
+  {q:"Quel prochain saut bloque le trafic ?",o:["Internet","Réseau virtuel","Aucun"],a:2,e:"Aucun = le trafic est abandonné."},
+  {q:"À quoi associe-t-on une table de routage ?",o:["À un ou plusieurs sous-réseaux","Au VNet entier","À la carte réseau de chaque VM"],a:0,e:"Une table par sous-réseau au maximum, réutilisable sur plusieurs."},
+  {q:"À préfixe égal, quelle route l'emporte ?",o:["Système","BGP","UDR"],a:2,e:"UDR > BGP > système."},
+  {q:"Tu veux inspecter TOUTE la sortie Internet par une NVA. Quelle route ?",o:["0.0.0.0/0 → Appliance virtuelle","10.0.0.0/8 → Internet","0.0.0.0/0 → Aucun"],a:0,e:"C'est le tunneling forcé."},
+  {q:"Dans l'exercice, combien de sauts montre traceroute de private vers public ?",o:["Deux (NVA puis public)","Un seul (direct)","Aucun, c'est bloqué"],a:1,e:"Seul publicsubnet a la table perso ; le retour utilise les routes système."},
+  {q:"Quel outil montre les routes réellement appliquées à une VM ?",o:["Journal d'activité","Routes effectives de la carte réseau","Azure Advisor"],a:1,e:"Ou Network Watcher › Prochain tronçon."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

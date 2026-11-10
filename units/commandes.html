@@ -118,6 +118,12 @@ var C=[
  {c:'az network vnet peering list -g rg-labo --vnet-name app-vnet -o table',t:'cli',th:'Réseau',d:"Voir les peerings d'un VNet et leur état.",eq:'Get-AzVirtualNetworkPeering -VirtualNetworkName app-vnet -ResourceGroupName rg-labo',p:'peering'},
  {c:'az network route-table route create -g rg-labo --route-table-name rt-app -n vers-dev --address-prefix 10.2.0.0/16 --next-hop-type VirtualAppliance --next-hop-ip-address 10.0.1.4',t:'cli',th:'Réseau',d:"Ajouter une route (UDR) qui envoie le trafic vers une appliance (NVA).",eq:'Add-AzRouteConfig … -NextHopType VirtualAppliance',p:'peering'},
  {c:'az network vnet subnet update -g rg-labo --vnet-name app-vnet -n frontend --route-table rt-app',t:'cli',th:'Réseau',d:"Associer une table de routage à un sous-réseau.",eq:'Set-AzVirtualNetworkSubnetConfig -RouteTable $rt',p:'peering'},
+ {c:'az network route-table create -g rg-labo -n publictable --disable-bgp-route-propagation false',t:'cli',th:'Réseau',d:"Créer une table de routage (en acceptant les routes BGP de la passerelle).",eq:'New-AzRouteTable -Name publictable -ResourceGroupName rg-labo -Location canadacentral',p:'routes'},
+ {c:'az network nic update -g rg-labo -n nic-nva --ip-forwarding true',t:'cli',th:'Réseau',d:"Activer le transfert IP sur la carte réseau d'une NVA (côté Azure).",eq:'$nic.EnableIPForwarding = $true; Set-AzNetworkInterface -NetworkInterface $nic',p:'routes'},
+ {c:'sudo sysctl -w net.ipv4.ip_forward=1',t:'shell',th:'Réseau',d:"Activer le transfert IP dans Linux (côté système de la NVA). Ne survit pas au redémarrage, sauf dans /etc/sysctl.conf.",eq:'—',p:'routes'},
+ {c:'traceroute private --type=icmp',t:'shell',th:'Réseau',d:"Lister chaque saut jusqu'à une machine : prouve que le trafic passe par la NVA.",eq:'tracert private (Windows)',p:'routes'},
+ {c:'az network nic show-effective-route-table -g rg-labo -n nic-public -o table',t:'cli',th:'Réseau',d:"Voir les routes réellement appliquées à une carte réseau (système + UDR + BGP).",eq:'Get-AzEffectiveRouteTable -NetworkInterfaceName nic-public -ResourceGroupName rg-labo',p:'routes'},
+ {c:'az vm create -g rg-labo -n nva --vnet-name vnet --subnet dmzsubnet --image Ubuntu2204 --admin-username azureuser --admin-password <motdepasse>',t:'cli',th:'Réseau',d:"Créer une VM Ubuntu dans un sous-réseau précis (ajoute --custom-data cloud-init.txt pour un script au démarrage).",eq:'New-AzVM',p:'routes'},
  {c:'Test-NetConnection -ComputerName 10.2.0.4 -Port 3389',t:'ps',th:'Réseau',d:"Tester si un port répond sur une autre machine (ici RDP vers une VM d'un VNet appairé).",eq:'nc -zv 10.2.0.4 3389',p:'peering'},
  {c:'nslookup -type=SOA wideworldimports.com',t:'shell',th:'DNS',d:"Vérifier que la délégation vers Azure DNS fonctionne.",eq:'Resolve-DnsName -Type SOA wideworldimports.com',p:'azure-dns'},
  {c:'nslookup www.wideworldimports.com ns1-04.azure-dns.com',t:'shell',th:'DNS',d:"Interroger directement un serveur de noms Azure (avant la délégation).",eq:'Resolve-DnsName www.wideworldimports.com -Server ns1-04.azure-dns.com',p:'azure-dns'},
@@ -138,7 +144,7 @@ var C=[
  {c:'rm fichier.json',t:'shell',th:'Shell',d:"Supprimer un fichier.",eq:'Remove-Item fichier.json',p:'arm-templates'},
  {c:'cp a.json b.json · mv a.json b.json',t:'shell',th:'Shell',d:"Copier · déplacer ou renommer un fichier.",eq:'Copy-Item · Move-Item',p:'arm-templates'}
 ];
-var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering'};
+var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering','routes':'Routes et NVA'};
 
 var state={q:'',tool:'',th:''};
 try{var s=JSON.parse(sessionStorage.getItem('cmd-filtres')||'null');if(s)state=s;}catch(e){}

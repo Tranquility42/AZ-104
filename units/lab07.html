@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Plan du labo 07</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Stockage</span><span class="sep">›</span><span class="here">Plan du labo 07</span></nav>
+  <h1>Plan du labo 07 · Gérer le stockage Azure</h1>
+  <p class="lede">Le résultat final à construire, avec tous les réglages, <b>sans les étapes</b>. Regarde le plan, construis tout toi-même (portail, CLI ou Terraform), puis vérifie avec les résultats attendus. Durée prévue : environ 50 minutes.</p>
+  <div class="meta">
+    <span class="chip">🧩 Mode « plan d'architecte »</span>
+    <span class="chip"><a href="https://microsoftlearning.github.io/AZ-104-MicrosoftAzureAdministrator/Instructions/Labs/LAB_07-Manage_Azure_Storage.html">Énoncé officiel</a> si tu bloques</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>Le scénario :</b> l'entreprise veut déplacer des fichiers rarement consultés vers un stockage moins cher et <b>bien protégé</b>. Tu construis un compte de stockage verrouillé : rien de public, un conteneur <b>immuable</b>, un accès ponctuel par <b>SAS</b>, un partage de fichiers, puis tu fermes l'accès à tout sauf un <b>VNet</b>.</div>
+  </div>
+
+  <h2>Le plan</h2>
+
+  <div class="card diagram">
+    <svg viewBox="0 0 960 720" role="img" aria-label="Plan du labo 07 : groupe az104-rg7 en East US contenant un compte de stockage RA-GRS avec un conteneur data privé et immuable 180 jours, un partage share1, une règle de cycle de vie Movetocool, et un VNet vnet1 avec un point de terminaison de service Microsoft.Storage. Ton PC accède d'abord par son IP, puis est retiré du pare-feu.">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--onprem)"/></marker>
+      </defs>
+
+      <!-- PC -->
+      <rect x="10" y="10" width="250" height="150" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="135" y="36" text-anchor="middle" class="svg-title-o">💻 Ton PC</text>
+      <text x="135" y="58" text-anchor="middle" class="svg-small">navigateur en fenêtre privée</text>
+      <text x="135" y="80" text-anchor="middle" class="svg-small">ton IPv4 publique</text>
+      <text x="135" y="102" text-anchor="middle" class="svg-small">ton compte : 2 rôles IAM</text>
+      <text x="135" y="120" text-anchor="middle" class="svg-small">· Contributeur données Blob</text>
+      <text x="135" y="138" text-anchor="middle" class="svg-small">· Contributeur privilégié données Fichier</text>
+
+      <!-- RG -->
+      <rect x="290" y="10" width="660" height="700" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="310" y="38" class="svg-title-c">az104-rg7 · East US</text>
+
+      <!-- Storage account -->
+      <rect x="310" y="55" width="620" height="200" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="330" y="82" class="svg-text">🗄️ Compte de stockage · nom unique 3-24 (minuscules + chiffres)</text>
+      <text x="330" y="106" class="svg-small">Standard · StorageV2 · type « Blob Storage / Data Lake »</text>
+      <text x="330" y="126" class="svg-small">Redondance : GRS + case « accès en lecture » = RA-GRS (East US → West US)</text>
+      <text x="330" y="146" class="svg-small">Onglets Avancé, Sécurité, Protection des données, Chiffrement : par défaut</text>
+      <text x="330" y="166" class="svg-small">Accès par clé du compte : Activé</text>
+      <text x="330" y="194" class="svg-text">🌐 Réseau</text>
+      <text x="330" y="214" class="svg-small">À la création : accès public Désactivé</text>
+      <text x="330" y="232" class="svg-small">Ensuite : « réseaux sélectionnés » + ton IP · À la fin : vnet1/default seulement, ton IP retirée</text>
+
+      <!-- Lifecycle -->
+      <rect x="310" y="270" width="620" height="60" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="330" y="296" class="svg-text">♻️ Cycle de vie · règle « Movetocool »</text>
+      <text x="330" y="316" class="svg-small">Blobs de base · modifiés il y a plus de 30 jours → déplacer vers Cool</text>
+
+      <!-- Container -->
+      <rect x="310" y="345" width="300" height="215" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="330" y="372" class="svg-text">📦 Conteneur « data »</text>
+      <text x="330" y="394" class="svg-small">Accès public : Privé</text>
+      <text x="330" y="414" class="svg-small">Immuabilité : rétention basée</text>
+      <text x="330" y="432" class="svg-small">sur le temps · 180 jours</text>
+      <text x="330" y="458" class="svg-text">📄 securitytest/&lt;fichier&gt;</text>
+      <text x="330" y="480" class="svg-small">Blob de blocs · bloc 4 Mio · Hot</text>
+      <text x="330" y="500" class="svg-small">Étendue de chiffrement : par défaut</text>
+      <text x="330" y="526" class="svg-text">🔑 SAS sur le fichier</text>
+      <text x="330" y="546" class="svg-small">Délégation utilisateur · Lecture · hier → demain</text>
+
+      <!-- Share -->
+      <rect x="630" y="345" width="300" height="215" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="650" y="372" class="svg-text">🗂️ Partage « share1 »</text>
+      <text x="650" y="394" class="svg-small">Niveau : optimisé pour les transactions</text>
+      <text x="650" y="414" class="svg-small">Sauvegarde : désactivée</text>
+      <text x="650" y="440" class="svg-small">Dans le navigateur de stockage :</text>
+      <text x="650" y="460" class="svg-small">un dossier + un fichier envoyé</text>
+      <text x="650" y="490" class="svg-small">Erreur d'autorisation ?</text>
+      <text x="650" y="510" class="svg-small">→ méthode « compte d'utilisateur</text>
+      <text x="650" y="528" class="svg-small">Microsoft Entra »</text>
+
+      <!-- VNet -->
+      <rect x="310" y="575" width="620" height="120" rx="12" class="svg-onprem" stroke-width="1.6"/>
+      <text x="330" y="602" class="svg-title-o">🔀 VNet « vnet1 » (réglages par défaut)</text>
+      <text x="330" y="626" class="svg-small">Espace 10.0.0.0/16 · sous-réseau « default » 10.0.0.0/24 (valeurs par défaut du portail)</text>
+      <text x="330" y="648" class="svg-small">Point de terminaison de service : Microsoft.Storage sur « default » · stratégies : 0</text>
+      <text x="330" y="672" class="svg-small">Ajouté au pare-feu du compte : vnet1 / default</text>
+
+      <!-- arrows -->
+      <path d="M260 60 H305" stroke="var(--onprem)" stroke-width="2.5" marker-end="url(#m2)"/>
+      <path d="M930 640 H943 V160 H936" fill="none" stroke="var(--cloud)" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#m1)"/>
+
+      <!-- tests -->
+      <rect x="10" y="190" width="250" height="300" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="135" y="216" text-anchor="middle" class="svg-text">🧪 Résultats attendus</text>
+      <text x="25" y="246" class="svg-small">URL du blob sans SAS</text>
+      <text x="25" y="264" class="svg-small">→ ✖ ResourceNotFound ou</text>
+      <text x="25" y="282" class="svg-small">PublicAccessNotPermitted</text>
+      <text x="25" y="312" class="svg-small">URL du blob avec SAS</text>
+      <text x="25" y="330" class="svg-small">→ ✔ le fichier s'affiche</text>
+      <text x="25" y="360" class="svg-small">Supprimer le fichier avant</text>
+      <text x="25" y="378" class="svg-small">180 jours → ✖ refusé (immuable)</text>
+      <text x="25" y="408" class="svg-small">Ton IP retirée du pare-feu</text>
+      <text x="25" y="426" class="svg-small">→ ✖ « non autorisé » dans le</text>
+      <text x="25" y="444" class="svg-small">navigateur de stockage</text>
+      <text x="25" y="462" class="svg-small">(quelques minutes de délai)</text>
+    </svg>
+  </div>
+
+  <h2>Fiche technique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Élément</th><th>Réglage</th></tr></thead>
+      <tbody>
+        <tr><td>Groupe de ressources</td><td><code>az104-rg7</code> · East US (tu peux prendre une autre région, ex. si East US manque de place)</td></tr>
+        <tr><td>Compte de stockage</td><td>Nom unique 3-24 · <b>Standard</b> · StorageV2 · <b>RA-GRS</b> · accès public <b>désactivé</b> à la création</td></tr>
+        <tr><td>Pare-feu du compte (phase 1)</td><td>Accès public : <b>activé depuis des réseaux sélectionnés</b> + <b>ton IPv4 client</b></td></tr>
+        <tr><td>Cycle de vie</td><td>Règle <code>Movetocool</code> : blobs de base modifiés il y a <b>plus de 30 jours</b> → <b>Cool</b></td></tr>
+        <tr><td>Conteneur</td><td><code>data</code> · <b>Privé</b> · stratégie d'<b>immuabilité</b> « rétention basée sur le temps » <b>180 jours</b></td></tr>
+        <tr><td>Accès par clé du compte</td><td><b>Activé</b> (Paramètres → Configuration)</td></tr>
+        <tr><td>IAM (ton utilisateur)</td><td><b>Contributeur aux données Blob du stockage</b> + <b>Contributeur privilégié aux données de fichier du stockage</b></td></tr>
+        <tr><td>Fichier envoyé</td><td>N'importe quel petit fichier, dans le dossier <code>securitytest</code> · blob de blocs · bloc 4 Mio · <b>Hot</b></td></tr>
+        <tr><td>SAS</td><td>Sur le fichier · <b>clé de délégation d'utilisateur</b> · <b>Lecture</b> · début <b>hier</b>, fin <b>demain</b> · IP : vide</td></tr>
+        <tr><td>Partage</td><td><code>share1</code> · <b>optimisé pour les transactions</b> · sauvegarde décochée · 1 dossier + 1 fichier</td></tr>
+        <tr><td>VNet</td><td><code>vnet1</code> dans az104-rg7, tout par défaut · point de terminaison de service <b>Microsoft.Storage</b> sur le sous-réseau <b>default</b></td></tr>
+        <tr><td>Pare-feu du compte (phase 2)</td><td>Ajouter <b>vnet1 / default</b> · <b>supprimer ton IP</b> · enregistrer</td></tr>
+        <tr><td>Nettoyage</td><td><code>az group delete -n az104-rg7 --yes --no-wait</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>À savoir avant de commencer</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>⚠️ Différences avec ton image</h3>
+      <ul style="font-size:14px">
+        <li>Ton image vient d'une <b>ancienne version</b> du labo : elle avait une VM <code>az104-07-vm0</code> (réseau 10.70.0.0/22). La version actuelle n'a <b>pas de VM</b> ni de modèle à déployer</li>
+        <li>Les noms ont changé : <code>az104-rg7</code> (un seul groupe), conteneur <code>data</code>, partage <code>share1</code>, VNet <code>vnet1</code></li>
+        <li>La phase « navigateur privé » (Task 4 de ton image) = les tests de l'URL avec et sans SAS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🧠 Les pièges du labo</h3>
+      <ul style="font-size:14px">
+        <li>Si ton IP n'est pas dans le pare-feu, le portail lui-même ne peut plus lire le conteneur</li>
+        <li>Si tu ne peux pas signer la SAS avec la clé du compte, c'est normal : utilise la <b>délégation d'utilisateur</b>. Il te faut le rôle Blob Data Contributor</li>
+        <li>L'immuabilité de 180 jours empêche de supprimer le fichier. Au nettoyage, si Azure refuse de supprimer le groupe, supprime d'abord la <b>stratégie d'immuabilité</b> (possible tant qu'elle n'est <b>pas verrouillée</b>), puis le groupe. Ne la <b>verrouille jamais</b> dans un labo</li>
+        <li>Les changements réseau prennent <b>quelques minutes</b></li>
+        <li>💸 Rien de cher ici (pas de VM) : quelques sous</li>
+      </ul>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:14px">Les notions derrière ce labo : <a href="comptes-stockage.html">comptes de stockage</a> · <a href="stockage-blob.html">Stockage Blob</a> · <a href="securite-stockage.html">sécurité</a> · <a href="azure-files.html">Azure Files</a>.</p>
+
+  <nav class="pager" aria-label="Navigation"><a class="prev" href="azure-files.html"><span class="lbl">← Précédent</span><span class="ttl">Azure Files</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Plan tiré du labo AZ-104 « LAB_07 · Manage Azure Storage » (Microsoft Learning, GitHub).</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

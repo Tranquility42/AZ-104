@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Container Instances</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">Container Instances</span></nav>
+  <h1>Configurer Azure Container Instances</h1>
+  <p class="lede">Conteneurs ou VM, Azure Container Instances, groupes de conteneurs, Azure Container Apps et le choix ACI / ACA / AKS. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 7 min · module complet</span>
+    <span class="chip">🎯 ACI vs Container Apps vs AKS : question fréquente</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> un <b>conteneur</b> partage le noyau de l'hôte : léger et rapide, mais moins isolé qu'une <b>VM</b>. <b>ACI</b> lance un conteneur en secondes, sans serveur (IP publique + DNS, Azure Files, Linux ou Windows). Un <b>groupe de conteneurs</b> partage IP, ports et volumes (≈ un pod). <b>Container Apps</b> = serverless qui grandit <b>jusqu'à zéro</b> ; <b>AKS</b> = Kubernetes complet.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : camion complet ou conteneur maritime 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🚚 VM vs conteneur</h3>
+      <ul>
+        <li><b>VM</b> = un <b>camion complet</b> avec son moteur (le noyau de l'OS) : lourd, long à démarrer, mais bien séparé des autres</li>
+        <li><b>Conteneur</b> = un <b>conteneur maritime</b> standard : il n'a pas de moteur, il partage celui du porteur ; on en charge beaucoup sur un même châssis</li>
+        <li><b>Image</b> = le <b>plan de chargement</b> : code, runtime, outils, bibliothèques, réglages</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🏗️ Les 3 façons de le transporter</h3>
+      <ul>
+        <li><b>ACI</b> = <b>un taxi-remorque à la course</b> : tu donnes le conteneur, il roule en quelques secondes, tu paies à la seconde</li>
+        <li><b>Container Apps</b> = un <b>transporteur géré</b> : il ajoute ou retire des remorques selon les commandes, jusqu'à <b>zéro</b></li>
+        <li><b>AKS</b> = <b>ta propre flotte</b> avec ton répartiteur (Kubernetes) : tout le contrôle, tout le travail</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- VS -->
+  <h2 id="vs">1 · Conteneurs ou machines virtuelles ?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Conteneurs</th><th>Machines virtuelles</th></tr></thead>
+      <tbody>
+        <tr><td><b>Isolement</b></td><td>Léger : frontière de sécurité <b>moins forte</b></td><td><b>Complet</b> : préféré quand la sécurité entre clients compte (ex. deux entreprises concurrentes)</td></tr>
+        <tr><td><b>OS</b></td><td>Seulement la partie <b>utilisateur</b> de l'OS ; partage le <b>noyau</b> de l'hôte ; peu de ressources</td><td>OS <b>complet</b> avec son noyau ; plus de CPU, mémoire, disque</td></tr>
+        <tr><td><b>Déploiement</b></td><td>Docker en ligne de commande ; plusieurs : un orchestrateur comme <b>AKS</b></td><td>Windows Admin Center, Hyper-V ; plusieurs : PowerShell, SCVMM</td></tr>
+        <tr><td><b>Stockage persistant</b></td><td><b>Azure Disks</b> (un nœud) ou <b>Azure Files</b> (partagé)</td><td>Disque <b>VHD</b> ou partage SMB</td></tr>
+        <tr><td><b>Tolérance aux pannes</b></td><td>Un nœud tombe → l'orchestrateur <b>recrée</b> vite les conteneurs ailleurs</td><td>La VM bascule sur un autre serveur et l'OS <b>redémarre</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Avantages des conteneurs : développement et partage rapides, tests simplifiés, déploiement plus rapide, <b>plus de charges par serveur</b>.</p>
+
+  <!-- ACI -->
+  <h2 id="aci">2 · Azure Container Instances (ACI)</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Fonction</th><th>Détail</th></tr></thead>
+      <tbody>
+        <tr><td><b>Démarrage rapide</b></td><td>En <b>secondes</b>, sans VM à gérer (serverless)</td></tr>
+        <tr><td><b>IP publique et DNS</b></td><td>Exposé directement sur Internet avec une IP et un <b>FQDN</b> : <code>&lt;étiquette&gt;.&lt;région&gt;.azurecontainer.io</code></td></tr>
+        <tr><td><b>Tailles sur mesure</b></td><td>De <b>0,1 à 4 vCPU</b> et de <b>0,1 à 16 Go</b> de mémoire par conteneur, fixés pour la vie du groupe</td></tr>
+        <tr><td><b>Stockage persistant</b></td><td>Montage direct d'un partage <b>Azure Files</b></td></tr>
+        <tr><td><b>Linux et Windows</b></td><td>Type d'OS choisi à la création du groupe</td></tr>
+        <tr><td><b>Groupes co-planifiés</b></td><td>Plusieurs conteneurs qui partagent l'hôte</td></tr>
+        <tr><td><b>Réseau virtuel</b></td><td>Groupes Linux dans un VNet : <b>pas d'IP publique</b>, accès privé seulement (VNet ou peering)</td></tr>
+        <tr><td>➕ <b>Stratégie de redémarrage</b></td><td><b>Always</b> (défaut, serveur web), <b>OnFailure</b> (relancer si erreur), <b>Never</b> (tâche qui s'exécute une fois)</td></tr>
+        <tr><td>➕ <b>Facturation</b></td><td>À la <b>seconde</b>, selon vCPU et mémoire demandés</td></tr>
+        <tr><td>➕ <b>Image</b></td><td>Docker Hub, <b>Azure Container Registry</b> ou autre registre (privé = identifiants à fournir)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- GROUPES -->
+  <h2 id="groupes">3 · Les groupes de conteneurs</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 260" role="img" aria-label="Un groupe de conteneurs partage une IP publique, une étiquette DNS et des volumes Azure Files; un conteneur web sur le port 80 et un conteneur sur le port 1433">
+      <rect x="10" y="10" width="940" height="240" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">Groupe de conteneurs (≈ un pod Kubernetes) · même hôte</text>
+      <text x="30" y="62" class="svg-small">1 IP publique · 1 étiquette DNS · même réseau local (localhost) · même cycle de vie</text>
+      <rect x="40" y="85" width="300" height="140" rx="12" class="svg-node" stroke-width="1.4"/>
+      <text x="190" y="115" text-anchor="middle" class="svg-text">📦 Conteneur web</text>
+      <text x="190" y="140" text-anchor="middle" class="svg-small">écoute le port 80 (exposé)</text>
+      <text x="190" y="165" text-anchor="middle" class="svg-small">monte le partage « contenu »</text>
+      <rect x="380" y="85" width="300" height="140" rx="12" class="svg-node" stroke-width="1.4"/>
+      <text x="530" y="115" text-anchor="middle" class="svg-text">📦 Conteneur base / sidecar</text>
+      <text x="530" y="140" text-anchor="middle" class="svg-small">écoute le port 1433</text>
+      <text x="530" y="165" text-anchor="middle" class="svg-small">monte le partage « donnees »</text>
+      <rect x="720" y="85" width="210" height="140" rx="12" class="svg-onprem" stroke-width="1.4"/>
+      <text x="825" y="115" text-anchor="middle" class="svg-title-o">🗂️ Azure Files</text>
+      <text x="825" y="140" text-anchor="middle" class="svg-small">2 partages</text>
+      <text x="825" y="165" text-anchor="middle" class="svg-small">= volumes persistants</text>
+    </svg>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>📐 Règles</h3>
+      <ul style="font-size:14px">
+        <li>Le groupe = la ressource de <b>plus haut niveau</b> d'ACI</li>
+        <li>Ressources du groupe = <b>la somme</b> des demandes de ses conteneurs (CPU, mémoire, GPU)</li>
+        <li>Partagent <b>IP</b>, <b>ports</b> et <b>étiquette DNS</b></li>
+        <li><b>Pas de mappage de ports</b> : deux conteneurs ne peuvent pas écouter le même port</li>
+        <li>Groupe supprimé = <b>IP et FQDN libérés</b> (pas garantis au retour)</li>
+        <li>➕ Plusieurs conteneurs dans un groupe : <b>Linux seulement</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🧾 Déployer un groupe multi-conteneurs</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Format</th><th>Quand</th></tr></thead>
+      <tbody>
+        <tr><td><b>Modèle ARM</b></td><td>Avec d'autres ressources Azure (ex. un partage Files)</td></tr>
+        <tr><td><b>Bicep</b></td><td>Recommandé par Microsoft, plus court que ARM</td></tr>
+        <tr><td><b>YAML</b></td><td>Seulement des conteneurs : <code>az container create --file groupe.yaml</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">Usages : <b>sidecar</b> qui tire le contenu, collecteur de <b>journaux</b>, conteneur de <b>surveillance</b>, front-end + back-end.</p>
+    </div>
+  </div>
+
+  <!-- CONTAINER APPS -->
+  <h2 id="aca">4 · Azure Container Apps et le choix ACI / ACA / AKS</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>ACI</th><th>Container Apps (ACA)</th><th>AKS</th></tr></thead>
+      <tbody>
+        <tr><td>C'est</td><td>Un conteneur ou groupe, à la demande</td><td>Plateforme <b>serverless</b> bâtie sur Kubernetes (avec <b>KEDA</b>, <b>Dapr</b>, Envoy)</td><td>Cluster <b>Kubernetes managé</b></td></tr>
+        <tr><td>Pour</td><td>Tâches <b>isolées et courtes</b>, scripts, tests</td><td><b>Microservices</b>, API, traitements d'événements, <b>jobs</b></td><td>Applis complexes et longues, contrôle total</td></tr>
+        <tr><td>Mise à l'échelle</td><td>Aucune (taille fixe)</td><td>Auto selon <b>HTTP</b>, événements (files d'attente), CPU/mémoire, tout scaler KEDA, <b>jusqu'à zéro</b></td><td>HPA (pods) + autoscaler de cluster (nœuds)</td></tr>
+        <tr><td>API Kubernetes</td><td>—</td><td><b>Pas d'accès direct</b></td><td><b>Accès complet</b></td></tr>
+        <tr><td>Gestion</td><td>Minimale</td><td>PaaS simple, découverte de services, <b>fractionnement du trafic</b></td><td>Demande une expertise Kubernetes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LAB -->
+  <h2 id="labo">5 · Le labo 09b en bref</h2>
+  <ol class="numl">
+    <li><span>Déployer une <b>instance de conteneur</b> à partir d'une <b>image Docker</b> (ex. <code>mcr.microsoft.com/azuredocs/aci-helloworld</code>), avec une étiquette DNS.</span></li>
+    <li><span><b>Tester</b> : ouvrir le FQDN dans le navigateur et lire les <b>journaux</b> du conteneur.</span></li>
+  </ol>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az container create -g rg-labo -n hello --image mcr.microsoft.com/azuredocs/aci-helloworld \
+  --os-type Linux --cpu 1 --memory 1.5 --ports 80 --dns-name-label hello-mah123 \
+  --restart-policy Always -l eastus
+az container show -g rg-labo -n hello --query "{fqdn:ipAddress.fqdn,etat:instanceView.state}" -o table
+az container logs -g rg-labo -n hello
+az container exec -g rg-labo -n hello --exec-command "/bin/sh"
+az container create -g rg-labo --file groupe.yaml        # groupe multi-conteneurs
+az containerapp up -n optiapp -g rg-labo --image monregistre.azurecr.io/optifuel:1.0 \
+  --ingress external --target-port 3000                  # Container Apps</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Optifuel est déjà en conteneurs, donc :</b></p>
+    <ul>
+      <li><b>ACI</b> avec <code>--restart-policy Never</code> : lancer une <b>tâche ponctuelle</b> (import de données, script de maintenance) sans cluster.</li>
+      <li><b>Container Apps</b> : l'image Next.js roule avec mise à l'échelle <b>jusqu'à zéro</b>, sans gérer de nœuds (option économique pour une démo).</li>
+      <li>Ta prod <b>k3s</b> ressemble à <b>AKS</b> : tu gardes le contrôle total, c'est aussi ce que vise la CKA.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Les conteneurs isolent aussi bien que les VM. »</span><span class="right">Isolement <b>léger</b> : pour une vraie frontière de sécurité entre clients, des <b>VM</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon ACI dans un réseau virtuel garde son IP publique. »</span><span class="right">Dans un VNet : <b>pas d'IP publique</b>, accès privé seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Deux conteneurs du groupe écoutent le port 80. »</span><span class="right">Ils partagent l'espace de ports : <b>pas de mappage</b>, ports différents obligatoires.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Groupe multi-conteneurs Windows. »</span><span class="right">➕ Les groupes à plusieurs conteneurs sont <b>Linux seulement</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mon script ACI recommence en boucle après avoir fini. »</span><span class="right">Stratégie par défaut <b>Always</b>. Pour une tâche unique : <b>Never</b> (ou OnFailure).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour une appli qui doit tomber à zéro la nuit, je prends ACI. »</span><span class="right">ACI ne se met pas à l'échelle. <b>Container Apps</b> descend <b>à zéro</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Avec Container Apps, je lance mes commandes kubectl. »</span><span class="right">Container Apps n'expose <b>pas</b> l'API Kubernetes. Pour ça : <b>AKS</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je supprime et recrée le groupe : il garde son IP. »</span><span class="right">Suppression = IP et FQDN <b>libérés</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Groupe de conteneurs ACI</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_container_group"</span> <span class="c-s">"hello"</span> {
+  name                = <span class="c-s">"hello"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>
+  os_type             = <span class="c-s">"Linux"</span>
+  ip_address_type     = <span class="c-s">"Public"</span>
+  dns_name_label      = <span class="c-s">"hello-mah123"</span>
+  restart_policy      = <span class="c-s">"Always"</span>     <span class="c-c"># OnFailure, Never</span>
+  container {
+    name   = <span class="c-s">"web"</span>
+    image  = <span class="c-s">"mcr.microsoft.com/azuredocs/aci-helloworld:latest"</span>
+    cpu    = 1
+    memory = 1.5
+    ports {
+      port     = 80
+      protocol = <span class="c-s">"TCP"</span>
+    }
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Conteneur</td><td>Container</td><td>Appli emballée avec tout ce qu'il lui faut, partage le noyau de l'hôte</td></tr>
+        <tr><td>Image</td><td>Container image</td><td>Le modèle d'un conteneur (code, runtime, bibliothèques, réglages)</td></tr>
+        <tr><td>Noyau</td><td>Kernel</td><td>Le cœur du système d'exploitation</td></tr>
+        <tr><td>ACI</td><td>Azure Container Instances</td><td>Lancer un conteneur sans serveur ni cluster</td></tr>
+        <tr><td>Groupe de conteneurs</td><td>Container group</td><td>Conteneurs sur le même hôte qui partagent IP et volumes</td></tr>
+        <tr><td>Sidecar</td><td>Sidecar</td><td>Conteneur d'aide à côté de l'appli principale</td></tr>
+        <tr><td>FQDN</td><td>Fully qualified domain name</td><td>Nom DNS complet</td></tr>
+        <tr><td>Stratégie de redémarrage</td><td>Restart policy</td><td>Always, OnFailure ou Never</td></tr>
+        <tr><td>ACR</td><td>Azure Container Registry</td><td>Registre privé d'images dans Azure</td></tr>
+        <tr><td>ACA</td><td>Azure Container Apps</td><td>Conteneurs serverless avec mise à l'échelle auto</td></tr>
+        <tr><td>AKS</td><td>Azure Kubernetes Service</td><td>Kubernetes managé par Azure</td></tr>
+        <tr><td>KEDA</td><td>Kubernetes Event-driven Autoscaling</td><td>Mise à l'échelle selon des événements</td></tr>
+        <tr><td>Dapr</td><td>Distributed Application Runtime</td><td>Briques prêtes pour microservices</td></tr>
+        <tr><td>Pod</td><td>Pod</td><td>Plus petite unité de Kubernetes, ≈ groupe de conteneurs</td></tr>
+        <tr><td>YAML</td><td>YAML</td><td>Format de fichier texte pour décrire une config</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="app-service.html"><span class="lbl">← Précédent</span><span class="ttl">App Service</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><span class="next ghost"></span></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer Azure Container Instances », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Deux entreprises concurrentes doivent partager un serveur avec une forte isolation. Quoi choisir ?",o:["Des conteneurs","Des machines virtuelles","Un groupe de conteneurs"],a:1,e:"Les VM isolent complètement."},
+  {q:"Quel stockage persistant ACI monte directement ?",o:["Azure Files","Un disque Ultra","Une file d'attente"],a:0,e:"Partage SMB monté comme volume."},
+  {q:"Ton groupe ACI est dans un réseau virtuel. Quelle IP a-t-il ?",o:["Publique et privée","Privée seulement","Aucune"],a:1,e:"Pas d'IP publique dans un VNet."},
+  {q:"Format conseillé pour déployer un groupe qui contient seulement des conteneurs ?",o:["YAML","ARM avec d'autres ressources","Script PowerShell"],a:0,e:"ARM/Bicep quand il y a d'autres ressources."},
+  {q:"Deux conteneurs d'un même groupe veulent le port 80. Que se passe-t-il ?",o:["ACI mappe le second sur 8080","Impossible : ils partagent l'espace de ports","Chacun a sa propre IP"],a:1,e:"Pas de mappage de ports."},
+  {q:"Une API doit se mettre à l'échelle sur le trafic HTTP et descendre à zéro, sans gérer Kubernetes. Quel service ?",o:["ACI","Azure Container Apps","AKS"],a:1,e:"Serverless, KEDA, scale to zero."},
+  {q:"Tu as besoin d'un accès complet à l'API Kubernetes. Quel service ?",o:["Container Apps","AKS","ACI"],a:1,e:"ACA cache l'API Kubernetes."},
+  {q:"Un conteneur doit faire un traitement puis s'arrêter définitivement. Quelle stratégie de redémarrage ?",o:["Always","Never","OnFailure en boucle"],a:1,e:"➕ Always est la valeur par défaut."},
+  {q:"Maximum de CPU par conteneur dans ACI selon le module ?",o:["1 vCPU","4 vCPU","64 vCPU"],a:1,e:"De 0,1 à 4 vCPU, 0,1 à 16 Go."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

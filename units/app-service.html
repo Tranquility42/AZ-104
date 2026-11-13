@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>App Service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">App Service</span></nav>
+  <h1>Configurer Azure App Service</h1>
+  <p class="lede">Créer une appli web, CI/CD, emplacements de déploiement et échanges, authentification intégrée, domaine personnalisé et TLS, sauvegarde et Application Insights. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 10 min · module complet</span>
+    <span class="chip">🎯 Ce qui est échangé ou non au swap : question fréquente</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> App Service héberge applis web, API et mobiles sans gérer d'OS. Les <b>emplacements</b> (Standard et +) permettent de <b>tester puis échanger</b> sans coupure ; le <b>domaine</b>, l'<b>échelle</b>, <b>Always On</b> et les <b>restrictions IP</b> restent sur place, les paramètres suivent sauf « <b>paramètre d'emplacement</b> ». Domaine : <b>CNAME</b> ou <b>A</b> + TXT. Sauvegarde : compte de stockage, <b>10 Go</b> max.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le quai de livraison 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🔁 Emplacements de déploiement</h3>
+      <ul>
+        <li><b>Production</b> = le <b>quai 1</b> où les clients viennent chercher leur marchandise</li>
+        <li><b>Staging</b> = le <b>quai 2</b> où on prépare et vérifie le nouveau chargement</li>
+        <li><b>Échange (swap)</b> = on <b>change les panneaux</b> des quais : le quai 2 devient le quai 1, sans arrêter le service</li>
+        <li>Problème ? On <b>rééchange</b> : l'ancien chargement attend encore au quai 2</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>🏷️ Ce qui reste collé au quai</h3>
+      <ul>
+        <li>Le <b>chargement</b> (le code, les paramètres d'appli) <b>change de quai</b></li>
+        <li>L'<b>enseigne</b> du quai (domaine perso), les <b>règles d'accès</b> (restrictions IP), le <b>nombre de caristes</b> (mise à l'échelle) <b>restent</b> au quai</li>
+        <li>Un paramètre coché « <b>paramètre d'emplacement</b> » = une étiquette <b>vissée au quai</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- APP SERVICE -->
+  <h2 id="app">1 · App Service et la création d'une appli</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>🌐 Ce qu'il héberge</h3>
+      <ul style="font-size:14px">
+        <li>Applis <b>web</b>, <b>API</b> et back-ends <b>mobiles</b>, sur <b>Windows ou Linux</b> (PaaS : pas d'OS à gérer)</li>
+        <li>ASP.NET/.NET, Java, Node.js, PHP, Python, ou un <b>conteneur Docker</b></li>
+        <li>Mise à l'échelle manuelle ou auto, SLA, conformité ISO/SOC/PCI</li>
+        <li>Connexion Entra ID ou Google, Facebook, X, Microsoft ; <b>restrictions IP</b> ; <b>identités managées</b> ; <b>CORS</b> intégré</li>
+        <li>Modèles Marketplace : WordPress, Drupal, Joomla</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🛠️ À la création</h3>
+      <ul style="font-size:14px">
+        <li><b>Nom</b> unique → <code>monappli.azurewebsites.net</code></li>
+        <li><b>Publier</b> : code ou conteneur Docker</li>
+        <li><b>Pile d'exécution</b> et version (+ commande de démarrage pour Linux)</li>
+        <li><b>OS</b>, <b>région</b>, <b>plan</b> App Service</li>
+      </ul>
+      <h3 style="margin-top:10px">⚙️ Après, dans Configuration</h3>
+      <ul style="font-size:14px">
+        <li><b>Always On</b> : garde l'appli chargée sans trafic (obligatoire pour les <b>WebJobs</b> continus ou CRON)</li>
+        <li><b>Affinité de session (ARR)</b> : un client reste sur la même instance</li>
+        <li><b>HTTPS uniquement</b> : redirige HTTP vers HTTPS</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CI/CD -->
+  <h2 id="cicd">2 · Intégration et déploiement continus</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Source (Centre de déploiement)</th><th>Type</th><th>À savoir</th></tr></thead>
+      <tbody>
+        <tr><td><b>GitHub</b></td><td>Continu</td><td>Fournisseur de build par défaut : <b>GitHub Actions</b> (sinon App Service Build Service)</td></tr>
+        <tr><td><b>Bitbucket</b></td><td>Continu</td><td>Comme GitHub</td></tr>
+        <tr><td><b>Azure Repos</b></td><td>Continu</td><td>Avec Azure DevOps : pipelines de build et de release</td></tr>
+        <tr><td><b>Git local</b></td><td>Continu</td><td>App Service donne une URL à ajouter comme dépôt</td></tr>
+        <tr><td><b>Git distant</b></td><td>Manuel</td><td>Un <code>git push</code> vers l'URL donnée déploie</td></tr>
+        <tr><td>➕ <b>FTP/S</b>, ZIP</td><td>Manuel</td><td>Envoyer les fichiers directement</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SLOTS -->
+  <h2 id="slots">3 · Les emplacements de déploiement</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 240" role="img" aria-label="Le slot staging est préchauffé puis échangé avec production; les paramètres d'emplacement et le domaine restent sur place">
+      <defs><marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="10" width="940" height="220" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">Appli « optiweb » · plan Standard ou plus</text>
+      <rect x="40" y="60" width="350" height="150" rx="12" class="svg-node" stroke-width="1.4"/>
+      <text x="215" y="88" text-anchor="middle" class="svg-text">🟢 Production</text>
+      <text x="215" y="110" text-anchor="middle" class="svg-small">optiweb.azurewebsites.net</text>
+      <text x="215" y="135" text-anchor="middle" class="svg-small">version 1.4</text>
+      <text x="215" y="170" text-anchor="middle" class="svg-small">reste : domaine perso, échelle, IP</text>
+      <rect x="570" y="60" width="350" height="150" rx="12" class="svg-onprem" stroke-width="1.4"/>
+      <text x="745" y="88" text-anchor="middle" class="svg-title-o">🟡 Staging</text>
+      <text x="745" y="110" text-anchor="middle" class="svg-small">optiweb-staging.azurewebsites.net</text>
+      <text x="745" y="135" text-anchor="middle" class="svg-small">version 1.5 (préchauffée)</text>
+      <text x="745" y="170" text-anchor="middle" class="svg-small">reste : sa propre BD si « paramètre d'emplacement »</text>
+      <path d="M560 115 H400" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#sa)"/>
+      <path d="M400 150 H560" stroke="var(--cloud)" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#sa)"/>
+      <text x="480" y="105" text-anchor="middle" class="svg-small">échange (swap)</text>
+      <text x="480" y="175" text-anchor="middle" class="svg-small">retour arrière</text>
+    </svg>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>✅ Pourquoi</h3>
+      <ul style="font-size:14px">
+        <li>Chaque emplacement = une <b>vraie appli</b> avec son propre nom d'hôte</li>
+        <li><b>Valider</b> en staging avant la prod</li>
+        <li><b>Zéro coupure</b> : la cible est <b>préchauffée</b> avant l'échange, aucune requête perdue</li>
+        <li><b>Retour arrière</b> : rééchanger</li>
+        <li><b>Échange automatique</b> : chaque push dans staging part en prod après le préchauffage (➕ pas sur Linux)</li>
+        <li>Niveaux : <b>Standard (5)</b>, <b>Premium (20)</b>, Isolated</li>
+        <li>Nouvel emplacement : <b>vide</b> ou <b>cloné</b> d'un autre</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🔀 Ce qui part et ce qui reste</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Échangé avec le code</th><th>Reste sur l'emplacement</th></tr></thead>
+      <tbody>
+        <tr><td>Pile et version, 32/64 bits</td><td><b>Domaines personnalisés</b></td></tr>
+        <tr><td><b>Paramètres d'appli</b> *</td><td>Certificats non publics, réglages TLS</td></tr>
+        <tr><td><b>Chaînes de connexion</b> *</td><td><b>Mise à l'échelle</b></td></tr>
+        <tr><td>Comptes de stockage montés *</td><td><b>Always On</b></td></tr>
+        <tr><td>Certificats publics</td><td><b>Restrictions IP</b>, CORS</td></tr>
+        <tr><td>Contenu des WebJobs</td><td>Planificateurs WebJobs, diagnostics</td></tr>
+        <tr><td>Mappages de chemins</td><td><b>Intégration au réseau virtuel</b>, <b>identités managées</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 0">* sauf si tu coches <b>Paramètre d'emplacement</b> : il reste alors sur place (ex. la chaîne vers la BD de test).</p>
+    </div>
+  </div>
+
+  <!-- SECURITE -->
+  <h2 id="securite">4 · Sécuriser l'appli</h2>
+  <div class="card">
+    <ul style="font-size:14px;margin:0">
+      <li><b>Authentification intégrée</b> (« Easy Auth ») : un module tourne <b>à côté</b> de l'appli, <b>sans code ni SDK</b>. Il connecte l'usager au fournisseur, gère les <b>jetons</b> et la session, et met l'identité dans les <b>en-têtes</b> HTTP.</li>
+      <li>Fournisseurs : <b>Microsoft Entra ID</b>, Microsoft, Google, Facebook, X.</li>
+      <li><b>Autoriser les requêtes anonymes</b> : le code de l'appli décide (bon pour un site avec une page d'accueil publique).</li>
+      <li><b>Exiger l'authentification</b> : redirection vers <code>/.auth/login/&lt;fournisseur&gt;</code>, ou <b>HTTP 401</b> pour une appli mobile native. Bloque <b>tout</b>, y compris la page d'accueil.</li>
+      <li>Journaux : chercher <code>EasyAuthModule_32/64</code> dans le suivi des demandes ayant échoué.</li>
+    </ul>
+  </div>
+
+  <!-- DOMAINE -->
+  <h2 id="domaine">5 · Nom de domaine personnalisé</h2>
+  <ol class="numl">
+    <li><span><b>Réserver</b> le domaine : l'acheter dans le portail Azure (le plus simple) ou chez un registraire.</span></li>
+    <li><span><b>Créer l'enregistrement DNS</b> : <b>CNAME</b> <code>www → optiweb.azurewebsites.net</code> (suit l'appli si son IP change) ou <b>A</b> vers l'IP de l'appli (obligatoire pour l'<b>apex</b> <code>optifuel.cloud</code>, à mettre à jour si l'IP change). ➕ Plus un <b>TXT</b> <code>asuid</code> qui <b>prouve</b> que le domaine est à toi.</span></li>
+    <li><span><b>Activer</b> le domaine dans le portail (validation), puis ajouter une <b>liaison TLS</b> : <b>certificat managé App Service</b> gratuit, renouvelé tout seul <b>30 jours</b> avant l'expiration.</span></li>
+  </ol>
+
+  <!-- BACKUP -->
+  <h2 id="sauvegarde">6 · Sauvegarder et restaurer</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Point</th><th>À retenir</th></tr></thead>
+      <tbody>
+        <tr><td>Niveaux</td><td><b>Basic</b>, Standard, Premium, Isolated. Basic : seulement l'emplacement <b>production</b></td></tr>
+        <tr><td>Destination</td><td>Un <b>compte de stockage + conteneur</b> dans le <b>même abonnement</b>. ⚠️ Pas de compte avec <b>pare-feu</b> activé</td></tr>
+        <tr><td>Contenu</td><td><b>Configuration</b>, <b>fichiers</b>, bases <b>connectées</b> (SQL Database, MySQL, PostgreSQL, MySQL in-app)</td></tr>
+        <tr><td>Fichiers créés</td><td>Un <b>.zip</b> (les données) + un <b>.xml</b> (le manifeste)</td></tr>
+        <tr><td>Taille</td><td><b>10 Go</b> max (appli + base)</td></tr>
+        <tr><td>Types</td><td>Complète (défaut) ou <b>partielle</b> (exclure des dossiers) ; manuelle ou <b>planifiée</b></td></tr>
+        <tr><td>Restauration</td><td>Écrase l'appli ou vers <b>une autre appli</b>. Complète : supprime les fichiers absents de la sauvegarde. Partielle : laisse les exclus tranquilles</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- APP INSIGHTS -->
+  <h2 id="insights">7 · Application Insights</h2>
+  <div class="card">
+    <p style="margin:0 0 8px;font-size:14px">Fonction d'<b>Azure Monitor</b> qui surveille une appli <b>en production</b> et détecte <b>seule</b> les anomalies de performance (.NET, Node.js, Java ; Azure, local ou autre cloud).</p>
+    <ul style="font-size:14px;margin:0">
+      <li><b>Requêtes</b> : taux, temps de réponse, échecs, pages populaires, heures de pointe, lieux</li>
+      <li><b>Dépendances</b> : un service externe ralentit-il l'appli ?</li>
+      <li><b>Exceptions</b> serveur et navigateur ; <b>vues de page</b> et temps de chargement</li>
+      <li><b>Sessions et usagers</b> ; <b>compteurs</b> CPU, mémoire, réseau ; diagnostics Docker</li>
+      <li><b>Traces</b> liées aux requêtes ; <b>événements personnalisés</b> (ex. pleins de carburant saisis)</li>
+      <li>Sorties : <b>alertes</b>, Power BI, Visual Studio</li>
+    </ul>
+  </div>
+
+  <!-- LAB -->
+  <h2 id="labo">8 · Le labo 09a en bref</h2>
+  <ol class="numl">
+    <li><span>Créer une <b>appli web</b> (PHP, Windows).</span></li>
+    <li><span>Créer un emplacement <b>staging</b>.</span></li>
+    <li><span>Configurer le <b>déploiement</b> (Centre de déploiement).</span></li>
+    <li><span>Déployer le code dans <b>staging</b>.</span></li>
+    <li><span><b>Échanger</b> staging et production.</span></li>
+    <li><span>Configurer et tester la <b>mise à l'échelle auto</b>.</span></li>
+  </ol>
+
+  <!-- CLI -->
+  <h2 id="cli">9 · ➕ En CLI</h2>
+<pre class="cmd">az webapp create -g rg-labo -p plan-web -n optiweb123 --runtime "NODE:20-lts"
+az webapp config set -g rg-labo -n optiweb123 --always-on true
+az webapp update -g rg-labo -n optiweb123 --https-only true
+az webapp deployment slot create -g rg-labo -n optiweb123 --slot staging
+az webapp deployment slot swap -g rg-labo -n optiweb123 --slot staging --target-slot production
+az webapp config appsettings set -g rg-labo -n optiweb123 --slot staging \
+  --slot-settings DB_URL="postgres://test..."      # paramètre d'emplacement
+az webapp config hostname add -g rg-labo --webapp-name optiweb123 --hostname www.exemple.com</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Ce qui colle à Optifuel :</b></p>
+    <ul>
+      <li>Next.js tourne sur App Service <b>Linux</b> (pile Node) ou en <b>conteneur</b>.</li>
+      <li>Ton workflow <b>GitHub Actions</b> déploie dans <b>staging</b>, tu testes, puis <b>swap</b> en prod.</li>
+      <li>La chaîne PostgreSQL de test = <b>paramètre d'emplacement</b>, pour ne jamais brancher staging sur la vraie base.</li>
+      <li><b>Application Insights</b> pour voir les pages lentes de l'appli.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Après le swap, mon domaine perso est passé sur staging. »</span><span class="right">Les <b>domaines personnalisés</b> restent sur leur emplacement, comme l'échelle, Always On et les restrictions IP.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Ma chaîne de connexion de test est partie en prod au swap. »</span><span class="right">Les chaînes de connexion sont échangées par défaut. Coche <b>Paramètre d'emplacement</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je crée un emplacement staging sur mon plan Basic. »</span><span class="right">Emplacements à partir de <b>Standard</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je pointe optifuel.cloud (l'apex) avec un CNAME. »</span><span class="right">Beaucoup de registraires refusent un CNAME à l'apex : <b>enregistrement A</b> (+ TXT de vérification).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je sauvegarde vers mon compte de stockage protégé par pare-feu. »</span><span class="right">Un compte avec <b>pare-feu</b> ne peut pas servir de destination de sauvegarde.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux sauvegarder un site de 25 Go. »</span><span class="right">Limite : <b>10 Go</b> appli + base.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'exige l'authentification et ma page d'accueil publique reste visible. »</span><span class="right">« Exiger l'authentification » bloque <b>tout</b>. Autorise l'anonyme et gère-le dans le code.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Mes WebJobs CRON s'arrêtent la nuit. »</span><span class="right">Active <b>Always On</b> : sans lui l'appli se décharge quand il n'y a pas de trafic.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Appli web Linux + emplacement staging</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_linux_web_app"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"optiweb123"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>
+  service_plan_id     = azurerm_service_plan.web.id
+  https_only          = <span class="c-k">true</span>
+  site_config {
+    always_on = <span class="c-k">true</span>
+    application_stack {
+      node_version = <span class="c-s">"20-lts"</span>
+    }
+  }
+  app_settings = {
+    <span class="c-s">"NODE_ENV"</span> = <span class="c-s">"production"</span>
+  }
+  sticky_settings {
+    app_setting_names = [<span class="c-s">"DB_URL"</span>]   <span class="c-c"># paramètre d'emplacement</span>
+  }
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_linux_web_app_slot"</span> <span class="c-s">"staging"</span> {
+  name           = <span class="c-s">"staging"</span>
+  app_service_id = azurerm_linux_web_app.web.id
+  site_config {
+    application_stack {
+      node_version = <span class="c-s">"20-lts"</span>
+    }
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>App Service</td><td>Azure App Service</td><td>Hébergement PaaS d'applis web, API, mobiles</td></tr>
+        <tr><td>Emplacement de déploiement</td><td>Deployment slot</td><td>Copie vivante de l'appli (staging, test…)</td></tr>
+        <tr><td>Échange</td><td>Swap</td><td>Inverser deux emplacements sans coupure</td></tr>
+        <tr><td>Paramètre d'emplacement</td><td>Slot setting (sticky)</td><td>Réglage qui ne suit pas le code au swap</td></tr>
+        <tr><td>Préchauffage</td><td>Warm-up</td><td>Démarrer l'appli avant de lui envoyer le trafic</td></tr>
+        <tr><td>Always On</td><td>Always On</td><td>Empêche l'appli de se décharger sans trafic</td></tr>
+        <tr><td>ARR</td><td>Application Request Routing</td><td>Affinité de session : même client, même instance</td></tr>
+        <tr><td>WebJobs</td><td>WebJobs</td><td>Tâches en arrière-plan d'une appli App Service</td></tr>
+        <tr><td>Centre de déploiement</td><td>Deployment Center</td><td>Où on branche GitHub, Azure Repos, Git…</td></tr>
+        <tr><td>Easy Auth</td><td>App Service authentication</td><td>Authentification intégrée sans code</td></tr>
+        <tr><td>Apex</td><td>Root domain</td><td>Le domaine nu, sans www</td></tr>
+        <tr><td>CNAME / A / TXT</td><td>DNS records</td><td>Alias de nom / adresse IP / texte de vérification</td></tr>
+        <tr><td>Certificat managé</td><td>App Service managed certificate</td><td>Certificat TLS gratuit renouvelé par Azure</td></tr>
+        <tr><td>Application Insights</td><td>Application Insights</td><td>Surveillance des performances d'une appli (Azure Monitor)</td></tr>
+        <tr><td>CORS</td><td>Cross-Origin Resource Sharing</td><td>Autoriser un autre site à appeler ton API</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="plans-app-service.html"><span class="lbl">← Précédent</span><span class="ttl">Plans App Service</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="container-instances.html"><span class="lbl">Suivant →</span><span class="ttl">Container Instances</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer Azure App Service », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Quel réglage reste sur son emplacement lors d'un échange ?",o:["Les paramètres d'appli","Le domaine personnalisé","Le contenu des WebJobs"],a:1,e:"Domaine, échelle, Always On, restrictions IP restent."},
+  {q:"Comment empêcher la chaîne de connexion de staging de partir en production au swap ?",o:["La mettre dans le code","Cocher Paramètre d'emplacement","Désactiver Always On"],a:1,e:"Slot setting = collé à l'emplacement."},
+  {q:"Niveau minimum pour des emplacements de déploiement ?",o:["Basic","Standard","Free"],a:1,e:"Standard : 5 emplacements."},
+  {q:"Tu veux pointer le domaine apex vers l'appli. Quel enregistrement ?",o:["CNAME","A","MX"],a:1,e:"CNAME souvent refusé à l'apex."},
+  {q:"Où sont rangées les sauvegardes App Service ?",o:["Dans un coffre Recovery Services","Dans un conteneur d'un compte de stockage","Dans le plan App Service"],a:1,e:"Même abonnement, pas de pare-feu."},
+  {q:"Taille maximale d'une sauvegarde App Service ?",o:["10 Go","100 Go","1 To"],a:0,e:"Appli + base connectée."},
+  {q:"Quel réglage est obligatoire pour un WebJob continu ?",o:["HTTPS uniquement","Affinité de session","Always On"],a:2,e:"Sinon l'appli se décharge."},
+  {q:"Avec GitHub, quel est le fournisseur de build par défaut ?",o:["GitHub Actions","Azure Pipelines","FTP"],a:0,e:"L'autre : App Service Build Service."},
+  {q:"Quel service surveille les requêtes, dépendances et exceptions d'une appli en prod ?",o:["Azure Backup","Application Insights","Azure Advisor"],a:1,e:"Fonction d'Azure Monitor."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

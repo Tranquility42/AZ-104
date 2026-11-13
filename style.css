@@ -184,3 +184,4 @@ h2.fold{margin:14px 0 4px}
 .optifuel code{overflow-wrap:anywhere}
 main p code,.note code,.card li code{overflow-wrap:anywhere}
 .card.diagram + .tablewrap{margin-top:14px}
+.grid2 + .tablewrap{margin-top:14px}

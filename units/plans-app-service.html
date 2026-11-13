@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Plans App Service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">Plans App Service</span></nav>
+  <h1>Configurer des plans Azure App Service</h1>
+  <p class="lede">Ce qu'est un plan, les niveaux tarifaires et leurs limites, scale up et scale out, mise à l'échelle automatique par règles ou élastique. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 6 min · module complet</span>
+    <span class="chip">🎯 Quel niveau pour quelle fonction : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> le <b>plan</b> = les VM qui font tourner tes applis ; toutes ses applis partagent <b>toutes</b> ses instances. <b>Free/Shared</b> : partagé, pas de SLA. <b>Basic</b> : dédié, 3 instances, manuel. <b>Standard</b> : <b>auto</b> + <b>5 emplacements</b>. <b>Premium</b> : 30 instances, 20 emplacements, élastique. <b>Isolated v2</b> : réseau dédié, 200 instances.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le terminal loué 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🏭 Le plan = le terminal</h3>
+      <ul>
+        <li><b>Plan App Service</b> = le <b>terminal</b> que tu loues (des quais, des employés) ; les <b>applis</b> sont les <b>clients</b> qui s'y installent</li>
+        <li>Toutes les applis du plan partagent <b>les mêmes quais</b> : un client trop gros ralentit tout le monde</li>
+        <li>Tu paies <b>le terminal</b>, pas chaque client : 3 applis dans un plan = un seul loyer</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📈 Grossir</h3>
+      <ul>
+        <li><b>Scale up</b> = passer à un <b>terminal de catégorie supérieure</b> (plus grands quais, et des services en plus : domaine perso, TLS, emplacements…)</li>
+        <li><b>Scale out</b> = <b>ouvrir plus de quais</b> identiques ; chaque appli tourne sur <b>tous</b> les quais</li>
+        <li>Pas besoin de toucher le code : le changement prend quelques <b>secondes</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PLAN -->
+  <h2 id="plan">1 · Ce que définit un plan</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Réglage</th><th>À retenir</th></tr></thead>
+      <tbody>
+        <tr><td><b>OS</b></td><td>Linux ou Windows : choisi <b>à la création</b>, il limite les niveaux tarifaires disponibles</td></tr>
+        <tr><td><b>Région</b></td><td>Les VM du plan sont créées <b>dans cette région</b> ; une appli d'une autre région = un autre plan</td></tr>
+        <tr><td><b>Niveau tarifaire</b></td><td>Fonctionnalités et prix</td></tr>
+        <tr><td><b>Nombre d'instances</b></td><td>Combien de VM ; <b>toutes les applis</b> du plan tournent sur <b>toutes</b> les instances</td></tr>
+        <tr><td><b>Taille d'instance</b></td><td>CPU, mémoire, stockage</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Isoler une appli dans son propre plan</b> si elle consomme <b>beaucoup</b>, si elle doit grossir <b>indépendamment</b> des autres, ou si elle doit tourner dans une <b>autre région</b>. Sinon, regrouper les applis économise de l'argent, mais attention à ne pas <b>surcharger</b> le plan.</div>
+
+  <!-- NIVEAUX -->
+  <h2 id="niveaux">2 · Les niveaux tarifaires</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Catégorie</th><th>Niveaux</th><th>Où ça tourne</th><th>Pour</th></tr></thead>
+      <tbody>
+        <tr><td><b>Calcul partagé</b></td><td><b>Free (F1)</b>, <b>Shared (D1)</b></td><td>Sur les mêmes VM que <b>d'autres clients</b> ; quota de CPU, <b>pas de scale out</b>, <b>pas de SLA</b>, facturé par appli</td><td>Dev et test seulement</td></tr>
+        <tr><td><b>Calcul dédié</b></td><td><b>Basic</b>, <b>Standard</b>, <b>Premium</b> v2/v3</td><td>VM <b>dédiées</b> au plan</td><td>Du petit site à la grosse production</td></tr>
+        <tr><td><b>Isolé</b></td><td><b>Isolated v2</b></td><td>VM dédiées dans un <b>réseau virtuel dédié</b> (App Service Environment)</td><td>Isolement réseau, échelle maximale</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Free F1</th><th>Basic B1</th><th>Standard S1</th><th>Premium P1v3</th><th>Isolated v2</th></tr></thead>
+      <tbody>
+        <tr><td>Usage</td><td>Dev/test</td><td>Dev/test, petit trafic</td><td><b>Production</b></td><td>Production exigeante</td><td>Isolement réseau</td></tr>
+        <tr><td>Instances max</td><td>—</td><td><b>3</b></td><td><b>10</b></td><td><b>30</b></td><td><b>200</b></td></tr>
+        <tr><td>Mise à l'échelle auto</td><td>—</td><td>Manuelle</td><td><b>Règles</b></td><td>Règles + <b>élastique</b></td><td>Règles</td></tr>
+        <tr><td>Emplacements de déploiement</td><td>—</td><td>—</td><td><b>5</b></td><td><b>20</b></td><td><b>20</b></td></tr>
+        <tr><td>Sauvegardes par jour</td><td>—</td><td>—</td><td>10</td><td>50</td><td>50</td></tr>
+        <tr><td>➕ Domaine perso / TLS</td><td>❌ / ❌</td><td>✅ / ✅</td><td>✅ / ✅</td><td>✅ / ✅</td><td>✅ / ✅</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Basic et Standard ont un <b>équilibrage de charge</b> intégré entre les instances. <b>Premium v3</b> (séries Dav4/Ddv4, SSD, tailles optimisées mémoire) et <b>Isolated v2</b> sont recommandés pour les nouveaux déploiements. ➕ Le niveau <b>Shared (D1)</b> accepte déjà un domaine personnalisé, mais pas de certificat TLS. Le module cite aussi « jusqu'à 100 instances » pour l'ancien Isolated ; retiens <b>200</b> pour Isolated v2.</p>
+
+  <!-- SCALE -->
+  <h2 id="echelle">3 · Scale up et scale out</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Scale up (vertical)</th><th>Scale out (horizontal)</th></tr></thead>
+      <tbody>
+        <tr><td>Comment</td><td>Changer de <b>niveau tarifaire</b> (ou de taille)</td><td>Ajouter des <b>instances</b>, manuellement ou en auto</td></tr>
+        <tr><td>Donne</td><td>Plus de CPU, mémoire, disque <b>et des fonctionnalités</b> : VM dédiées, domaine perso, TLS, emplacements, mise à l'échelle auto</td><td>Plus de capacité, jusqu'au max du niveau</td></tr>
+        <tr><td>Effet</td><td>Toutes les applis du plan, en quelques secondes, sans redéploiement</td><td>Idem</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>🏨 L'exemple de l'hôtel du module</h3>
+    <ol class="numl">
+      <li><span><b>Free</b> pendant les tests.</span></li>
+      <li><span>Il faut un <b>nom de domaine perso</b> → <b>Shared</b>.</span></li>
+      <li><span>Il faut une <b>liaison TLS/SSL</b> → <b>Basic</b>.</span></li>
+      <li><span>Il faut des <b>environnements de préproduction</b> (emplacements) → <b>Standard</b>.</span></li>
+      <li><span>Il faut plus de cœurs ou de mémoire → une <b>plus grosse taille</b> dans le même niveau.</span></li>
+    </ol>
+  </div>
+  <div class="note" style="margin-top:14px">⚠️ Le plan ne gère <b>que ses VM</b>. Une base <b>Azure SQL</b> ou un <b>compte de stockage</b> utilisés par l'appli se mettent à l'échelle <b>séparément</b>.</div>
+
+  <!-- AUTOSCALE -->
+  <h2 id="autoscale">4 · La mise à l'échelle automatique</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📏 Basée sur des règles (Standard et +)</h3>
+      <ul style="font-size:14px">
+        <li><b>Paramètre</b> de mise à l'échelle → regroupé en <b>profils</b> → contenant des <b>règles</b></li>
+        <li>Règle = <b>déclencheur</b> + <b>action</b> (ajouter ou retirer)</li>
+        <li>Déclencheur <b>métrique</b> : temps CPU, temps de réponse moyen, requêtes (« CPU &gt; 50 % »)</li>
+        <li>Déclencheur <b>horaire</b> : « tous les samedis à 8 h »</li>
+        <li><b>Notifications</b> : courriels et/ou <b>webhooks</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⚡ Élastique (Premium v2 / v3 seulement)</h3>
+      <ul style="font-size:14px">
+        <li>Basée sur le <b>trafic HTTP</b>, <b>aucune règle</b> à écrire</li>
+        <li>C'est la <b>plateforme</b> qui décide</li>
+        <li>Instances <b>toujours prêtes</b> (déjà chaudes) pour absorber les pics</li>
+        <li>Pour une charge <b>imprévisible</b> et moins de gestion</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Bonne pratique</th><th>Pourquoi</th></tr></thead>
+      <tbody>
+        <tr><td><b>Minimum</b> d'instances</td><td>L'appli tourne même sans charge</td></tr>
+        <tr><td><b>Maximum</b> d'instances</td><td>Plafonne la facture horaire</td></tr>
+        <tr><td>Assez d'<b>écart</b> entre min et max</td><td>Sinon la mise à l'échelle n'a pas de marge</td></tr>
+        <tr><td>Toujours <b>scale-out + scale-in</b></td><td>Sans scale-out : appli lente ; sans scale-in : facture haute</td></tr>
+        <tr><td>Bonne <b>statistique</b> (moyenne, min, max, total)</td><td>La moyenne évite de réagir à un pic isolé</td></tr>
+        <tr><td><b>Nombre par défaut</b> raisonnable</td><td>Utilisé quand les métriques ne sont <b>pas disponibles</b></td></tr>
+        <tr><td>Activer les <b>notifications</b></td><td>Savoir quand ça grossit</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CLI -->
+  <h2 id="cli">5 · ➕ En CLI</h2>
+<pre class="cmd">az appservice plan create -g rg-labo -n plan-web --sku B1 --is-linux -l eastus
+az appservice plan update -g rg-labo -n plan-web --sku S1          # scale up
+az appservice plan update -g rg-labo -n plan-web --number-of-workers 3   # scale out
+az appservice plan list -o table</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Si Optifuel passait sur App Service :</b></p>
+    <ul>
+      <li>Dev : <b>B1</b> Linux (pas cher, mais pas d'emplacements).</li>
+      <li>Prod : <b>S1</b> minimum pour la mise à l'échelle auto et un emplacement <b>staging</b>.</li>
+      <li>PostgreSQL reste à part (Azure Database for PostgreSQL) : il se met à l'échelle <b>séparément</b> du plan.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je paie chaque appli de mon plan Standard. »</span><span class="right">Calcul dédié : tu paies le <b>plan</b> (ses instances). La facturation <b>par appli</b>, c'est Free/Shared.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets la mise à l'échelle auto sur mon plan Basic. »</span><span class="right">Basic = <b>manuel</b> (3 instances max). Mise à l'échelle auto à partir de <b>Standard</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je veux des emplacements de déploiement en Basic. »</span><span class="right">Emplacements à partir de <b>Standard</b> (5), Premium (20).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Plan Free avec SLA pour un petit client. »</span><span class="right">Free et Shared : <b>aucun SLA</b>, dev/test seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Scale out d'une seule appli du plan. »</span><span class="right">Le scale out s'applique à <b>toutes</b> les applis du plan. Pour isoler : un <b>plan séparé</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La mise à l'échelle élastique est dispo en Standard. »</span><span class="right">Élastique = <b>Premium v2/v3</b> seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« En montant le plan, ma base Azure SQL grossit aussi. »</span><span class="right">Les autres services se mettent à l'échelle <b>séparément</b>.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Plan App Service Linux</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_service_plan"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"plan-web"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>
+  os_type             = <span class="c-s">"Linux"</span>     <span class="c-c"># choisi à la création</span>
+  sku_name            = <span class="c-s">"S1"</span>        <span class="c-c"># F1, B1, S1, P1v3, I1v2...</span>
+  worker_count        = 2           <span class="c-c"># nombre d'instances</span>
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Plan App Service</td><td>App Service plan</td><td>Les VM (calcul) sur lesquelles tournent tes applis</td></tr>
+        <tr><td>Niveau tarifaire</td><td>Pricing tier</td><td>Free, Shared, Basic, Standard, Premium, Isolated</td></tr>
+        <tr><td>Instance</td><td>Instance / worker</td><td>Une VM du plan</td></tr>
+        <tr><td>Scale up</td><td>Scale up</td><td>Monter de niveau ou de taille</td></tr>
+        <tr><td>Scale out</td><td>Scale out</td><td>Ajouter des instances</td></tr>
+        <tr><td>Mise à l'échelle élastique</td><td>Elastic scale</td><td>Mise à l'échelle auto gérée par Azure selon le trafic HTTP (Premium)</td></tr>
+        <tr><td>Profil</td><td>Autoscale profile</td><td>Groupe de règles d'une condition (ex. semaine, week-end)</td></tr>
+        <tr><td>Webhook</td><td>Webhook</td><td>URL appelée automatiquement lors d'un événement</td></tr>
+        <tr><td>ASE</td><td>App Service Environment</td><td>Environnement isolé dans ton réseau virtuel (niveau Isolated)</td></tr>
+        <tr><td>SLA</td><td>Service-level agreement</td><td>Disponibilité garantie</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="disponibilite-vm.html"><span class="lbl">← Précédent</span><span class="ttl">Disponibilité des VM</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="app-service.html"><span class="lbl">Suivant →</span><span class="ttl">App Service</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer des plans Azure App Service », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Quel niveau est le minimum pour la mise à l'échelle automatique basée sur des règles ?",o:["Basic","Standard","Premium"],a:1,e:"Basic = manuel seulement."},
+  {q:"Combien d'instances maximum en Basic ?",o:["3","10","30"],a:0,e:"Standard 10, Premium v3 30, Isolated v2 200."},
+  {q:"Ton appli doit être dans un réseau isolé avec jusqu'à 200 instances. Quel niveau ?",o:["Premium v3","Isolated v2","Standard"],a:1,e:"Réseau virtuel dédié."},
+  {q:"Quels niveaux n'offrent aucun SLA ?",o:["Free et Shared","Basic et Standard","Premium et Isolated"],a:0,e:"Calcul partagé = dev/test."},
+  {q:"Tu as 3 applis dans un plan avec 4 instances. Sur combien d'instances tourne chaque appli ?",o:["1","Elle est répartie au hasard","4"],a:2,e:"Toutes les applis tournent sur toutes les instances."},
+  {q:"Une appli gourmande ralentit les autres du plan. Que faire ?",o:["La mettre dans son propre plan","Ajouter un emplacement","Passer en Shared"],a:0,e:"Isoler une appli gourmande."},
+  {q:"Mise à l'échelle sans règle, basée sur le trafic HTTP, avec instances toujours prêtes :",o:["Basée sur des règles","Élastique","Manuelle"],a:1,e:"Premium v2/v3."},
+  {q:"Quand les métriques ne sont pas disponibles, la mise à l'échelle auto utilise :",o:["Le maximum","Le nombre d'instances par défaut","Zéro instance"],a:1,e:"D'où un défaut raisonnable."},
+  {q:"Ton site a besoin d'un emplacement staging. Niveau minimum ?",o:["Basic","Standard","Premium"],a:1,e:"5 emplacements en Standard."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

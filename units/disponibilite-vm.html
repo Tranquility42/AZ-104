@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Disponibilité des VM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">Disponibilité des VM</span></nav>
+  <h1>Configurer la disponibilité des machines virtuelles</h1>
+  <p class="lede">Maintenance et pannes, groupes à haute disponibilité (domaines d'erreur et de mise à jour), zones, mise à l'échelle verticale et horizontale, VMSS et mise à l'échelle automatique. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 9 min · module complet</span>
+    <span class="chip">🎯 FD/UD, zones vs groupes, SLA, VMSS : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> <b>groupe à haute disponibilité</b> = plusieurs racks d'<b>un</b> centre (FD contre les pannes, UD contre la maintenance, <b>5 UD par défaut</b>, choisi <b>à la création</b>). <b>Zones</b> = plusieurs <b>centres</b> (99,99 %). <b>Verticale</b> = plus gros (redémarrage), <b>horizontale</b> = plus nombreux. <b>VMSS</b> + règles <b>min / max / CPU</b> = mise à l'échelle auto.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : la flotte de camions 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🅿️ Où garer la flotte</h3>
+      <ul>
+        <li><b>Domaine d'erreur</b> = une <b>rangée du stationnement</b> avec la même borne électrique : si la borne saute, toute la rangée est en panne</li>
+        <li><b>Domaine de mise à jour</b> = un <b>groupe d'entretien</b> : on fait la vidange d'un groupe à la fois, jamais toute la flotte</li>
+        <li><b>Groupe à haute disponibilité</b> = répartir les camions sur plusieurs rangées et groupes <b>dans le même dépôt</b></li>
+        <li><b>Zones de disponibilité</b> = <b>3 dépôts séparés</b> dans la même ville : un incendie dans un dépôt n'arrête pas les autres</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>📈 Grossir la flotte</h3>
+      <ul>
+        <li><b>Verticale (scale up)</b> = remplacer le porteur par un <b>tracteur plus puissant</b> : il faut l'arrêter, et il y a un modèle maximum</li>
+        <li><b>Horizontale (scale out)</b> = <b>ajouter des camions</b> identiques : quasi sans limite</li>
+        <li><b>VMSS</b> = un <b>contrat de location de flotte</b> : tous les camions sortent du même modèle</li>
+        <li><b>Mise à l'échelle auto</b> = le <b>répartiteur</b> qui appelle des camions en renfort quand les commandes s'empilent et les renvoie le soir</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <h2 id="maintenance">1 · Les 3 causes d'arrêt</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Événement</th><th>Ce qui se passe</th><th>Ce que fait Azure</th></tr></thead>
+      <tbody>
+        <tr><td><b>Maintenance matérielle non planifiée</b></td><td>Azure <b>prévoit</b> qu'un serveur va lâcher</td><td><b>Migration dynamique</b> (live migration) : la VM est mise en pause quelques secondes</td></tr>
+        <tr><td><b>Temps d'arrêt inattendu</b></td><td>Panne réelle (disque, réseau, rack)</td><td>Répare : déplace la VM sur un autre serveur <b>du même centre</b>. La VM <b>redémarre</b>, le disque temporaire peut être <b>perdu</b></td></tr>
+        <tr><td><b>Maintenance planifiée</b></td><td>Mises à jour de la plateforme Azure</td><td>Met à jour l'hôte. ⚠️ L'<b>OS invité</b> (Windows/Linux de ta VM), c'est <b>toi</b> qui le mets à jour</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FD UD -->
+  <h2 id="domaines">2 · Groupes à haute disponibilité : domaines d'erreur et de mise à jour</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 300" role="img" aria-label="Six VM réparties sur 3 domaines d'erreur (racks) et sur des domaines de mise à jour différents">
+      <rect x="10" y="10" width="940" height="280" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">Groupe à haute disponibilité « web » (un seul centre de données)</text>
+      <g>
+        <rect x="40" y="60" width="270" height="210" rx="12" class="svg-onprem" stroke-width="1.4"/>
+        <text x="175" y="88" text-anchor="middle" class="svg-title-o">FD 0 · rack 1</text>
+        <text x="175" y="106" text-anchor="middle" class="svg-small">même alimentation + commutateur</text>
+        <rect x="70" y="125" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="175" y="158" text-anchor="middle" class="svg-text">web1 · UD 0</text>
+        <rect x="70" y="195" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="175" y="228" text-anchor="middle" class="svg-text">web4 · UD 3</text>
+      </g>
+      <g>
+        <rect x="345" y="60" width="270" height="210" rx="12" class="svg-onprem" stroke-width="1.4"/>
+        <text x="480" y="88" text-anchor="middle" class="svg-title-o">FD 1 · rack 2</text>
+        <text x="480" y="106" text-anchor="middle" class="svg-small">même alimentation + commutateur</text>
+        <rect x="375" y="125" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="480" y="158" text-anchor="middle" class="svg-text">web2 · UD 1</text>
+        <rect x="375" y="195" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="480" y="228" text-anchor="middle" class="svg-text">web5 · UD 4</text>
+      </g>
+      <g>
+        <rect x="650" y="60" width="270" height="210" rx="12" class="svg-onprem" stroke-width="1.4"/>
+        <text x="785" y="88" text-anchor="middle" class="svg-title-o">FD 2 · rack 3</text>
+        <text x="785" y="106" text-anchor="middle" class="svg-small">même alimentation + commutateur</text>
+        <rect x="680" y="125" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="785" y="158" text-anchor="middle" class="svg-text">web3 · UD 2</text>
+        <rect x="680" y="195" width="210" height="55" rx="10" class="svg-node" stroke-width="1.2"/>
+        <text x="785" y="228" text-anchor="middle" class="svg-text">web6 · UD 0</text>
+      </g>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Domaine d'erreur (FD)</th><th>Domaine de mise à jour (UD)</th></tr></thead>
+      <tbody>
+        <tr><td>Protège contre</td><td>Une panne <b>matérielle</b> (courant, réseau, rack)</td><td>Les <b>redémarrages</b> de maintenance planifiée</td></tr>
+        <tr><td>Image</td><td>Un <b>rack</b> physique</td><td>Un groupe redémarré <b>en même temps</b></td></tr>
+        <tr><td>Nombre</td><td>➕ <b>2 par défaut, 3 max</b> (selon la région)</td><td><b>5 par défaut</b>, de <b>1 à 20</b></td></tr>
+        <tr><td>Règle</td><td>Chaque VM est dans 1 FD et 1 UD</td><td>Un seul UD redémarre à la fois ; le nombre d'UD ne change plus après création</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>📌 Règles du groupe à haute disponibilité</h3>
+      <ul style="font-size:14px">
+        <li>Une VM entre dans un groupe <b>seulement à sa création</b>. Pour changer : <b>supprimer et recréer</b> la VM.</li>
+        <li>Mêmes rôles et mêmes logiciels sur toutes les VM du groupe.</li>
+        <li><b>Un groupe par niveau</b> d'appli (un pour le web, un pour SQL).</li>
+        <li>Combiner avec un <b>Load Balancer</b> et des <b>disques managés</b>.</li>
+        <li>Ne protège <b>pas</b> d'une erreur de l'OS ou de l'appli : il faut encore sauvegarde et reprise.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🏢 Zones de disponibilité</h3>
+      <ul style="font-size:14px">
+        <li>Des <b>centres de données séparés</b> dans une région, chacun avec courant, réseau et clim indépendants. Au moins <b>3 zones</b> par région qui les supporte.</li>
+        <li>3 VM dans 3 zones = réparties sur 3 FD et 3 UD.</li>
+        <li><b>Services zonaux</b> : tu choisis la zone (VM, disques managés).</li>
+        <li><b>Services redondants entre zones</b> : Azure réplique tout seul (stockage <b>ZRS</b>, Azure SQL Database).</li>
+        <li>IP publique Standard : zonale, <b>redondante entre zones</b> ou régionale.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>➕ examen : SLA d'une VM</th><th>Disponibilité</th><th>Protège contre</th></tr></thead>
+      <tbody>
+        <tr><td>1 VM seule avec disques <b>Premium SSD</b> (ou Ultra)</td><td><b>99,9 %</b></td><td>Rien de plus</td></tr>
+        <tr><td>2+ VM dans un <b>groupe à haute disponibilité</b></td><td><b>99,95 %</b></td><td>Panne d'un rack, maintenance</td></tr>
+        <tr><td>2+ VM dans <b>2+ zones</b></td><td><b>99,99 %</b></td><td>Perte d'un centre de données</td></tr>
+        <tr><td><b>Paires de régions</b> + Site Recovery</td><td>—</td><td>Perte d'une région entière</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SCALING -->
+  <h2 id="echelle">3 · Verticale ou horizontale ?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Verticale (scale up / down)</th><th>Horizontale (scale out / in)</th></tr></thead>
+      <tbody>
+        <tr><td>On change</td><td>La <b>taille</b> de la VM</td><td>Le <b>nombre</b> de VM</td></tr>
+        <tr><td>Arrêt ?</td><td>Oui, <b>redémarrage</b></td><td>Non</td></tr>
+        <tr><td>Limite</td><td>La plus grosse taille dispo dans la région</td><td>Quasi aucune (des <b>milliers</b> de VM)</td></tr>
+        <tr><td>Exemple</td><td>Réduire une VM peu utilisée le week-end</td><td>Ajouter des VM pendant le rush</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VMSS -->
+  <h2 id="vmss">4 · Groupes de machines virtuelles identiques (VMSS)</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 230" role="img" aria-label="Le trafic passe par un Load Balancer ou un Application Gateway vers un VMSS de 2 à 5 VM qui grandit selon le CPU">
+      <defs><marker id="va" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="70" width="170" height="90" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="95" y="108" text-anchor="middle" class="svg-text">⚖️ Load Balancer</text>
+      <text x="95" y="130" text-anchor="middle" class="svg-small">ou App Gateway (L7)</text>
+      <path d="M180 115 H225" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#va)"/>
+      <rect x="230" y="20" width="560" height="190" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="250" y="48" class="svg-title-c">VMSS · min 2 · par défaut 2 · max 5</text>
+      <rect x="250" y="70" width="95" height="60" rx="10" class="svg-node" stroke-width="1.2"/><text x="297" y="106" text-anchor="middle" class="svg-text">VM 1</text>
+      <rect x="355" y="70" width="95" height="60" rx="10" class="svg-node" stroke-width="1.2"/><text x="402" y="106" text-anchor="middle" class="svg-text">VM 2</text>
+      <rect x="460" y="70" width="95" height="60" rx="10" class="svg-node" stroke-width="1.2" stroke-dasharray="5 4"/><text x="507" y="106" text-anchor="middle" class="svg-small">VM 3</text>
+      <rect x="565" y="70" width="95" height="60" rx="10" class="svg-node" stroke-width="1.2" stroke-dasharray="5 4"/><text x="612" y="106" text-anchor="middle" class="svg-small">VM 4</text>
+      <rect x="670" y="70" width="95" height="60" rx="10" class="svg-node" stroke-width="1.2" stroke-dasharray="5 4"/><text x="717" y="106" text-anchor="middle" class="svg-small">VM 5</text>
+      <text x="250" y="160" class="svg-small">Pointillés = ajoutées par la mise à l'échelle auto quand le CPU dépasse le seuil</text>
+      <text x="250" y="184" class="svg-small">Le VMSS est gratuit : tu paies seulement les VM qui tournent</text>
+      <rect x="815" y="60" width="135" height="110" rx="12" class="svg-onprem" stroke-width="1.4"/>
+      <text x="882" y="95" text-anchor="middle" class="svg-title-o">📊 Règles</text>
+      <text x="882" y="120" text-anchor="middle" class="svg-small">CPU &gt; 70 % → +1</text>
+      <text x="882" y="142" text-anchor="middle" class="svg-small">CPU &lt; 30 % → −1</text>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Réglage</th><th>Choix</th><th>À retenir</th></tr></thead>
+      <tbody>
+        <tr><td><b>Mode d'orchestration</b></td><td><b>Uniforme</b> (même image et config) ou <b>Flexible</b> (images, tailles et configs différentes)</td><td>Choisi <b>à la création</b>, non modifiable. <b>Flexible</b> = par défaut et recommandé</td></tr>
+        <tr><td><b>Équilibreur</b></td><td><b>Load Balancer</b> (couche 4) ou <b>Application Gateway</b> (couche 7, TLS)</td><td>Une VM tombe → les clients passent par une autre</td></tr>
+        <tr><td><b>Architecture</b></td><td>x64 ou <b>Arm64</b></td><td>Arm64 : jusqu'à 50 % meilleur prix-performance</td></tr>
+        <tr><td><b>Algorithme de répartition</b> (onglet Avancé)</td><td><b>Max</b> : autant de FD que possible · <b>Fixe</b> : exactement <b>5 FD</b></td><td>Fixe <b>échoue</b> s'il y a moins de 5 FD. Microsoft recommande <b>Max</b></td></tr>
+        <tr><td><b>Nombre d'instances</b></td><td>De <b>0 à 1 000</b></td><td>Manuel (fixe) ou mise à l'échelle auto</td></tr>
+        <tr><td><b>Stratégie de scale-in</b></td><td>Quelles VM supprimer d'abord</td><td>Ex. : équilibrer entre zones, puis supprimer l'ID le plus élevé</td></tr>
+        <tr><td>Autres</td><td>Instances <b>Spot</b>, disques managés, zones</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- AUTOSCALE -->
+  <h2 id="autoscale">5 · Mise à l'échelle automatique</h2>
+  <ol class="numl">
+    <li><span><b>Limites</b> : un <b>minimum</b>, un <b>maximum</b> et un nombre <b>par défaut</b> d'instances.</span></li>
+    <li><span><b>Scale-out</b> : seuil de CPU qui ajoute des instances, et combien en ajouter (pour une charge <b>durable</b>, pas un pic de 2 secondes).</span></li>
+    <li><span><b>Scale-in</b> : seuil de CPU qui en retire, et combien (le soir, le week-end).</span></li>
+    <li><span><b>Durée de la requête</b> : sur combien de minutes on fait la moyenne du CPU avant de décider.</span></li>
+    <li><span><b>Planification</b> (optionnel) : dates de début et de fin, jours qui se répètent.</span></li>
+  </ol>
+  <div class="note" style="margin-top:14px">➕ Toujours une règle de <b>scale-out ET</b> une règle de <b>scale-in</b>. Sans scale-in, la facture reste haute. Garde de l'écart entre les seuils (ex. 70 % / 30 %) pour éviter le <b>yo-yo</b>. Le <b>temps de récupération</b> (cooldown, 5 min par défaut) laisse les nouvelles VM démarrer avant de rejuger.</div>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · ➕ En CLI</h2>
+<pre class="cmd">az vm availability-set create -g rg-labo -n as-web --platform-fault-domain-count 2 --platform-update-domain-count 5
+az vm create -g rg-labo -n web1 --image Ubuntu2204 --availability-set as-web --generate-ssh-keys
+az vm create -g rg-labo -n web-z1 --image Ubuntu2204 --zone 1 --generate-ssh-keys
+az vmss create -g rg-labo -n vmss-web --image Ubuntu2204 --instance-count 2 \
+  --orchestration-mode Flexible --zones 1 2 3 --generate-ssh-keys
+az vmss scale -g rg-labo -n vmss-web --new-capacity 4
+az monitor autoscale create -g rg-labo --resource vmss-web --resource-type Microsoft.Compute/virtualMachineScaleSets \
+  -n auto-web --min-count 2 --max-count 5 --count 2
+az monitor autoscale rule create -g rg-labo --autoscale-name auto-web \
+  --condition "Percentage CPU > 70 avg 10m" --scale out 1
+az monitor autoscale rule create -g rg-labo --autoscale-name auto-web \
+  --condition "Percentage CPU < 30 avg 10m" --scale in 1</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Ce que ça donne pour Optifuel :</b></p>
+    <ul>
+      <li>Ton cluster k3s fait déjà de l'<b>horizontal</b> : plusieurs pods = plusieurs camions identiques.</li>
+      <li>En Azure, les nœuds k3s pourraient être un <b>VMSS</b> réparti sur <b>3 zones</b> : une zone tombe, l'appli roule encore.</li>
+      <li>Les règles <b>CPU 70 % / 30 %</b>, c'est la même idée que le <b>HPA</b> de Kubernetes (CKA).</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ajoute ma VM existante au groupe à haute disponibilité. »</span><span class="right">Impossible : seulement <b>à la création</b>. Il faut <b>recréer</b> la VM.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Le groupe à haute disponibilité protège de la perte du centre de données. »</span><span class="right">Non, il reste <b>dans un seul centre</b>. Pour un centre entier : <b>zones de disponibilité</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je passe mon groupe de 5 à 10 domaines de mise à jour. »</span><span class="right">Le nombre d'UD est <b>figé</b> après création : supprimer et recréer le groupe.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Azure met à jour Windows dans mes VM pendant la maintenance planifiée. »</span><span class="right">Azure met à jour l'<b>hôte</b>. L'<b>OS invité</b>, c'est ta responsabilité.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je passe le VMSS de Uniforme à Flexible. »</span><span class="right">Le mode d'orchestration se choisit <b>à la création</b> seulement.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Répartition fixe, région avec 3 FD : ça passe. »</span><span class="right">Fixe exige <b>exactement 5 FD</b>, sinon <b>échec</b>. Max s'adapte.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Monter à une plus grosse taille se fait sans coupure. »</span><span class="right">La mise à l'échelle <b>verticale</b> <b>redémarre</b> la VM. L'horizontale non.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai mis une règle de scale-out, c'est suffisant. »</span><span class="right">Il faut aussi un <b>scale-in</b>, sinon tu paies le maximum pour toujours.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 VMSS sur 3 zones + mise à l'échelle auto</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_linux_virtual_machine_scale_set"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"vmss-web"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>
+  sku                 = <span class="c-s">"Standard_B1s"</span>
+  instances           = 2
+  zones               = [<span class="c-s">"1"</span>, <span class="c-s">"2"</span>, <span class="c-s">"3"</span>]
+  admin_username      = <span class="c-s">"azureuser"</span>
+  <span class="c-c"># admin_ssh_key, source_image_reference, os_disk,</span>
+  <span class="c-c"># network_interface { ... subnet_id ... } comme pour une VM</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_monitor_autoscale_setting"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"auto-web"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>
+  target_resource_id  = azurerm_linux_virtual_machine_scale_set.web.id
+  profile {
+    name = <span class="c-s">"defaut"</span>
+    capacity {
+      default = 2
+      minimum = 2
+      maximum = 5
+    }
+    rule {
+      metric_trigger {
+        metric_name        = <span class="c-s">"Percentage CPU"</span>
+        metric_resource_id = azurerm_linux_virtual_machine_scale_set.web.id
+        time_grain         = <span class="c-s">"PT1M"</span>
+        statistic          = <span class="c-s">"Average"</span>
+        time_window        = <span class="c-s">"PT10M"</span>   <span class="c-c"># durée de la requête</span>
+        time_aggregation   = <span class="c-s">"Average"</span>
+        operator           = <span class="c-s">"GreaterThan"</span>
+        threshold          = 70
+      }
+      scale_action {
+        direction = <span class="c-s">"Increase"</span>
+        type      = <span class="c-s">"ChangeCount"</span>
+        value     = <span class="c-s">"1"</span>
+        cooldown  = <span class="c-s">"PT5M"</span>
+      }
+    }
+    <span class="c-c"># + une règle "LessThan 30" / "Decrease" pour le scale-in</span>
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Groupe à haute disponibilité</td><td>Availability set</td><td>VM réparties sur plusieurs racks d'un même centre</td></tr>
+        <tr><td>FD</td><td>Fault domain</td><td>Domaine d'erreur : un rack avec la même alimentation</td></tr>
+        <tr><td>UD</td><td>Update domain</td><td>Domaine de mise à jour : redémarré en même temps</td></tr>
+        <tr><td>Zone de disponibilité</td><td>Availability zone</td><td>Centre de données séparé dans une région</td></tr>
+        <tr><td>Zonal</td><td>Zonal</td><td>Ressource placée dans une zone précise</td></tr>
+        <tr><td>Redondant entre zones</td><td>Zone-redundant</td><td>Répliqué par Azure dans toutes les zones</td></tr>
+        <tr><td>Migration dynamique</td><td>Live migration</td><td>Déplacer une VM allumée vers un autre hôte</td></tr>
+        <tr><td>OS invité</td><td>Guest OS</td><td>Le système dans ta VM (pas celui de l'hôte)</td></tr>
+        <tr><td>VMSS</td><td>Virtual Machine Scale Set</td><td>Groupe de VM identiques à l'échelle</td></tr>
+        <tr><td>Scale up / down</td><td>Vertical scaling</td><td>Changer la taille</td></tr>
+        <tr><td>Scale out / in</td><td>Horizontal scaling</td><td>Changer le nombre</td></tr>
+        <tr><td>Orchestration</td><td>Orchestration mode</td><td>Uniforme ou Flexible</td></tr>
+        <tr><td>Mise à l'échelle auto</td><td>Autoscale</td><td>Ajouter ou retirer des VM selon des règles</td></tr>
+        <tr><td>Temps de récupération</td><td>Cooldown</td><td>Pause après une action avant de rejuger</td></tr>
+        <tr><td>SLA</td><td>Service-level agreement</td><td>Disponibilité garantie par contrat</td></tr>
+        <tr><td>HPA</td><td>Horizontal Pod Autoscaler</td><td>L'équivalent dans Kubernetes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="machines-virtuelles.html"><span class="lbl">← Précédent</span><span class="ttl">Machines virtuelles</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="plans-app-service.html"><span class="lbl">Suivant →</span><span class="ttl">Plans App Service</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Configurer la disponibilité des machines virtuelles », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Combien de domaines de mise à jour par défaut dans un groupe à haute disponibilité ?",o:["2","5","20"],a:1,e:"5 par défaut, de 1 à 20."},
+  {q:"Un rack entier perd son alimentation. Quel concept limite les dégâts ?",o:["Les domaines de mise à jour","Les domaines d'erreur","La mise à l'échelle verticale"],a:1,e:"FD = unité de panne matérielle."},
+  {q:"Tu veux survivre à la perte d'un centre de données entier. Quelle option ?",o:["Groupe à haute disponibilité","Zones de disponibilité","Plus gros disque"],a:1,e:"Les groupes restent dans un seul centre."},
+  {q:"Comment mettre une VM existante dans un groupe à haute disponibilité ?",o:["Avec az vm update","La recréer dans le groupe","Depuis le menu Disponibilité de la VM"],a:1,e:"Seulement à la création."},
+  {q:"Quel SLA pour 2 VM ou plus réparties sur 2 zones ou plus ?",o:["99,9 %","99,95 %","99,99 %"],a:2,e:"➕ 99,95 % = groupe, 99,9 % = 1 VM Premium."},
+  {q:"Quel service est zonal (tu choisis la zone) ?",o:["Stockage ZRS","Azure SQL Database","Une machine virtuelle"],a:2,e:"VM et disques managés sont zonaux."},
+  {q:"Ajouter des VM pendant un rush, c'est :",o:["Scale up","Scale out","Scale in"],a:1,e:"Horizontal = nombre de VM."},
+  {q:"Répartition fixe dans une région qui n'a que 3 domaines d'erreur. Résultat ?",o:["Le VMSS est créé sur 3 FD","La création échoue","Azure passe en Max"],a:1,e:"Fixe = exactement 5 FD."},
+  {q:"Quel mode d'orchestration est recommandé pour un nouveau VMSS ?",o:["Uniforme","Flexible","Fixe"],a:1,e:"Flexible, et il est choisi à la création."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

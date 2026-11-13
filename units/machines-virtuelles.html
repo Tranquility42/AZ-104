@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Machines virtuelles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">Machines virtuelles</span></nav>
+  <h1>Présentation des machines virtuelles Azure</h1>
+  <p class="lede">Checklist avant de créer une VM, tailles, disques, facturation, outils de création, disponibilité et sauvegarde. Les notions marquées <b>➕ examen</b> complètent le module.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 9 min · module complet</span>
+    <span class="chip">🎯 Désallouer vs arrêter, disques OS, 15 caractères : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> une VM = calcul + disques + carte réseau + réseau virtuel + NSG + IP. Planifie le <b>réseau d'abord</b>. Le calcul est facturé <b>à la minute</b> et s'arrête seulement si la VM est <b>désallouée</b> ; le <b>stockage reste facturé</b>. Disque OS : <b>pas Ultra ni Premium SSD v2</b>. <b>Site Recovery</b> = basculer ailleurs, <b>Backup</b> = revenir en arrière.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : louer un camion chez Azure 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🚚 La location</h3>
+      <ul>
+        <li><b>VM</b> = un <b>camion loué</b> : tu choisis le modèle, tu conduis, tu fais l'entretien de la cabine (l'OS)</li>
+        <li><b>Taille</b> = la <b>classe du camion</b> (porteur, tracteur, frigo…) : plus gros = plus cher</li>
+        <li><b>Disque OS</b> = le <b>moteur</b> ; <b>disque de données</b> = la <b>remorque</b> qu'on peut détacher et atteler à un autre camion</li>
+        <li><b>Disque temporaire</b> = le <b>coffre de la cabine</b> : vidé quand le camion change de garage</li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>💵 La facture</h3>
+      <ul>
+        <li><b>Calcul</b> = la <b>location à la minute</b> du camion</li>
+        <li><b>Arrêter et désallouer</b> = rendre les clés : plus de location, mais tu paies encore le <b>stationnement</b> (le stockage)</li>
+        <li><b>Arrêter depuis l'OS</b> = couper le moteur sur le terrain : le camion reste réservé et <b>facturé</b></li>
+        <li><b>Instance réservée</b> = <b>location longue durée</b> 1 ou 3 ans : jusqu'à <b>−72 %</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <h2 id="checklist">1 · La checklist avant de créer une VM</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 250" role="img" aria-label="Une VM dépend d'un réseau virtuel et son sous-réseau, d'une carte réseau, d'un NSG, d'une IP publique et de disques">
+      <rect x="10" y="10" width="940" height="230" rx="16" class="svg-cloud" stroke-width="1.6"/>
+      <text x="30" y="40" class="svg-title-c">Réseau virtuel 10.0.0.0/16 (à planifier en premier)</text>
+      <rect x="30" y="60" width="600" height="160" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="50" y="86" class="svg-text">Sous-réseau 10.0.1.0/24</text>
+      <text x="50" y="104" class="svg-small">5 adresses réservées par Azure</text>
+      <rect x="50" y="120" width="160" height="80" rx="10" class="svg-onprem" stroke-width="1.2"/>
+      <text x="130" y="152" text-anchor="middle" class="svg-title-o">🛡️ NSG</text>
+      <text x="130" y="176" text-anchor="middle" class="svg-small">pare-feu (gratuit)</text>
+      <rect x="230" y="120" width="170" height="80" rx="10" class="svg-onprem" stroke-width="1.2"/>
+      <text x="315" y="152" text-anchor="middle" class="svg-title-o">🔌 Carte réseau</text>
+      <text x="315" y="176" text-anchor="middle" class="svg-small">IP privée (gratuit)</text>
+      <rect x="420" y="120" width="190" height="80" rx="10" class="svg-cloud" stroke-width="1.4"/>
+      <text x="515" y="152" text-anchor="middle" class="svg-title-c">🖥️ VM</text>
+      <text x="515" y="176" text-anchor="middle" class="svg-small">taille · image · région</text>
+      <rect x="660" y="60" width="270" height="70" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="795" y="90" text-anchor="middle" class="svg-text">🌐 IP publique (facturée)</text>
+      <text x="795" y="112" text-anchor="middle" class="svg-small">optionnelle</text>
+      <rect x="660" y="150" width="270" height="70" rx="12" class="svg-node" stroke-width="1.2"/>
+      <text x="795" y="178" text-anchor="middle" class="svg-text">💽 Disques managés</text>
+      <text x="795" y="200" text-anchor="middle" class="svg-small">OS 127 Gio · données · temporaire</text>
+      <path d="M610 150 H655" stroke="var(--cloud)" stroke-width="2"/>
+      <path d="M610 170 L655 185" stroke="var(--cloud)" stroke-width="2"/>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Élément</th><th>Ce qu'il faut savoir</th></tr></thead>
+      <tbody>
+        <tr><td><b>Réseau</b></td><td>À planifier <b>avant</b> : plages et sous-réseaux difficiles à changer après. Pas de chevauchement entre réseaux reliés.</td></tr>
+        <tr><td><b>Nom</b></td><td><b>15 caractères</b> max pour Windows, <b>64</b> pour Linux. Le nom devient aussi le nom de l'ordinateur. Convention : <code>deveus-webvm01</code> (environnement, région, rôle, numéro).</td></tr>
+        <tr><td><b>Région</b></td><td>Proche des utilisateurs, conformité, prix différents selon la région, et toutes les tailles ne sont pas partout (ton erreur <i>SkuNotAvailable</i> !).</td></tr>
+        <tr><td><b>Taille</b></td><td>Calcul + mémoire + stockage. Choisie selon la charge (tableau ci-dessous).</td></tr>
+        <tr><td><b>Disques</b></td><td>OS + temporaire d'office ; ajouter des disques de données. Nombre max ≈ <b>2 par vCPU</b>.</td></tr>
+        <tr><td><b>OS</b></td><td>Image Marketplace, image personnalisée ou <b>Azure Compute Gallery</b> (partager et répliquer des images entre régions).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAILLES -->
+  <h2 id="tailles">2 · Les familles de tailles</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Famille</th><th>Profil</th><th>Pour</th><th>➕ Séries</th></tr></thead>
+      <tbody>
+        <tr><td><b>Usage général</b></td><td>CPU/mémoire équilibrés</td><td>Dev/test, petites BD, sites peu chargés</td><td>B, D</td></tr>
+        <tr><td><b>Optimisée calcul</b></td><td>Beaucoup de CPU</td><td>Serveurs web moyens, appliances réseau, traitements par lots</td><td>F</td></tr>
+        <tr><td><b>Optimisée mémoire</b></td><td>Beaucoup de mémoire</td><td>BD relationnelles, caches, analytique en mémoire</td><td>E, M</td></tr>
+        <tr><td><b>Optimisée stockage</b></td><td>Débit disque et E/S élevés</td><td>Bases de données (Big Data, SQL, NoSQL)</td><td>L</td></tr>
+        <tr><td><b>GPU</b></td><td>Carte graphique</td><td>Rendu, montage vidéo, IA (apprentissage, inférence)</td><td>N</td></tr>
+        <tr><td><b>Calcul haute performance</b></td><td>CPU les plus rapides</td><td>Simulations, calcul scientifique</td><td>H</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Redimensionner</b> : la VM <b>redémarre</b>. Si elle est <b>allumée</b>, tu ne vois que les tailles du <b>cluster</b> où elle tourne. Pour avoir <b>toutes</b> les tailles de la région : <b>arrêter et désallouer</b> d'abord. ⚠️ Un redémarrage peut changer l'IP publique dynamique.</div>
+
+  <!-- DISQUES -->
+  <h2 id="disques">3 · Les 5 types de disques managés</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Type</th><th>Taille max</th><th>IOPS max</th><th>Débit max</th><th>Disque OS ?</th><th>Pour</th></tr></thead>
+      <tbody>
+        <tr><td><b>Ultra</b></td><td>64 Tio</td><td>160 000</td><td>4 000 Mo/s</td><td>❌</td><td>SAP HANA, grosses BD très transactionnelles</td></tr>
+        <tr><td><b>Premium SSD v2</b></td><td>64 Tio</td><td>80 000</td><td>1 200 Mo/s</td><td>❌</td><td>Production, latence faible constante</td></tr>
+        <tr><td><b>Premium SSD</b></td><td>32 Tio</td><td>20 000</td><td>900 Mo/s</td><td>✅</td><td>Production sensible aux performances</td></tr>
+        <tr><td><b>Standard SSD</b></td><td>32 Tio</td><td>6 000</td><td>750 Mo/s</td><td>✅</td><td>Serveurs web, dev/test</td></tr>
+        <tr><td><b>Standard HDD</b></td><td>32 Tio</td><td>2 000</td><td>500 Mo/s</td><td>✅</td><td>Sauvegardes, données peu utilisées</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Bon réflexe : mettre les <b>données sur un disque séparé</b> de l'OS. Si la VM meurt, on détache le disque et on l'attache à une nouvelle VM. Le <b>disque temporaire</b> n'est pas facturé, mais son contenu peut disparaître (➕ ne jamais y mettre de données importantes).</p>
+
+  <!-- PRIX -->
+  <h2 id="prix">4 · Ce qui est facturé</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>💵 Facturé</h3>
+      <ul style="font-size:14px">
+        <li><b>Calcul</b> : tarif horaire, facturé <b>à la minute</b> (55 min = 55 min)</li>
+        <li><b>Stockage</b> (disques managés) : facturé <b>même VM arrêtée</b></li>
+        <li><b>IP publique</b></li>
+        <li><b>Licence OS</b> incluse pour Windows (selon les cœurs) → Linux coûte moins cher. <b>Azure Hybrid Benefit</b> réutilise tes licences.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🆓 Gratuit</h3>
+      <ul style="font-size:14px">
+        <li><b>Carte réseau</b> (nombre limité par la taille)</li>
+        <li><b>NSG</b></li>
+        <li><b>Disque temporaire</b></li>
+        <li>Le <b>VMSS</b> lui-même (tu paies ses VM)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Mode de paiement</th><th>Engagement</th><th>Rabais</th><th>Pour</th></tr></thead>
+      <tbody>
+        <tr><td><b>Paiement à l'utilisation</b></td><td>Aucun</td><td>—</td><td>Tests, charges imprévisibles, courte durée</td></tr>
+        <tr><td><b>Instance réservée</b></td><td><b>1 ou 3 ans</b>, dans une région</td><td>Jusqu'à <b>72 %</b></td><td>VM toujours allumées, budget prévisible ; échange ou remboursement avec frais</td></tr>
+        <tr><td>➕ <b>Spot</b></td><td>Aucun</td><td>Jusqu'à ~90 %</td><td>Capacité inutilisée : Azure peut <b>expulser</b> la VM. Traitements interruptibles</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- OUTILS -->
+  <h2 id="outils">5 · Créer et gérer les VM</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Outil</th><th>Quand</th></tr></thead>
+      <tbody>
+        <tr><td><b>Portail</b></td><td>Le plus simple, une VM à la fois</td></tr>
+        <tr><td><b>Modèle ARM</b></td><td>JSON réutilisable avec paramètres (dev/test/prod). VM → Automatisation → <b>Exporter le modèle</b></td></tr>
+        <tr><td><b>Azure CLI</b> / <b>PowerShell</b></td><td>Scripts et tâches répétées</td></tr>
+        <tr><td><b>Terraform</b></td><td>Fichiers HCL : écrire → <code>plan</code> → <code>apply</code></td></tr>
+        <tr><td><b>API REST / SDK</b></td><td>Appli complexe qui gère des VM dans sa logique (.NET, Java, Python, Go…)</td></tr>
+        <tr><td><b>Extensions de VM</b></td><td>Petites applis qui configurent la VM <b>après</b> le déploiement (ex. ➕ <i>Custom Script Extension</i>)</td></tr>
+        <tr><td><b>Azure Automation</b></td><td>Runbooks déclenchés par alerte, suivi de configuration, <b>gestion des mises à jour</b></td></tr>
+        <tr><td><b>Arrêt automatique</b></td><td>VM → Opérations → <b>Arrêt automatique</b> : heure + fuseau, pour économiser</td></tr>
+      </tbody>
+    </table>
+  </div>
+<pre class="cmd">az vm create -g rg-labo -n web01 --image Ubuntu2204 --size Standard_B1s \
+  --admin-username azureuser --generate-ssh-keys -l eastus
+az vm list-sizes -l eastus -o table          # tailles d'une région
+az vm list-skus -l eastus --size Standard_B --all -o table   # ➕ voir les restrictions
+az vm resize -g rg-labo -n web01 --size Standard_B2s
+az vm deallocate -g rg-labo -n web01         # arrête la facture de calcul
+az vm auto-shutdown -g rg-labo -n web01 --time 2300</pre>
+
+  <!-- DISPO + SAUVEGARDE -->
+  <h2 id="dispo">6 · Disponibilité, reprise et sauvegarde</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Service</th><th>Protège contre</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td><b>Zones de disponibilité</b></td><td>La perte d'un <b>centre de données</b></td><td>3 zones par région, chacune avec son courant, son réseau et sa climatisation</td></tr>
+        <tr><td><b>VMSS</b></td><td>Surcharge, panne d'une VM</td><td>Groupe de VM identiques qui grandit tout seul (page suivante)</td></tr>
+        <tr><td><b>Load Balancer</b></td><td>Une VM qui tombe</td><td>Répartit le trafic entre plusieurs VM</td></tr>
+        <tr><td><b>Redondance du stockage</b></td><td>Panne matérielle ou régionale</td><td>LRS, ZRS, GRS… (voir comptes de stockage)</td></tr>
+        <tr><td><b>Azure Site Recovery</b></td><td>La perte d'une <b>région</b> ou d'un site</td><td><b>Réplique</b> les VM vers une autre région, bascule (failover), puis retour (failback). Tests sans toucher la prod.</td></tr>
+        <tr><td><b>Azure Backup</b></td><td>Suppression, corruption, rançongiciel</td><td><b>Copies</b> restaurables dans un <b>coffre Recovery Services</b>, selon une <b>stratégie</b> (quand + combien de temps)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>Site Recovery ≠ Backup.</b> Site Recovery garde une <b>copie qui roule</b> pour redémarrer ailleurs vite (le camion de relève). Backup garde des <b>photos datées</b> pour revenir en arrière (l'historique des bons de livraison). Azure Backup : transfert de données <b>non facturé</b>, rétention longue, sauvegardes <b>cohérentes avec les applis</b> (VSS sous Windows), stockage LRS ou GRS. Composants : agent MARS, DPM, Azure Backup Server, <b>extension de VM</b>.</div>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Si un jour Optifuel tourne sur une VM Azure :</b></p>
+    <ul>
+      <li>Nœud k3s = VM <b>Linux</b> série <b>B</b> (pas de licence Windows à payer).</li>
+      <li>PostgreSQL sur un <b>disque de données séparé</b> (Premium ou Standard SSD), pas sur le disque OS.</li>
+      <li>VM de dev : <b>arrêt automatique</b> le soir et <code>az vm deallocate</code>.</li>
+      <li>Prod toujours allumée : <b>instance réservée</b> 1 an et <b>Azure Backup</b> sur la VM.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'ai arrêté la VM depuis Windows, je ne paie plus rien. »</span><span class="right">Arrêt depuis l'OS = <b>toujours alloué</b>, calcul facturé. Il faut <b>arrêter et désallouer</b> (portail ou <code>az vm deallocate</code>). Et le stockage reste facturé dans tous les cas.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je mets le disque OS sur un Ultra Disk pour la vitesse. »</span><span class="right">Ultra et Premium SSD v2 ne peuvent <b>pas</b> être disques OS.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je nomme ma VM Windows « optifuel-prod-web-01 ». »</span><span class="right"><b>15 caractères</b> max pour Windows (64 pour Linux).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La taille voulue n'apparaît pas : elle n'existe pas. »</span><span class="right">VM allumée = seulement les tailles du <b>cluster</b> actuel. <b>Désalloue</b>, puis redimensionne. Sinon, elle n'existe pas dans la <b>région</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Le disque temporaire est sauvegardé avec la VM. »</span><span class="right">Le disque temporaire peut être <b>vidé</b> (redimensionnement, maintenance). Données importantes = disque de données.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Azure Site Recovery sert à restaurer un fichier supprimé hier. »</span><span class="right">Ça, c'est <b>Azure Backup</b>. Site Recovery = <b>basculer</b> toute la VM dans une autre région.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« La carte réseau et le NSG font monter la facture. »</span><span class="right">Les deux sont <b>gratuits</b>. L'IP publique, elle, est facturée.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Une VM Linux avec son réseau</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_network_interface"</span> <span class="c-s">"web"</span> {
+  name                = <span class="c-s">"web01-nic"</span>
+  location            = <span class="c-s">"eastus"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  ip_configuration {
+    name                          = <span class="c-s">"interne"</span>
+    subnet_id                     = azurerm_subnet.web.id
+    private_ip_address_allocation = <span class="c-s">"Dynamic"</span>
+  }
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_linux_virtual_machine"</span> <span class="c-s">"web"</span> {
+  name                  = <span class="c-s">"web01"</span>
+  resource_group_name   = azurerm_resource_group.labo.name
+  location              = <span class="c-s">"eastus"</span>
+  size                  = <span class="c-s">"Standard_B1s"</span>
+  admin_username        = <span class="c-s">"azureuser"</span>
+  network_interface_ids = [azurerm_network_interface.web.id]
+  admin_ssh_key {
+    username   = <span class="c-s">"azureuser"</span>
+    public_key = file(<span class="c-s">"~/.ssh/id_rsa.pub"</span>)
+  }
+  os_disk {
+    caching              = <span class="c-s">"ReadWrite"</span>
+    storage_account_type = <span class="c-s">"StandardSSD_LRS"</span>
+  }
+  source_image_reference {
+    publisher = <span class="c-s">"Canonical"</span>
+    offer     = <span class="c-s">"ubuntu-24_04-lts"</span>
+    sku       = <span class="c-s">"server"</span>
+    version   = <span class="c-s">"latest"</span>
+  }
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>VM</td><td>Virtual machine</td><td>Machine virtuelle : un serveur loué dans Azure</td></tr>
+        <tr><td>Taille / SKU</td><td>Size</td><td>Combinaison CPU + mémoire + stockage (ex. Standard_B1s)</td></tr>
+        <tr><td>vCPU</td><td>Virtual CPU</td><td>Cœur de processeur virtuel</td></tr>
+        <tr><td>Désallouer</td><td>Deallocate</td><td>Libérer le serveur physique : le calcul n'est plus facturé</td></tr>
+        <tr><td>Disque managé</td><td>Managed disk</td><td>Disque géré par Azure (pas de compte de stockage à gérer)</td></tr>
+        <tr><td>IOPS</td><td>Input/Output operations per second</td><td>Opérations disque par seconde</td></tr>
+        <tr><td>Disque temporaire</td><td>Temporary disk</td><td>Disque local gratuit et non persistant</td></tr>
+        <tr><td>Instance réservée</td><td>Reserved instance</td><td>Engagement 1 ou 3 ans contre un rabais</td></tr>
+        <tr><td>Spot</td><td>Azure Spot VM</td><td>VM à bas prix qu'Azure peut reprendre</td></tr>
+        <tr><td>Hybrid Benefit</td><td>Azure Hybrid Benefit</td><td>Réutiliser ses licences Windows Server/SQL</td></tr>
+        <tr><td>Compute Gallery</td><td>Azure Compute Gallery</td><td>Bibliothèque d'images de VM partagées</td></tr>
+        <tr><td>Extension</td><td>VM extension</td><td>Petit agent qui configure une VM après création</td></tr>
+        <tr><td>ASR</td><td>Azure Site Recovery</td><td>Réplication et bascule vers une autre région</td></tr>
+        <tr><td>Coffre Recovery Services</td><td>Recovery Services vault</td><td>Où Azure Backup range les sauvegardes</td></tr>
+        <tr><td>VSS</td><td>Volume Shadow Copy Service</td><td>Service Windows pour des sauvegardes cohérentes</td></tr>
+        <tr><td>BCDR</td><td>Business continuity and disaster recovery</td><td>Continuité d'activité et reprise après sinistre</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="lab07.html"><span class="lbl">← Précédent</span><span class="ttl">Plan du labo 07</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="disponibilite-vm.html"><span class="lbl">Suivant →</span><span class="ttl">Disponibilité des VM</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Présentation des machines virtuelles Azure », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Ta VM est allumée et la taille voulue n'apparaît pas dans la liste. Que faire ?",o:["Changer de groupe de ressources","Arrêter et désallouer la VM, puis redimensionner","Ajouter un disque de données"],a:1,e:"Désallouée, la VM voit toutes les tailles de la région."},
+  {q:"Quel est le nombre maximum de caractères pour le nom d'une VM Windows ?",o:["15","64","80"],a:0,e:"15 pour Windows, 64 pour Linux."},
+  {q:"Lequel de ces disques peut servir de disque OS ?",o:["Ultra Disk","Premium SSD v2","Premium SSD"],a:2,e:"Ultra et Premium SSD v2 : données seulement."},
+  {q:"Tu as arrêté la VM depuis le système d'exploitation. Que paies-tu ?",o:["Rien","Le calcul et le stockage","Seulement le stockage"],a:1,e:"Seule la désallocation arrête le calcul."},
+  {q:"Une base de données relationnelle a besoin de beaucoup de mémoire. Quelle famille ?",o:["Optimisée calcul","Optimisée mémoire","GPU"],a:1,e:"Ratio mémoire/CPU élevé."},
+  {q:"Une VM tourne 24 h/24 pendant 3 ans. Comment payer moins cher ?",o:["Spot","Instance réservée","Paiement à l'utilisation"],a:1,e:"Jusqu'à 72 % de rabais."},
+  {q:"Tu veux redémarrer tes VM dans une autre région si la tienne tombe. Quel service ?",o:["Azure Backup","Azure Site Recovery","Arrêt automatique"],a:1,e:"Réplication, failover, failback."},
+  {q:"Où Azure Backup range-t-il les sauvegardes de VM ?",o:["Dans un coffre Recovery Services","Sur le disque temporaire","Dans une Compute Gallery"],a:0,e:"Avec une stratégie de sauvegarde."},
+  {q:"Qu'est-ce qui n'est PAS facturé ?",o:["L'IP publique","Le NSG","Le disque OS"],a:1,e:"NSG et carte réseau sont gratuits."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

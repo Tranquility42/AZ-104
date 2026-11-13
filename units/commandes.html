@@ -146,6 +146,29 @@ var C=[
  {c:'az storage share-rm create -g rg-labo --storage-account stock1 -n partage --quota 100 --access-tier Hot',t:'cli',th:'Stockage',d:"Créer un partage Azure Files.",eq:'New-AzRmStorageShare',p:'azure-files'},
  {c:'az storage share-rm snapshot -g rg-labo --storage-account stock1 -n partage',t:'cli',th:'Stockage',d:"Prendre un instantané d'un partage.",eq:'New-AzRmStorageShare -Snapshot',p:'azure-files'},
  {c:'az storage account file-service-properties update -g rg-labo -n stock1 --enable-delete-retention true --delete-retention-days 14',t:'cli',th:'Stockage',d:"Activer la suppression réversible des partages.",eq:'Update-AzStorageFileServiceProperty -EnableShareDeleteRetentionPolicy $true',p:'azure-files'},
+ {c:"az vm list-sizes -l eastus -o table",t:'cli',th:'Calcul',d:"Lister les tailles de VM d'une région.",eq:"Get-AzVMSize -Location eastus",p:'machines-virtuelles'},
+ {c:"az vm list-skus -l eastus --size Standard_B --all -o table",t:'cli',th:'Calcul',d:"Voir les tailles et leurs restrictions (SkuNotAvailable) dans une région.",eq:"Get-AzComputeResourceSku",p:'machines-virtuelles'},
+ {c:"az vm resize -g rg-labo -n web01 --size Standard_B2s",t:'cli',th:'Calcul',d:"Changer la taille d'une VM (redémarrage).",eq:"Update-AzVM (après $vm.HardwareProfile.VmSize = ...)",p:'machines-virtuelles'},
+ {c:"az vm deallocate -g rg-labo -n web01",t:'cli',th:'Calcul',d:"Arrêter et désallouer : le calcul n'est plus facturé.",eq:"Stop-AzVM -Name web01 -ResourceGroupName rg-labo",p:'machines-virtuelles'},
+ {c:"az vm auto-shutdown -g rg-labo -n web01 --time 2300",t:'cli',th:'Calcul',d:"Programmer l'arrêt automatique quotidien (heure UTC).",eq:"—",p:'machines-virtuelles'},
+ {c:"az vm availability-set create -g rg-labo -n as-web --platform-fault-domain-count 2 --platform-update-domain-count 5",t:'cli',th:'Calcul',d:"Créer un groupe à haute disponibilité (FD et UD).",eq:"New-AzAvailabilitySet",p:'disponibilite-vm'},
+ {c:"az vmss create -g rg-labo -n vmss-web --image Ubuntu2204 --instance-count 2 --orchestration-mode Flexible --zones 1 2 3 --generate-ssh-keys",t:'cli',th:'Calcul',d:"Créer un groupe de VM identiques sur 3 zones.",eq:"New-AzVmss",p:'disponibilite-vm'},
+ {c:"az vmss scale -g rg-labo -n vmss-web --new-capacity 4",t:'cli',th:'Calcul',d:"Changer à la main le nombre d'instances d'un VMSS.",eq:"Update-AzVmss -SkuCapacity 4",p:'disponibilite-vm'},
+ {c:"az monitor autoscale create -g rg-labo --resource vmss-web --resource-type Microsoft.Compute/virtualMachineScaleSets -n auto-web --min-count 2 --max-count 5 --count 2",t:'cli',th:'Calcul',d:"Créer un paramètre de mise à l'échelle auto (min, max, défaut).",eq:"New-AzAutoscaleSetting",p:'disponibilite-vm'},
+ {c:"az monitor autoscale rule create -g rg-labo --autoscale-name auto-web --condition \"Percentage CPU > 70 avg 10m\" --scale out 1",t:'cli',th:'Calcul',d:"Ajouter une règle : +1 instance si CPU > 70 % sur 10 min.",eq:"New-AzAutoscaleScaleRuleObject",p:'disponibilite-vm'},
+ {c:"az appservice plan create -g rg-labo -n plan-web --sku B1 --is-linux -l eastus",t:'cli',th:'Calcul',d:"Créer un plan App Service Linux.",eq:"New-AzAppServicePlan -Tier Basic",p:'plans-app-service'},
+ {c:"az appservice plan update -g rg-labo -n plan-web --sku S1",t:'cli',th:'Calcul',d:"Scale up : changer le niveau tarifaire.",eq:"Set-AzAppServicePlan -Tier Standard",p:'plans-app-service'},
+ {c:"az appservice plan update -g rg-labo -n plan-web --number-of-workers 3",t:'cli',th:'Calcul',d:"Scale out : changer le nombre d'instances.",eq:"Set-AzAppServicePlan -NumberofWorkers 3",p:'plans-app-service'},
+ {c:"az webapp create -g rg-labo -p plan-web -n optiweb123 --runtime \"NODE:20-lts\"",t:'cli',th:'Calcul',d:"Créer une appli web dans un plan.",eq:"New-AzWebApp",p:'app-service'},
+ {c:"az webapp config set -g rg-labo -n optiweb123 --always-on true",t:'cli',th:'Calcul',d:"Activer Always On.",eq:"Set-AzWebApp -AlwaysOn $true",p:'app-service'},
+ {c:"az webapp deployment slot create -g rg-labo -n optiweb123 --slot staging",t:'cli',th:'Calcul',d:"Créer un emplacement de déploiement.",eq:"New-AzWebAppSlot",p:'app-service'},
+ {c:"az webapp deployment slot swap -g rg-labo -n optiweb123 --slot staging --target-slot production",t:'cli',th:'Calcul',d:"Échanger staging et production.",eq:"Switch-AzWebAppSlot",p:'app-service'},
+ {c:"az webapp config appsettings set -g rg-labo -n optiweb123 --slot staging --slot-settings DB_URL=\"...\"",t:'cli',th:'Calcul',d:"Créer un paramètre d'emplacement (ne suit pas le swap).",eq:"—",p:'app-service'},
+ {c:"az webapp config hostname add -g rg-labo --webapp-name optiweb123 --hostname www.exemple.com",t:'cli',th:'Calcul',d:"Ajouter un domaine personnalisé.",eq:"New-AzWebAppCustomHostname",p:'app-service'},
+ {c:"az container create -g rg-labo -n hello --image mcr.microsoft.com/azuredocs/aci-helloworld --os-type Linux --ports 80 --dns-name-label hello-mah123 --restart-policy Always",t:'cli',th:'Calcul',d:"Lancer un conteneur ACI avec IP publique et DNS.",eq:"New-AzContainerGroup",p:'container-instances'},
+ {c:"az container logs -g rg-labo -n hello",t:'cli',th:'Calcul',d:"Lire les journaux d'un conteneur ACI.",eq:"Get-AzContainerInstanceLog",p:'container-instances'},
+ {c:"az container create -g rg-labo --file groupe.yaml",t:'cli',th:'Calcul',d:"Déployer un groupe multi-conteneurs décrit en YAML.",eq:"—",p:'container-instances'},
+ {c:"az containerapp up -n optiapp -g rg-labo --image monregistre.azurecr.io/optifuel:1.0 --ingress external --target-port 3000",t:'cli',th:'Calcul',d:"Déployer une image sur Azure Container Apps.",eq:"New-AzContainerApp",p:'container-instances'},
  {c:'Test-NetConnection -ComputerName 10.2.0.4 -Port 3389',t:'ps',th:'Réseau',d:"Tester si un port répond sur une autre machine (ici RDP vers une VM d'un VNet appairé).",eq:'nc -zv 10.2.0.4 3389',p:'peering'},
  {c:'nslookup -type=SOA wideworldimports.com',t:'shell',th:'DNS',d:"Vérifier que la délégation vers Azure DNS fonctionne.",eq:'Resolve-DnsName -Type SOA wideworldimports.com',p:'azure-dns'},
  {c:'nslookup www.wideworldimports.com ns1-04.azure-dns.com',t:'shell',th:'DNS',d:"Interroger directement un serveur de noms Azure (avant la délégation).",eq:'Resolve-DnsName www.wideworldimports.com -Server ns1-04.azure-dns.com',p:'azure-dns'},
@@ -166,7 +189,7 @@ var C=[
  {c:'rm fichier.json',t:'shell',th:'Shell',d:"Supprimer un fichier.",eq:'Remove-Item fichier.json',p:'arm-templates'},
  {c:'cp a.json b.json · mv a.json b.json',t:'shell',th:'Shell',d:"Copier · déplacer ou renommer un fichier.",eq:'Copy-Item · Move-Item',p:'arm-templates'}
 ];
-var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering','routes':'Routes et NVA','load-balancer':'Load Balancer','comptes-stockage':'Comptes de stockage','stockage-blob':'Stockage Blob','securite-stockage':'Sécurité du stockage','azure-files':'Azure Files'};
+var PAGES={'arm-templates':'Modèles ARM','architecture':'Architecture','azure-policy':'Azure Policy','rbac':'RBAC','reseaux-virtuels':'Réseaux virtuels','azure-dns':'Azure DNS','peering':'Peering','routes':'Routes et NVA','load-balancer':'Load Balancer','comptes-stockage':'Comptes de stockage','stockage-blob':'Stockage Blob','securite-stockage':'Sécurité du stockage','azure-files':'Azure Files','machines-virtuelles':'Machines virtuelles','disponibilite-vm':'Disponibilité des VM','plans-app-service':'Plans App Service','app-service':'App Service','container-instances':'Container Instances'};
 
 var state={q:'',tool:'',th:''};
 try{var s=JSON.parse(sessionStorage.getItem('cmd-filtres')||'null');if(s)state=s;}catch(e){}

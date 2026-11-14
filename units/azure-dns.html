@@ -7,6 +7,10 @@
 <title>Azure DNS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="theme-color" content="#ffffff">
 <link rel="stylesheet" href="../style.css">
 <style>
 .numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
@@ -17,8 +21,8 @@ pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12p
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
-  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+  <a class="brand" href="../index.html"><img src="../favicon.svg" alt="" width="28" height="28">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><button class="icon-btn" id="theme" type="button" aria-label="Changer de thème">🌙</button><button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="drawer"><span aria-hidden="true">☰</span> Menu</button></div>
 </div></header>
 
 <main class="wrap">
@@ -309,7 +313,7 @@ pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12p
 
   <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="nsg.html"><span class="lbl">← Précédent</span><span class="ttl">Groupes de sécurité réseau</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="peering.html"><span class="lbl">Suivant →</span><span class="ttl">Peering de réseaux virtuels</span></a></nav>
   <footer>Résumé personnel d'après le module Microsoft Learn « Héberger votre domaine sur Azure DNS », complété des notions d'examen.</footer>
-  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Ouvrir le menu">☰ Menu</a>
 </main>
 
 <script>
@@ -353,5 +357,6 @@ Q.forEach(function(item,i){
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
 <script src="../fold.js"></script>
+<script src="../nav.js"></script>
 </body>
 </html>

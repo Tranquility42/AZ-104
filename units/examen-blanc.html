@@ -7,6 +7,10 @@
 <title>Examen blanc AZ-104</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="theme-color" content="#ffffff">
 <link rel="stylesheet" href="../style.css">
 <style>
 .modes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));margin-top:12px}
@@ -71,8 +75,8 @@
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
-  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+  <a class="brand" href="../index.html"><img src="../favicon.svg" alt="" width="28" height="28">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><button class="icon-btn" id="theme" type="button" aria-label="Changer de thème">🌙</button><button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="drawer"><span aria-hidden="true">☰</span> Menu</button></div>
 </div></header>
 
 <main class="wrap">
@@ -138,7 +142,7 @@
   </section>
 
   <footer>Questions originales rédigées d'après les modules résumés sur ce site et le plan officiel de l'examen AZ-104. Elles ne viennent pas de l'examen réel.</footer>
-  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Ouvrir le menu">☰ Menu</a>
 </main>
 <script>
 (function(){
@@ -316,5 +320,6 @@ function hist(){
 show('home');
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
+<script src="../nav.js"></script>
 </body>
 </html>

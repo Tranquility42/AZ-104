@@ -7,27 +7,38 @@
 <title>AZ-104 en images</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#ffffff">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="index.html">AZ-104 <span>en images</span></a>
-  <button class="theme-btn" id="theme" type="button">Thème</button>
+  <a class="brand" href="index.html"><img src="favicon.svg" alt="" width="28" height="28">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><button class="icon-btn" id="theme" type="button" aria-label="Changer de thème">🌙</button><button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="drawer"><span aria-hidden="true">☰</span> Menu</button></div>
 </div></header>
 
 <main class="wrap">
-  <h1>Mon parcours AZ-104</h1>
-  <p class="lede">Résumés visuels des parcours Microsoft Learn : schémas, tableaux, cartes mémo et pièges d'examen. Objectif : tout finir en 3 semaines.</p>
-  <div class="card" style="margin-top:20px">
-    <div style="display:flex;justify-content:space-between;font-size:14px"><b>Progression</b><span style="color:var(--muted)">27 modules/unités résumés</span></div>
-    <div class="progress"><i style="width:100%"></i></div>
+  <section class="hero">
+    <p class="eyebrow">Microsoft Azure Administrator · AZ-104</p>
+    <h1>Mon parcours AZ-104</h1>
+    <p class="lede">Résumés visuels des parcours Microsoft Learn : schémas, tableaux, cartes mémo et pièges d'examen, avec des analogies de la route.</p>
+    <div class="hero-stats">
+      <div><b data-stat="pages">25</b><span>pages résumées</span></div>
+      <div><b data-stat="terms">288</b><span>termes au lexique</span></div>
+      <div><b data-stat="questions">114</b><span>questions d'examen</span></div>
+    </div>
+    <div class="progress" aria-label="Progression du parcours"><i style="width:100%"></i></div>
+  </section>
+
+  <div class="tools">
+    <a class="card unit tool" href="units/examen-blanc.html"><span class="tool-ico" aria-hidden="true">⏱️</span><div><b>Examen blanc</b><div class="s">Chrono, score sur 1000, historique</div></div></a>
+    <a class="card unit tool" href="units/lexique.html"><span class="tool-ico" aria-hidden="true">📖</span><div><b>Lexique</b><div class="s">Tous les termes, de A à Z</div></div></a>
+    <a class="card unit tool" href="units/commandes.html"><span class="tool-ico" aria-hidden="true">⌨️</span><div><b>Mes commandes</b><div class="s">CLI et PowerShell, avec recherche</div></div></a>
   </div>
 
-  <a class="card unit" href="units/commandes.html" style="margin-top:14px"><div><b>⌨️ Mes commandes Azure</b><div class="s">CLI, PowerShell et shell, avec recherche et équivalents</div></div><span class="badge">outil</span></a>
-  <a class="card unit" href="units/lexique.html" style="margin-top:10px"><div><b>📖 Lexique</b><div class="s">Tous les termes et sigles du site, de A à Z, avec recherche</div></div><span class="badge">outil</span></a>
-  <a class="card unit" href="units/examen-blanc.html" style="margin-top:10px"><div><b>⏱️ Examen blanc</b><div class="s">Questions style AZ-104, chrono, score sur 1000 et historique</div></div><span class="badge">outil</span></a>
-
-  <button class="fold-all" id="foldAll" type="button">Tout ouvrir</button>
+  <div class="sec-head"><h2>Modules</h2><button class="fold-all" id="foldAll" type="button">Tout ouvrir</button></div>
 
   <p class="mod">1 · Prérequis</p>
   <div class="units">
@@ -114,5 +125,6 @@
   label();
 })();
 </script>
+<script src="nav.js"></script>
 </body>
 </html>

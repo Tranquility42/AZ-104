@@ -37,7 +37,7 @@
 .opt[aria-checked="true"]{border-color:var(--cloud);background:var(--cloud-soft)}
 .opt[aria-checked="true"] .k{background:var(--cloud);border-color:var(--cloud);color:#fff}
 .nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.nav .btn{flex:1;min-width:90px;white-space:nowrap}
+.nav .btn{flex:1;min-width:110px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;margin-top:14px}
 .cell{all:unset;cursor:pointer;box-sizing:border-box;height:38px;border-radius:9px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--surface);position:relative}
 .cell.done{background:var(--cloud-soft);border-color:var(--cloud)}
@@ -108,8 +108,8 @@
     </div>
     <div class="card qcard" id="qcard"></div>
     <div class="nav">
-      <button class="btn sec" id="bPrev" type="button">← Préc.</button>
-      <button class="btn sec" id="bFlag" type="button">🚩 Revoir</button>
+      <button class="btn sec" id="bPrev" type="button">← Précédente</button>
+      <button class="btn sec" id="bFlag" type="button">🚩 À revoir</button>
       <button class="btn" id="bNext" type="button">Suivante →</button>
     </div>
     <div id="gridBox" hidden>
@@ -216,9 +216,9 @@ function renderQ(){
     if(multi){var p=a.indexOf(k);if(p>=0)a.splice(p,1);else a.push(k);}else run.ans[cur]=[k];
     save(K.run,run);renderQ();};});
   $('bPrev').disabled=cur===0;
-  $('bNext').textContent=cur===run.ids.length-1?'Fin':'Suiv. →';
+  $('bNext').textContent=cur===run.ids.length-1?'Dernière':'Suivante →';
   $('bNext').disabled=cur===run.ids.length-1;
-  $('bFlag').textContent=run.flag[cur]?'🚩 Retirer':'🚩 Revoir';
+  $('bFlag').textContent=run.flag[cur]?'🚩 Retirer':'🚩 À revoir';
   var g=$('grid');g.innerHTML='';
   run.ids.forEach(function(_,n){var c=document.createElement('button');c.type='button';
     c.className='cell'+(run.ans[n].length?' done':'')+(run.flag[n]?' flag':'')+(n===cur?' cur':'');

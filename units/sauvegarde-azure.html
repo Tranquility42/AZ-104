@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Sauvegarde Azure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.opt3{grid-template-columns:minmax(0,1fr)}}
+.opt3 .card{display:flex;flex-direction:column;gap:6px}
+.opt3 .num{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.opt3 p{margin:0;font-size:14px}
+pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0}
+.numl{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.numl li{counter-increment:s;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.numl li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--cloud-soft);border:1.5px solid var(--cloud);display:grid;place-items:center;font-weight:700;font-size:14px}
+.sas{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sas span{padding:2px 4px;border-radius:5px}
+.sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Supervision</span><span class="sep">›</span><span class="here">Sauvegarde Azure</span></nav>
+  <h1>Sauvegarde Azure : présentation et protection des VM</h1>
+  <p class="lede">Ce que protège Sauvegarde Azure, coffres, niveaux instantané/coffre/archive, cohérence, stratégies, sécurité du coffre et restauration d'une VM. Deux modules réunis. Les notions marquées <b>➕ examen</b> complètent les modules.</p>
+  <div class="meta">
+    <span class="chip">⏱ Lecture : 9 min · 2 modules</span>
+    <span class="chip">🎯 Coffres, MARS, stratégies, options de restauration : questions fréquentes</span>
+  </div>
+
+  <div class="keyidea">
+    <div class="ico">💡</div>
+    <div><b>À retenir :</b> Sauvegarde Azure range des <b>copies datées</b> dans un <b>coffre</b> (Recovery Services pour les VM). Une <b>stratégie</b> fixe la fréquence (Standard 1/jour, Enhanced toutes les <b>4 h</b> min) et la rétention. L'instantané reste <b>jusqu'à 5 jours</b> (restauration rapide), puis la copie part au coffre. Suppression réversible <b>14 jours</b>. <b>RPO</b> = perte acceptable, <b>RTO</b> = arrêt acceptable.</div>
+  </div>
+
+  <!-- ANALOGIE -->
+  <h2>Pour s'en souvenir : le coffre-fort du terminal 🚛</h2>
+  <div class="grid2">
+    <div class="card side c">
+      <h3>🗄️ Le principe</h3>
+      <ul>
+        <li><b>Coffre</b> (vault) = le <b>coffre-fort du bureau</b> où on range les copies des bons de livraison, à part des camions</li>
+        <li><b>Stratégie de sauvegarde</b> = la <b>consigne</b> : faire une copie tous les soirs à 23 h et la garder 180 jours</li>
+        <li><b>Point de récupération</b> = une <b>copie datée</b> dans le coffre</li>
+        <li><b>Suppression réversible</b> = la copie jetée reste dans la <b>poubelle verrouillée 14 jours</b></li>
+      </ul>
+    </div>
+    <div class="card side o">
+      <h3>⏱️ RPO et RTO</h3>
+      <ul>
+        <li><b>RPO</b> = combien de <b>livraisons</b> tu acceptes de perdre : sauvegarde toutes les heures → au pire 1 h de données perdues</li>
+        <li><b>RTO</b> = combien de <b>temps</b> le camion peut rester au garage avant de reprendre la route : RTO 4 h → service rétabli en 4 h max</li>
+        <li><b>Backup</b> = revenir en arrière ; <b>Site Recovery</b> = repartir ailleurs (voir la page Machines virtuelles)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- QUOI -->
+  <h2 id="quoi">1 · Ce que protège Sauvegarde Azure</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Charge</th><th>Comment</th><th>Coffre ➕</th></tr></thead>
+      <tbody>
+        <tr><td><b>VM Azure</b> Windows et Linux</td><td>Extension de sauvegarde, instantanés des disques</td><td><b>Recovery Services</b></td></tr>
+        <tr><td><b>SQL Server / SAP HANA</b> dans une VM</td><td>Streaming « conscient » de la base : complète, différentielle, <b>journal toutes les 15 min</b> (RPO 15 min, restauration à la seconde)</td><td><b>Recovery Services</b></td></tr>
+        <tr><td><b>Azure Files</b></td><td>Instantanés de partage gérés par Backup</td><td><b>Recovery Services</b></td></tr>
+        <tr><td>Fichiers, dossiers, état système <b>locaux</b> (Windows)</td><td><b>Agent MARS</b></td><td><b>Recovery Services</b></td></tr>
+        <tr><td>VM Hyper-V/VMware, Exchange, SharePoint locaux</td><td><b>MABS</b> ou <b>DPM</b>, puis copie vers le coffre</td><td><b>Recovery Services</b></td></tr>
+        <tr><td><b>Disques managés</b></td><td>Instantanés incrémentiels (opérationnels)</td><td><b>Backup vault</b></td></tr>
+        <tr><td><b>Blobs</b></td><td>Opérationnel (versions, soft delete) ou coffre</td><td><b>Backup vault</b></td></tr>
+        <tr><td><b>PostgreSQL</b>, MySQL flexibles, <b>AKS</b></td><td>—</td><td><b>Backup vault</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px">➕ Pour l'examen : <b>Recovery Services vault</b> = VM, SQL/SAP dans une VM, Azure Files, MARS/MABS (et Site Recovery). <b>Backup vault</b> = les plus récents (disques, blobs, PostgreSQL, AKS). Le coffre doit être dans la <b>même région</b> que la VM protégée. ⚠️ L'agent <b>MARS</b> ne marche <b>pas sous Linux</b>.</div>
+
+  <!-- COMMENT -->
+  <h2 id="comment">2 · Comment ça marche pour une VM</h2>
+  <div class="card diagram">
+    <svg viewBox="0 0 960 250" role="img" aria-label="L'extension prend un instantané de la VM, gardé 1 à 5 jours dans le niveau instantané pour une restauration rapide, puis transféré dans le coffre Recovery Services en ne copiant que les blocs modifiés">
+      <defs><marker id="ba" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--cloud)"/></marker></defs>
+      <rect x="10" y="40" width="250" height="170" rx="14" class="svg-onprem" stroke-width="1.6"/>
+      <text x="135" y="72" text-anchor="middle" class="svg-title-o">🖥️ VM</text>
+      <text x="135" y="98" text-anchor="middle" class="svg-small">extension VMSnapshot (Windows, VSS)</text>
+      <text x="135" y="120" text-anchor="middle" class="svg-small">ou VMSnapshotLinux</text>
+      <text x="135" y="160" text-anchor="middle" class="svg-small">installée à la 1re sauvegarde</text>
+      <path d="M260 125 H325" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ba)"/>
+      <text x="292" y="115" text-anchor="middle" class="svg-small">①</text>
+      <rect x="330" y="40" width="280" height="170" rx="14" class="svg-node" stroke-width="1.4"/>
+      <text x="470" y="72" text-anchor="middle" class="svg-text">⚡ Niveau instantané</text>
+      <text x="470" y="98" text-anchor="middle" class="svg-small">dans ton abonnement</text>
+      <text x="470" y="120" text-anchor="middle" class="svg-small">gardé jusqu'à 5 jours</text>
+      <text x="470" y="160" text-anchor="middle" class="svg-small">= restauration instantanée (rapide)</text>
+      <path d="M610 125 H675" stroke="var(--cloud)" stroke-width="2.5" marker-end="url(#ba)"/>
+      <text x="642" y="115" text-anchor="middle" class="svg-small">②</text>
+      <rect x="680" y="40" width="270" height="170" rx="14" class="svg-cloud" stroke-width="1.6"/>
+      <text x="815" y="72" text-anchor="middle" class="svg-title-c">🗄️ Coffre (niveau coffre)</text>
+      <text x="815" y="98" text-anchor="middle" class="svg-small">copie isolée, LRS / ZRS / GRS</text>
+      <text x="815" y="120" text-anchor="middle" class="svg-small">blocs modifiés seulement</text>
+      <text x="815" y="160" text-anchor="middle" class="svg-small">rétention des années (+ archive)</text>
+    </svg>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Cohérence</th><th>Quand</th><th>Résultat</th></tr></thead>
+      <tbody>
+        <tr><td><b>Avec l'application</b></td><td>Windows : <b>VSS</b> fige les applis. Linux : <b>scripts pré/post</b> à écrire</td><td>Meilleure : appli et données propres au redémarrage</td></tr>
+        <tr><td><b>Avec le système de fichiers</b></td><td>Si VSS ou les scripts échouent</td><td>Pas de corruption, mais l'appli doit se réparer au démarrage</td></tr>
+        <tr><td><b>En cas d'incident</b> (crash)</td><td>Souvent quand la VM est <b>arrêtée</b></td><td>Comme débrancher la prise : aucune garantie pour l'appli</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- STRATEGIE -->
+  <h2 id="strategie">3 · Stratégie de sauvegarde, coffre et sécurité</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>📅 Stratégie (policy)</h3>
+      <ul style="font-size:14px">
+        <li><b>Standard</b> : 1 sauvegarde par jour (ou par semaine). Par défaut dans le portail : <b>DailyPolicy</b>, chaque jour à 12 h UTC, gardée <b>180 jours</b></li>
+        <li><b>Enhanced</b> (améliorée) : <b>toutes les 4, 6, 8, 12 ou 24 h</b> (minimum 4 h, pas 1 h), choix des <b>disques de données</b> à sauvegarder</li>
+        <li>Rétention courte (jours) et <b>longue</b> (semaines, mois, années) ; niveau <b>archive</b> pour la conformité</li>
+        <li><b>Sauvegarder maintenant</b> (à la demande) : rétention choisie à part, la stratégie ne s'applique pas</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🔐 Protection du coffre</h3>
+      <ul style="font-size:14px">
+        <li><b>Suppression réversible</b> : sauvegardes supprimées gardées <b>14 jours</b> gratuits (réglable 14 à 180)</li>
+        <li><b>Immuabilité</b>, <b>autorisation multi-utilisateurs</b> (MUA) contre un admin malveillant ou un rançongiciel</li>
+        <li><b>RBAC</b> sur le coffre ; chiffrement par clés Microsoft ou <b>clés client</b> (Key Vault)</li>
+        <li>Trafic sur le réseau Azure : <b>pas besoin d'Internet</b> pour sauvegarder une VM</li>
+        <li>Redondance du coffre : <b>LRS</b>, <b>ZRS</b>, <b>GRS</b> (recommandée ; permet la <b>restauration inter-régions</b>). ➕ À choisir <b>avant</b> la 1re sauvegarde. L'archive n'existe pas en ZRS</li>
+      </ul>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Tout se pilote depuis <b>Résilience</b> (ancien <b>Centre de sauvegarde</b>) : travaux, coffres, abonnements, régions. <b>Backup Explorer</b> = un classeur Azure Monitor pour la vue d'ensemble ; journaux vers <b>Log Analytics</b>.</p>
+
+  <!-- RESTAURER -->
+  <h2 id="restaurer">4 · Restaurer</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Option</th><th>Ce qu'elle fait</th><th>Quand</th></tr></thead>
+      <tbody>
+        <tr><td><b>Créer une machine virtuelle</b></td><td>Nouvelle VM à partir du point de restauration</td><td>Garder l'ancienne pour comparer</td></tr>
+        <tr><td><b>Restaurer les disques</b></td><td>Crée des disques (+ modèle) que tu attaches ou personnalises</td><td>Changer la taille, le réseau…</td></tr>
+        <tr><td><b>Remplacer l'existant</b></td><td>Remplace les disques de la VM actuelle. Exige un <b>compte de stockage intermédiaire</b></td><td>La VM est abîmée (labo du module)</td></tr>
+        <tr><td>➕ <b>Récupération de fichiers</b></td><td>Un <b>script</b> monte le point de récupération comme un lecteur : tu copies <b>quelques fichiers</b></td><td>Un fichier effacé, pas toute la VM</td></tr>
+        <tr><td>➕ <b>Restauration inter-régions</b></td><td>Restaurer dans la <b>région jumelée</b></td><td>Coffre <b>GRS</b> avec l'option activée</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px">Dans l'exercice : VM → <b>Sauvegarde</b> → <b>Restaurer la machine virtuelle</b> → choisir le point → <b>Remplacer l'existant</b> + compte de stockage intermédiaire. ⚠️ <b>Arrêter la VM d'abord</b>, sinon la restauration échoue. Suivi : coffre → <b>Travaux de sauvegarde</b>. Le plus rapide : un point encore dans le <b>niveau instantané</b> (restauration instantanée).</div>
+
+  <!-- LAB -->
+  <h2 id="labo">5 · Les exercices du module en bref</h2>
+  <ol class="numl">
+    <li><span>Créer 2 VM (Windows <code>NW-APP01</code>, Linux <code>NW-RHEL01</code>) dans le groupe <code>vmbackups</code>, West US 2.</span></li>
+    <li><span>Portail : VM Linux → <b>Sauvegarde</b> → coffre et <b>DailyPolicy</b> par défaut → <b>Activer</b> → <b>Sauvegarder maintenant</b>.</span></li>
+    <li><span>CLI : créer le coffre <code>azure-backup</code>, protéger la VM Windows, lancer une sauvegarde.</span></li>
+    <li><span>Restaurer NW-APP01 : compte de stockage intermédiaire, <b>arrêter</b> la VM, <b>Remplacer l'existant</b>.</span></li>
+  </ol>
+
+  <!-- CLI -->
+  <h2 id="cli">6 · En CLI</h2>
+<pre class="cmd">az backup vault create -g vmbackups -n azure-backup -l westus2
+az backup vault backup-properties set -g vmbackups -n azure-backup --backup-storage-redundancy GeoRedundant   # ➕ avant la 1re sauvegarde
+az backup protection enable-for-vm -g vmbackups --vault-name azure-backup --vm NW-APP01 --policy-name EnhancedPolicy
+az backup protection backup-now -g vmbackups --vault-name azure-backup \
+  --container-name NW-APP01 --item-name NW-APP01 --retain-until 18-10-2030 --backup-management-type AzureIaasVM
+az backup job list -g vmbackups --vault-name azure-backup -o table
+az backup recoverypoint list -g vmbackups --vault-name azure-backup -c NW-APP01 -i NW-APP01 \
+  --backup-management-type AzureIaasVM -o table      # ➕ points de restauration</pre>
+
+  <!-- OPTIFUEL -->
+  <h2>🚛 Appliquer à Optifuel</h2>
+  <div class="optifuel">
+    <p style="margin:0"><b>Pour la base d'Optifuel :</b></p>
+    <ul>
+      <li>PostgreSQL dans une VM Linux : sauvegarde de VM + <b>scripts pré/post</b> (ex. <code>pg_dump</code> ou figer les écritures) pour une copie <b>cohérente avec l'appli</b>.</li>
+      <li>Si un jour c'est <b>Azure Database for PostgreSQL</b> : protégé par un <b>Backup vault</b>, rétention longue pour les dossiers de conformité.</li>
+      <li>Fixe d'abord ton <b>RPO</b> : perdre au plus 1 journée de pleins saisis ? Alors une sauvegarde par jour suffit.</li>
+    </ul>
+  </div>
+
+  <!-- PIEGES -->
+  <h2>Pièges d'examen</h2>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je sauvegarde une VM d'East US dans mon coffre de Canada Central. »</span><span class="right">➕ Le coffre Recovery Services doit être dans la <b>même région</b> que la VM.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« J'installe l'agent MARS sur ma VM Linux. »</span><span class="right">MARS = <b>Windows</b> seulement (fichiers, dossiers, état système). Linux : sauvegarde de VM complète.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Ma stratégie Enhanced sauvegarde toutes les heures. »</span><span class="right">Minimum <b>4 h</b> (4, 6, 8, 12, 24 h).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je restaure en « Remplacer l'existant » avec la VM allumée. »</span><span class="right">Il faut <b>arrêter</b> la VM et fournir un <b>compte de stockage intermédiaire</b>.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Pour un seul fichier supprimé, je restaure toute la VM. »</span><span class="right">➕ <b>Récupération de fichiers</b> : un script monte le point de restauration, tu copies le fichier.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Backup et Site Recovery, c'est pareil. »</span><span class="right">Backup = <b>revenir en arrière</b> (copies datées). Site Recovery = <b>basculer</b> dans une autre région (réplication continue).</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Une sauvegarde supprimée est perdue tout de suite. »</span><span class="right"><b>Suppression réversible</b> : gardée <b>14 jours</b> par défaut.</span></div>
+  <div class="trap"><span class="x">🪤</span><span class="wrong">« Je change la redondance du coffre de LRS à GRS après des mois. »</span><span class="right">➕ À choisir <b>avant</b> de protéger la première ressource.</span></div>
+
+  <!-- QUIZ -->
+  <h2>Mini-quiz <span class="score" id="score" style="font-size:15px;color:var(--muted)"></span></h2>
+  <div class="card quiz" id="quiz"></div>
+
+  <!-- TERRAFORM -->
+  <h2>Encart Terraform</h2>
+  <div class="tf">
+    <h3>🟪 Coffre Recovery Services + sauvegarde d'une VM</h3>
+<pre><span class="c-k">resource</span> <span class="c-s">"azurerm_recovery_services_vault"</span> <span class="c-s">"coffre"</span> {
+  name                = <span class="c-s">"azure-backup"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  location            = <span class="c-s">"eastus"</span>             <span class="c-c"># même région que la VM</span>
+  sku                 = <span class="c-s">"Standard"</span>
+  storage_mode_type   = <span class="c-s">"GeoRedundant"</span>
+  soft_delete_enabled = <span class="c-k">true</span>
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_backup_policy_vm"</span> <span class="c-s">"quotidienne"</span> {
+  name                = <span class="c-s">"quotidienne-23h"</span>
+  resource_group_name = azurerm_resource_group.labo.name
+  recovery_vault_name = azurerm_recovery_services_vault.coffre.name
+  instant_restore_retention_days = 2
+  backup {
+    frequency = <span class="c-s">"Daily"</span>
+    time      = <span class="c-s">"23:00"</span>
+  }
+  retention_daily {
+    count = 30
+  }
+}
+<span class="c-k">resource</span> <span class="c-s">"azurerm_backup_protected_vm"</span> <span class="c-s">"web"</span> {
+  resource_group_name = azurerm_resource_group.labo.name
+  recovery_vault_name = azurerm_recovery_services_vault.coffre.name
+  source_vm_id        = azurerm_linux_virtual_machine.web.id
+  backup_policy_id    = azurerm_backup_policy_vm.quotidienne.id
+}</pre>
+  </div>
+
+  <!-- LEXIQUE -->
+  <h2>Lexique</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Terme</th><th>Anglais</th><th>En clair</th></tr></thead>
+      <tbody>
+        <tr><td>Sauvegarde Azure</td><td>Azure Backup</td><td>Service de sauvegarde sans serveur à gérer</td></tr>
+        <tr><td>Coffre Recovery Services</td><td>Recovery Services vault</td><td>Coffre pour VM, SQL dans une VM, Azure Files, MARS</td></tr>
+        <tr><td>Coffre de sauvegarde</td><td>Backup vault</td><td>Coffre pour disques, blobs, PostgreSQL, AKS</td></tr>
+        <tr><td>Stratégie de sauvegarde</td><td>Backup policy</td><td>Fréquence + durée de rétention</td></tr>
+        <tr><td>Point de récupération</td><td>Recovery point</td><td>Une sauvegarde datée</td></tr>
+        <tr><td>Restauration instantanée</td><td>Instant restore</td><td>Restaurer depuis l'instantané local (1 à 5 jours)</td></tr>
+        <tr><td>RPO</td><td>Recovery point objective</td><td>Perte de données acceptable (en temps)</td></tr>
+        <tr><td>RTO</td><td>Recovery time objective</td><td>Temps d'arrêt acceptable</td></tr>
+        <tr><td>MARS</td><td>Microsoft Azure Recovery Services agent</td><td>Agent Windows pour fichiers et dossiers</td></tr>
+        <tr><td>MABS</td><td>Microsoft Azure Backup Server</td><td>Serveur local de sauvegarde (Hyper-V, VMware, SQL…)</td></tr>
+        <tr><td>DPM</td><td>System Center Data Protection Manager</td><td>L'équivalent payant de MABS</td></tr>
+        <tr><td>VSS</td><td>Volume Shadow Copy Service</td><td>Service Windows qui fige les applis pendant la copie</td></tr>
+        <tr><td>Suppression réversible</td><td>Soft delete</td><td>Sauvegardes supprimées gardées 14 jours</td></tr>
+        <tr><td>MUA</td><td>Multi-user authorization</td><td>Une 2e personne doit approuver les opérations critiques</td></tr>
+        <tr><td>Restauration inter-régions</td><td>Cross-region restore</td><td>Restaurer dans la région jumelée (coffre GRS)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Navigation entre les unités"><a class="prev" href="container-instances.html"><span class="lbl">← Précédent</span><span class="ttl">Container Instances</span></a><a class="home" href="../index.html"><span class="ttl">☰</span><span class="lbl">Sommaire</span></a><a class="next" href="azure-monitor-vm.html"><span class="lbl">Suivant →</span><span class="ttl">Azure Monitor pour les VM</span></a></nav>
+  <footer>Résumé personnel d'après le module Microsoft Learn « Présentation de Sauvegarde Azure » et « Protéger vos machines virtuelles en utilisant Sauvegarde Azure », complété des notions d'examen.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+var Q=[
+  {q:"Ton entreprise accepte de perdre au plus 1 heure de données. C'est quoi ?",o:["Le RTO","Le RPO","Le SLA"],a:1,e:"RPO = perte de données ; RTO = temps d'arrêt."},
+  {q:"Quel coffre protège une VM Azure ?",o:["Coffre Recovery Services","Backup vault","Key Vault"],a:0,e:"➕ Backup vault : disques, blobs, PostgreSQL, AKS."},
+  {q:"Tu veux sauvegarder des dossiers d'un serveur Windows local directement vers Azure. Quoi installer ?",o:["L'agent MARS","L'extension VMSnapshotLinux","Azure Site Recovery"],a:0,e:"MARS : fichiers, dossiers, état système, Windows seulement."},
+  {q:"Fréquence minimale d'une stratégie Enhanced pour VM ?",o:["1 heure","4 heures","24 heures"],a:1,e:"4, 6, 8, 12 ou 24 h."},
+  {q:"Combien de jours une sauvegarde supprimée reste récupérable par défaut ?",o:["7","14","30"],a:1,e:"Réglable de 14 à 180."},
+  {q:"Ta restauration « Remplacer l'existant » échoue. Cause probable ?",o:["La VM est encore allumée","La VM est en Linux","Le coffre est en GRS"],a:0,e:"Arrêter la VM + compte de stockage intermédiaire."},
+  {q:"Comment Windows obtient une sauvegarde cohérente avec les applications ?",o:["Avec VSS","Avec un script pré/post","En arrêtant la VM"],a:0,e:"Linux : scripts pré/post."},
+  {q:"Restauration la plus rapide d'une VM sauvegardée hier ?",o:["Depuis le niveau archive","Depuis le niveau instantané (restauration instantanée)","Depuis une autre région"],a:1,e:"L'instantané reste jusqu'à 5 jours."},
+  {q:"Tu veux pouvoir restaurer dans la région jumelée. Quelle redondance du coffre ?",o:["LRS","ZRS","GRS"],a:2,e:"Avec la restauration inter-régions activée."}
+];
+var box=document.getElementById('quiz'),score=0,done=0;
+Q.forEach(function(item,i){
+  var d=document.createElement('div');d.className='qq';
+  d.innerHTML='<b>'+(i+1)+'. '+item.q+'</b><div class="opts"></div><div class="fb"></div>';
+  var opts=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  var ord=item.o.map(function(_,k){return k;});for(var k=ord.length-1;k>0;k--){var m=Math.floor(Math.random()*(k+1)),tmp=ord[k];ord[k]=ord[m];ord[m]=tmp;}var good=ord.indexOf(item.a);
+  ord.forEach(function(oi,j){var t=item.o[oi];
+    var b=document.createElement('button');b.type='button';b.textContent=t;
+    b.onclick=function(){
+      if(d.dataset.done)return;d.dataset.done=1;done++;
+      opts.children[good].classList.add('good');
+      if(j===good){score++;fb.textContent='✅ '+item.e;}else{b.classList.add('bad');fb.textContent='❌ '+item.e;}
+      document.getElementById('score').textContent='· '+score+' / '+done;
+    };
+    opts.appendChild(b);
+  });
+  box.appendChild(d);
+});
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+<script src="../fold.js"></script>
+</body>
+</html>

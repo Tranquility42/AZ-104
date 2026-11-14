@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Examen blanc AZ-104</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.modes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));margin-top:12px}
+.mode{all:unset;box-sizing:border-box;cursor:pointer;display:block;padding:16px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface)}
+.mode:hover,.mode:focus-visible{border-color:var(--cloud)}
+.mode b{display:block;font-size:17px}.mode span{display:block;font-size:14px;color:var(--muted);margin-top:4px}
+.chipsel{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.f{all:unset;cursor:pointer;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.f[aria-pressed="true"]{background:var(--cloud);border-color:var(--cloud);color:#fff}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-weight:700;font-size:15px;padding:11px 18px;border-radius:12px;background:var(--cloud);color:#fff;text-align:center}
+.btn.sec{background:var(--surface);color:var(--text);border:1.5px solid var(--line)}
+.btn.warn{background:var(--onprem)}
+.btn:focus-visible,.f:focus-visible,.opt:focus-visible{outline:2px solid var(--cloud);outline-offset:2px}
+.btn[disabled]{opacity:.45;cursor:default}
+.bar{position:sticky;top:0;z-index:6;background:var(--bg);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px;padding:6px 12px;border-radius:10px;background:var(--cloud-soft)}
+.timer.low{background:var(--onprem-soft);color:var(--onprem)}
+.prog{flex:1;min-width:120px;font-size:14px;color:var(--muted)}
+.qcard{margin-top:14px;padding:18px}
+.qmeta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.dom{font-weight:700;color:var(--cloud)}
+.qtext{font-size:17px;line-height:1.5;margin:0 0 12px}
+.hint{font-size:13px;color:var(--muted);margin:-6px 0 10px}
+.opts{display:grid;gap:8px}
+.opt{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-size:15.5px;line-height:1.45}
+.opt .k{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700}
+.opt.m .k{border-radius:6px}
+.opt[aria-checked="true"]{border-color:var(--cloud);background:var(--cloud-soft)}
+.opt[aria-checked="true"] .k{background:var(--cloud);border-color:var(--cloud);color:#fff}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.nav .btn{flex:1;min-width:90px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;margin-top:14px}
+.cell{all:unset;cursor:pointer;box-sizing:border-box;height:38px;border-radius:9px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--surface);position:relative}
+.cell.done{background:var(--cloud-soft);border-color:var(--cloud)}
+.cell.cur{outline:2.5px solid var(--text);outline-offset:1px}
+.cell.flag::after{content:'';position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--onprem)}
+.legend{font-size:12.5px;color:var(--muted);margin-top:6px}
+.score{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.big{font-size:44px;font-weight:800;line-height:1}
+.pass{font-weight:700;padding:5px 12px;border-radius:999px}
+.pass.ok{background:var(--ok-soft);color:var(--ok)}.pass.ko{background:var(--onprem-soft);color:var(--onprem)}
+.drow{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:4px 10px;align-items:center;font-size:14px;margin-top:8px}
+.track{grid-column:1/-1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.track i{display:block;height:100%;background:var(--cloud)}
+.rev{padding:14px 16px;margin-top:10px}
+.rev.bad{border-left:4px solid var(--onprem)}.rev.good{border-left:4px solid var(--ok)}
+.rev ul{margin:8px 0 0;padding-left:18px;font-size:14.5px}
+.rev li.right{color:var(--ok);font-weight:600}.rev li.wrongpick{color:var(--onprem);text-decoration:line-through}
+.rev .ex{font-size:14px;margin:8px 0 0}
+.hist{width:100%;border-collapse:collapse;font-size:14px}
+.hist th,.hist td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+.hist td.n{font-variant-numeric:tabular-nums}
+.spark{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px;border-bottom:1px dashed var(--line);position:relative}
+.spark i{flex:1;max-width:26px;border-radius:4px 4px 0 0;background:var(--cloud)}
+.spark i.ko{background:var(--onprem)}
+.spark .line{position:absolute;left:0;right:0;border-top:2px dashed var(--ok)}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted);margin-top:8px}
+.stats b{color:var(--text)}
+[hidden]{display:none!important}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">AZ-104 <span>en images</span></a>
+  <div class="top-actions"><a class="nav-btn" href="../index.html">☰ Sommaire</a><button class="theme-btn" id="theme" type="button">Thème</button></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span class="here">Examen blanc</span></nav>
+
+  <!-- ACCUEIL -->
+  <section id="v-home">
+    <h1>Examen blanc AZ-104</h1>
+    <p class="lede">Des questions originales au format de l'examen : mises en situation, réponses multiples, séries « La solution atteint-elle l'objectif ? ». Les domaines sont tirés selon les poids officiels. Score sur 1000, réussite à 700.</p>
+    <div class="card" id="resume" hidden style="margin-top:14px;border-color:var(--cloud)">
+      <h3 style="margin-top:0">⏸️ Un examen est en cours</h3>
+      <p id="resumeTxt" style="font-size:14px;margin:0 0 10px"></p>
+      <div class="nav" style="margin-top:0"><button class="btn" id="bResume" type="button">Reprendre</button><button class="btn sec" id="bDrop" type="button">Abandonner</button></div>
+    </div>
+    <h2>Choisir un examen</h2>
+    <div class="modes" id="modes"></div>
+    <div class="card" style="margin-top:12px">
+      <b style="font-size:15px">🎯 Par domaine : 15 questions, 30 min</b>
+      <div class="chipsel" id="domsel"></div>
+    </div>
+    <div class="note" style="margin-top:14px"><b>Le vrai examen :</b> 40 à 60 questions, <b>100 minutes</b>, score mis à l'échelle sur 1000, réussite à <b>700</b>. Il y a aussi des <b>études de cas</b>, des glisser-déposer et des zones à cliquer, que ce site ne reproduit pas. Les questions <b>« Oui / Non »</b> d'une série ne permettent pas de revenir en arrière dans le vrai examen. Ici, une question à plusieurs réponses compte seulement si <b>toutes</b> les bonnes sont cochées.</div>
+
+    <h2>Historique</h2>
+    <div id="histBox"></div>
+  </section>
+
+  <!-- EXAMEN -->
+  <section id="v-exam" hidden>
+    <div class="bar">
+      <span class="timer" id="timer" role="timer" aria-live="off">--:--</span>
+      <span class="prog" id="prog"></span>
+      <button class="btn sec" id="bGrid" type="button" style="padding:8px 12px;font-size:14px">Vue d'ensemble</button>
+    </div>
+    <div class="card qcard" id="qcard"></div>
+    <div class="nav">
+      <button class="btn sec" id="bPrev" type="button">← Préc.</button>
+      <button class="btn sec" id="bFlag" type="button">🚩 Revoir</button>
+      <button class="btn" id="bNext" type="button">Suivante →</button>
+    </div>
+    <div id="gridBox" hidden>
+      <div class="grid" id="grid"></div>
+      <p class="legend">Bleu = répondue · point orange = à revoir · contour = question actuelle</p>
+    </div>
+    <div class="card" style="margin-top:14px" id="endBox">
+      <p id="endTxt" style="margin:0 0 10px;font-size:14px"></p>
+      <button class="btn warn" id="bEnd" type="button" style="width:100%">Terminer l'examen</button>
+    </div>
+  </section>
+
+  <!-- RESULTATS -->
+  <section id="v-res" hidden>
+    <h1>Résultat</h1>
+    <div class="card" style="margin-top:12px">
+      <div class="score"><span class="big" id="rScore"></span><span class="pass" id="rPass"></span></div>
+      <div class="stats" id="rStats"></div>
+    </div>
+    <h2>Par domaine</h2>
+    <div class="card" id="rDom"></div>
+    <h2>Correction</h2>
+    <div class="chipsel" id="revFilter"></div>
+    <div id="rRev"></div>
+    <div class="nav"><button class="btn" id="bAgain" type="button">Nouvel examen</button><a class="btn sec" href="../index.html">Sommaire</a></div>
+  </section>
+
+  <footer>Questions originales rédigées d'après les modules résumés sur ce site et le plan officiel de l'examen AZ-104. Elles ne viennent pas de l'examen réel.</footer>
+  <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
+</main>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme');if(t)r.dataset.theme=t;}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    r.dataset.theme=dark?'light':'dark';
+    try{localStorage.setItem('theme',r.dataset.theme);}catch(e){}
+  });
+})();
+
+var Q=[{"d": "id", "t": "s", "q": "User1 doit créer et gérer toutes les ressources du groupe RG1, sans pouvoir attribuer de rôles. Quel rôle lui donner, et à quelle étendue ?", "o": ["Propriétaire sur l'abonnement", "Contributeur sur RG1", "Administrateur de l'accès utilisateur sur RG1", "Lecteur sur RG1"], "a": [1], "e": "Contributeur = tout gérer sauf les accès (rôles). Étendue la plus petite possible : RG1.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Un technicien du support doit pouvoir donner des rôles aux autres utilisateurs sur RG2, sans gérer les ressources elles-mêmes. Quel rôle ?", "o": ["Contributeur", "Propriétaire", "Administrateur de l'accès utilisateur", "Contributeur de machines virtuelles"], "a": [2], "e": "User Access Administrator gère les attributions de rôles, rien d'autre.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Vous voulez empêcher la création de ressources hors de Canada Central et Canada Est. Quel effet Azure Policy utiliser ?", "o": ["Audit", "Deny", "Append", "AuditIfNotExists"], "a": [1], "e": "Deny bloque la création. Audit ne fait que signaler.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Vous attribuez une stratégie « Emplacements autorisés » (Deny). Des ressources existent déjà en West Europe. Que leur arrive-t-il ?", "o": ["Elles sont supprimées", "Elles sont déplacées", "Elles restent et sont marquées non conformes", "L'attribution échoue"], "a": [2], "e": "Une stratégie Deny ne touche pas l'existant : il apparaît comme non conforme.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Chaque ressource doit hériter de l'étiquette CostCenter de son groupe de ressources, y compris les ressources existantes. Que faire ?", "o": ["Un verrou CanNotDelete", "Une stratégie avec l'effet Modify et une tâche de correction", "Un rôle RBAC personnalisé", "Un groupe d'administration"], "a": [1], "e": "Modify ajoute ou corrige des étiquettes ; une tâche de correction traite l'existant.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Les administrateurs doivent pouvoir modifier les ressources de RG-Prod, mais personne ne doit pouvoir supprimer le groupe par erreur. Quelle solution ?", "o": ["Un verrou ReadOnly sur RG-Prod", "Un verrou CanNotDelete sur RG-Prod", "Le rôle Lecteur pour tous", "Une stratégie Audit"], "a": [1], "e": "CanNotDelete autorise lecture et modification, bloque la suppression.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Un verrou ReadOnly est posé sur un compte de stockage. Que ne peut plus faire un Contributeur dans le portail ?", "o": ["Voir le compte", "Lister les clés d'accès du compte", "Lire les étiquettes", "Voir les métriques"], "a": [1], "e": "Lister les clés est une opération POST : un verrou ReadOnly la bloque, même pour un Propriétaire.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Vous êtes Propriétaire de l'abonnement. Une ressource de RG1 a un verrou CanNotDelete posé par un collègue. Comment la supprimer ?", "o": ["Impossible pour un Propriétaire", "Supprimer d'abord le verrou, puis la ressource", "Ouvrir un ticket au support Microsoft", "Déplacer la ressource dans un autre groupe"], "a": [1], "e": "Un verrou s'applique à tous, Propriétaire compris. Le Propriétaire peut retirer le verrou.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Vous déplacez une VM d'East US du groupe RG-Est vers RG-Ouest, dont l'emplacement est West US. Où se trouve la VM après le déplacement ?", "o": ["West US", "East US", "Dans les deux régions", "Le déplacement est impossible"], "a": [1], "e": "Le groupe de ressources est un dossier logique : déplacer une ressource ne change pas sa région.", "p": "architecture"}, {"d": "id", "t": "m", "q": "Quels principaux peuvent recevoir un rôle Azure (RBAC) ? (2 ou plus)", "o": ["Un utilisateur", "Un groupe de sécurité", "Une identité managée", "Un groupe d'administration"], "a": [0, 1, 2], "e": "Utilisateurs, groupes, principaux de service et identités managées. Un groupe d'administration est une étendue, pas un principal.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Vous voulez des groupes Microsoft Entra à appartenance dynamique (ex. tous les utilisateurs du service Ventes). Quelle licence minimale ?", "o": ["Microsoft Entra ID Free", "Microsoft Entra ID P1", "Aucune licence", "Microsoft 365 Basic"], "a": [1], "e": "Les groupes dynamiques exigent P1 (ou P2).", "p": "identites"}, {"d": "id", "t": "s", "q": "Vous devez créer 300 comptes d'utilisateurs Entra ID en une fois depuis le portail. Quelle méthode ?", "o": ["Les créer un par un", "Opérations en bloc avec un fichier CSV", "Une stratégie Azure Policy", "Un groupe dynamique"], "a": [1], "e": "Utilisateurs → Opérations en bloc → Créer : modèle CSV à remplir.", "p": "identites"}, {"d": "id", "t": "s", "q": "Un consultant externe doit accéder à une application de votre locataire avec son propre compte d'entreprise. Que faire ?", "o": ["Lui créer un compte membre", "L'inviter comme invité B2B", "Lui donner la clé du compte de stockage", "Synchroniser son annuaire"], "a": [1], "e": "Microsoft Entra B2B : on invite un utilisateur externe qui garde ses identifiants.", "p": "identites"}, {"d": "id", "t": "s", "q": "Une Administratrice générale d'Entra ID ne voit aucun abonnement dans le portail. Comment obtient-elle l'accès aux ressources Azure ?", "o": ["Elle a déjà tous les droits", "Activer « Gestion de l'accès pour les ressources Azure » dans les propriétés d'Entra ID", "Lui donner une licence P2", "Créer un nouvel abonnement"], "a": [1], "e": "Les rôles Entra et les rôles Azure sont séparés. Ce réglage lui donne Administrateur de l'accès utilisateur à la racine.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Une stratégie est attribuée à l'abonnement, mais le groupe RG-Lab ne doit pas être concerné. Que faire ?", "o": ["Supprimer RG-Lab", "Ajouter RG-Lab aux exclusions de l'attribution", "Mettre un verrou sur RG-Lab", "Déplacer RG-Lab dans un groupe d'administration"], "a": [1], "e": "Les exclusions (notScopes) retirent une étendue enfant de l'attribution.", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "Comment s'appelle un ensemble de définitions de stratégies attribué en une seule fois ?", "o": ["Un plan", "Une initiative", "Un verrou", "Un rôle personnalisé"], "a": [1], "e": "Initiative = groupe de stratégies (ex. une norme de conformité).", "p": "azure-policy"}, {"d": "id", "t": "s", "q": "La direction veut un courriel quand les dépenses du mois atteignent 80 % de 2 000 $. Quel outil ?", "o": ["Azure Advisor", "Un budget dans Cost Management", "Une stratégie Deny", "Un verrou"], "a": [1], "e": "Un budget envoie des alertes à des seuils (ex. 80 %, 100 %). Il ne bloque pas les dépenses.", "p": "architecture"}, {"d": "id", "t": "y", "q": "Objectif : User1 doit créer et gérer des VM dans RG1 sans pouvoir donner d'accès à d'autres. Solution proposée : attribuer le rôle Propriétaire sur RG1. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [1], "e": "Propriétaire permet aussi d'attribuer des rôles : trop de droits.", "p": "rbac"}, {"d": "id", "t": "y", "q": "Objectif : User1 doit créer et gérer des VM dans RG1 sans pouvoir donner d'accès à d'autres. Solution proposée : attribuer le rôle Contributeur sur RG1. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [0], "e": "Contributeur gère tout sauf les accès.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Dans la définition d'un rôle personnalisé, quelle propriété limite les étendues où il peut être attribué ?", "o": ["Actions", "NotActions", "AssignableScopes", "DataActions"], "a": [2], "e": "AssignableScopes liste les abonnements, groupes ou groupes d'administration autorisés.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Un rôle a Actions = \"*\" et NotActions = \"Microsoft.Authorization/*/Write\", \"Microsoft.Authorization/*/Delete\". Que ne peut-il pas faire ?", "o": ["Créer des VM", "Attribuer ou retirer des rôles", "Lire les ressources", "Supprimer un compte de stockage"], "a": [1], "e": "C'est la définition de Contributeur : tout sauf la gestion des accès.", "p": "rbac"}, {"d": "id", "t": "s", "q": "Vous voulez que le responsable de la succursale de Québec gère seulement les utilisateurs de cette succursale dans Entra ID. Quoi utiliser ?", "o": ["Un groupe d'administration", "Une unité administrative", "Un groupe de ressources", "Un abonnement séparé"], "a": [1], "e": "L'unité administrative limite l'étendue d'un rôle Entra à un sous-ensemble d'utilisateurs.", "p": "identites"}, {"d": "id", "t": "s", "q": "Une vieille appli migrée dans une VM Azure a besoin de LDAP et Kerberos, sans contrôleurs de domaine à gérer. Quel service ?", "o": ["Microsoft Entra ID seul", "Microsoft Entra Domain Services", "Entra B2B", "Azure Policy"], "a": [1], "e": "Entra Domain Services fournit un domaine managé (LDAP, Kerberos, NTLM, GPO).", "p": "entra-domain-services"}, {"d": "id", "t": "s", "q": "Avant de déployer un modèle ARM, vous voulez voir les changements qu'il va faire. Quelle commande ?", "o": ["az deployment group create", "az deployment group what-if", "az group export", "az resource list"], "a": [1], "e": "what-if = l'équivalent de terraform plan.", "p": "arm-templates"}, {"d": "id", "t": "s", "q": "Quel mode de déploiement ARM supprime les ressources du groupe qui ne sont pas dans le modèle ?", "o": ["Incrémentiel", "Complet", "Validation", "What-if"], "a": [1], "e": "Complet supprime ce qui manque au modèle. Incrémentiel (par défaut) ne supprime rien.", "p": "arm-templates"}, {"d": "id", "t": "s", "q": "Combien de niveaux de groupes d'administration peut-on avoir sous le groupe racine ?", "o": ["3", "6", "10", "Illimité"], "a": [1], "e": "Jusqu'à 6 niveaux de profondeur, sans compter la racine ni l'abonnement.", "p": "architecture"}, {"d": "st", "t": "s", "q": "Les données doivent survivre à la perte d'une zone ET d'une région, et rester lisibles dans la région secondaire pendant une panne. Quelle redondance ?", "o": ["ZRS", "GRS", "RA-GZRS", "LRS"], "a": [2], "e": "RA-GZRS : 3 zones dans la région primaire + copie géo + lecture dans la secondaire.", "p": "comptes-stockage"}, {"d": "st", "t": "s", "q": "Quelle est la redondance la moins chère qui survit à la perte d'un centre de données, sans copie dans une autre région ?", "o": ["LRS", "ZRS", "GRS", "RA-GRS"], "a": [1], "e": "ZRS copie dans 3 zones de la même région.", "p": "comptes-stockage"}, {"d": "st", "t": "s", "q": "Des fichiers d'audit doivent être gardés 7 ans, lus presque jamais ; un délai de plusieurs heures pour les relire est acceptable. Quel niveau d'accès ?", "o": ["Chaud", "Froid (Cool)", "Archive", "Premium"], "a": [2], "e": "Archive : le moins cher, mais réhydratation de plusieurs heures avant lecture.", "p": "stockage-blob"}, {"d": "st", "t": "s", "q": "Les blobs doivent passer en Cool 30 jours après leur dernière modification, puis être supprimés après 365 jours. Quelle fonction ?", "o": ["Réplication d'objets", "Gestion du cycle de vie", "Suppression réversible", "Instantanés"], "a": [1], "e": "Une règle de cycle de vie fait les deux actions automatiquement.", "p": "stockage-blob"}, {"d": "st", "t": "s", "q": "Vous voulez une règle de cycle de vie sur un compte « Usage général v1 ». Que faire d'abord ?", "o": ["Rien, c'est supporté", "Mettre à niveau le compte en GPv2", "Passer en Premium", "Activer la réplication d'objets"], "a": [1], "e": "Le cycle de vie exige GPv2 ou un compte Blob (Premium blocs).", "p": "stockage-blob"}, {"d": "st", "t": "m", "q": "Vous configurez la réplication d'objets entre deux comptes. Quels prérequis ? (2 réponses)", "o": ["Le contrôle de version sur les deux comptes", "Le flux de modifications sur le compte source", "Le même groupe de ressources", "Le niveau Archive"], "a": [0, 1], "e": "Versioning des deux côtés + change feed sur la source.", "p": "stockage-blob"}, {"d": "st", "t": "s", "q": "Un partenaire doit lire un conteneur pendant 24 h. Vous devez pouvoir révoquer cet accès sans régénérer les clés du compte. Quelle solution ?", "o": ["Lui donner la clé du compte", "Une SAS de service liée à une stratégie d'accès stockée", "Une SAS de compte", "Accès anonyme au conteneur"], "a": [1], "e": "Supprimer ou modifier la stratégie stockée révoque toutes les SAS qui y sont liées.", "p": "securite-stockage"}, {"d": "st", "t": "s", "q": "Quelle SAS est signée avec des identifiants Microsoft Entra au lieu de la clé du compte ?", "o": ["SAS de compte", "SAS de service", "SAS de délégation d'utilisateur", "Stratégie d'accès stockée"], "a": [2], "e": "La SAS de délégation d'utilisateur, recommandée par Microsoft (Blob seulement).", "p": "securite-stockage"}, {"d": "st", "t": "s", "q": "Une seule SAS doit donner accès aux blobs ET aux files d'attente du même compte. Quel type ?", "o": ["SAS de service", "SAS de compte", "SAS de délégation d'utilisateur", "Aucune, il en faut deux"], "a": [1], "e": "La SAS de compte couvre plusieurs services ; la SAS de service, un seul.", "p": "securite-stockage"}, {"d": "st", "t": "s", "q": "Le pare-feu du compte de stockage autorise seulement des réseaux sélectionnés. Une VM de Subnet1 n'y accède pas par son IP privée. Que faire ?", "o": ["Ouvrir le port 445", "Activer le point de terminaison de service Microsoft.Storage sur Subnet1 et ajouter le réseau au pare-feu", "Créer un groupe d'administration", "Passer le compte en ZRS"], "a": [1], "e": "Point de terminaison de service sur le sous-réseau + règle de réseau virtuel dans le pare-feu du compte.", "p": "securite-stockage"}, {"d": "st", "t": "s", "q": "Des serveurs locaux reliés par VPN doivent joindre le compte de stockage par une IP privée de votre réseau virtuel. Quelle solution ?", "o": ["Point de terminaison de service", "Point de terminaison privé", "IP publique Standard", "SAS de compte"], "a": [1], "e": "Le point de terminaison privé donne au compte une IP privée, joignable depuis le local via VPN ou ExpressRoute.", "p": "securite-stockage"}, {"d": "st", "t": "s", "q": "Un employé ne peut pas monter un partage Azure Files depuis chez lui. Cause la plus probable ?", "o": ["Le port 445 est bloqué par son fournisseur Internet", "Le partage est en niveau Chaud", "La redondance est LRS", "Il manque un instantané"], "a": [0], "e": "SMB utilise le port 445, souvent bloqué par les FAI.", "p": "azure-files"}, {"d": "st", "t": "s", "q": "Un serveur de fichiers local doit se synchroniser avec Azure Files en gardant seulement les fichiers récents sur son disque. Quelle solution ?", "o": ["AzCopy planifié", "Azure File Sync avec hiérarchisation cloud", "Réplication d'objets", "Data Box"], "a": [1], "e": "File Sync + cloud tiering : les vieux fichiers restent dans Azure et reviennent à la demande.", "p": "azure-files"}, {"d": "st", "t": "s", "q": "Combien de points de terminaison cloud un groupe de synchronisation Azure File Sync peut-il contenir ?", "o": ["1", "50", "100", "Illimité"], "a": [0], "e": "Un seul point cloud (un partage) ; jusqu'à 50 points de terminaison serveur.", "p": "azure-files"}, {"d": "st", "t": "s", "q": "Un partage Azure Files a été supprimé par erreur hier. Comment le récupérer ?", "o": ["Depuis ses instantanés", "Grâce à la suppression réversible des partages", "Avec AzCopy", "C'est impossible"], "a": [1], "e": "Les instantanés sont supprimés avec le partage ; la suppression réversible le garde de 1 à 365 jours.", "p": "azure-files"}, {"d": "st", "t": "s", "q": "Vous devez transférer 60 To vers Azure, mais votre connexion Internet est lente. Quelle solution ?", "o": ["AzCopy", "Azure Data Box", "Explorateur Stockage", "Azure File Sync"], "a": [1], "e": "➕ Data Box : un appareil physique que Microsoft envoie et récupère.", "p": "comptes-stockage"}, {"d": "st", "t": "s", "q": "Quel outil en ligne de commande copie rapidement des milliers de blobs entre deux comptes de stockage ?", "o": ["AzCopy", "nslookup", "Azure File Sync", "Data Box"], "a": [0], "e": "AzCopy copie de serveur à serveur, avec une SAS ou Entra ID.", "p": "stockage-blob"}, {"d": "st", "t": "m", "q": "Quels services de données un compte GPv2 Standard peut-il héberger ? (plusieurs réponses)", "o": ["Blob", "Files", "Queue", "Azure SQL Database"], "a": [0, 1, 2], "e": "Blob, Files, Queue et Table. Azure SQL est un service séparé.", "p": "comptes-stockage"}, {"d": "st", "t": "s", "q": "Vous voulez des partages de fichiers Premium (SSD). Quel type de compte créer ?", "o": ["GPv2 Standard", "BlockBlobStorage", "FileStorage", "GPv1"], "a": [2], "e": "Les partages Premium exigent un compte FileStorage.", "p": "azure-files"}, {"d": "st", "t": "s", "q": "Des relevés doivent être impossibles à modifier ou supprimer pendant 3 ans (WORM). Quelle fonction du conteneur ?", "o": ["Suppression réversible", "Stratégie d'immuabilité avec rétention temporelle", "Niveau Archive", "Accès anonyme privé"], "a": [1], "e": "L'immuabilité à durée de rétention empêche modification et suppression pendant la période.", "p": "lab07"}, {"d": "st", "t": "s", "q": "Le chiffrement du stockage doit utiliser vos propres clés. Où les stocker ?", "o": ["Dans le compte de stockage", "Dans Azure Key Vault", "Dans une variable d'environnement", "Dans Entra ID"], "a": [1], "e": "Clés gérées par le client : Key Vault (ou HSM managé).", "p": "securite-stockage"}, {"d": "st", "t": "y", "q": "Objectif : aucun conteneur du compte ne doit jamais permettre l'accès anonyme, même créé plus tard. Solution : désactiver « Autoriser l'accès anonyme aux blobs » au niveau du compte. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [0], "e": "Le réglage du compte l'emporte sur le niveau d'accès de chaque conteneur.", "p": "stockage-blob"}, {"d": "st", "t": "y", "q": "Objectif : aucun conteneur du compte ne doit jamais permettre l'accès anonyme, même créé plus tard. Solution : mettre le niveau d'accès « Privé » sur chaque conteneur existant. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [1], "e": "Un futur conteneur pourrait être créé en accès public. Il faut le réglage du compte.", "p": "stockage-blob"}, {"d": "co", "t": "s", "q": "La taille voulue n'apparaît pas quand vous redimensionnez VM1 (allumée). Que faire ?", "o": ["Supprimer VM1", "Arrêter (désallouer) VM1, puis redimensionner", "Ajouter un disque de données", "Changer de groupe de ressources"], "a": [1], "e": "Allumée, la VM ne voit que les tailles de son cluster ; désallouée, toutes celles de la région.", "p": "machines-virtuelles"}, {"d": "co", "t": "s", "q": "Une appli sur VM exige un SLA de 99,99 %. Quelle configuration ?", "o": ["1 VM Premium SSD", "2 VM dans un groupe à haute disponibilité", "2 VM dans 2 zones de disponibilité", "1 VM avec Azure Backup"], "a": [2], "e": "Zones = 99,99 % ; groupe à haute dispo = 99,95 % ; 1 VM Premium = 99,9 %.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Dix VM sont dans un groupe à haute disponibilité avec 5 domaines de mise à jour. Combien de VM au maximum sont redémarrées en même temps pendant une maintenance planifiée ?", "o": ["1", "2", "5", "10"], "a": [1], "e": "10 VM / 5 UD = 2 VM par UD, et un seul UD redémarre à la fois.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Six VM sont réparties sur 3 domaines d'erreur. Un rack tombe. Combien de VM au maximum sont touchées ?", "o": ["1", "2", "3", "6"], "a": [1], "e": "6 / 3 = 2 VM par domaine d'erreur.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "VM5 existe déjà. Vous voulez l'ajouter au groupe à haute disponibilité AS1. Que faire ?", "o": ["az vm update --availability-set AS1", "Recréer VM5 dans AS1", "Redémarrer VM5", "Ajouter AS1 à son réseau virtuel"], "a": [1], "e": "Le groupe à haute dispo se choisit seulement à la création.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Votre VMSS ajoute des VM quand le CPU dépasse 75 %, mais la facture reste haute après les pics. Pourquoi ?", "o": ["Il manque une règle de scale-in", "Le seuil est trop bas", "Il faut un groupe à haute dispo", "Le mode Flexible ne réduit jamais"], "a": [0], "e": "Sans règle de diminution, les instances ajoutées restent.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Après la création d'une VM Windows, vous devez exécuter un script PowerShell qui installe IIS, sans vous connecter. Quoi utiliser ?", "o": ["Diagnostics de démarrage", "L'extension Custom Script", "Azure Backup", "Un verrou"], "a": [1], "e": "➕ Custom Script Extension télécharge et lance un script après le déploiement.", "p": "machines-virtuelles"}, {"d": "co", "t": "s", "q": "Quel est le niveau de plan App Service le moins cher qui offre les emplacements de déploiement et la mise à l'échelle automatique ?", "o": ["Free", "Basic", "Standard", "Premium v3"], "a": [2], "e": "Standard : 5 emplacements, mise à l'échelle auto par règles.", "p": "plans-app-service"}, {"d": "co", "t": "s", "q": "Lors d'un échange (swap) staging → production, quel élément reste attaché à l'emplacement production ?", "o": ["Les paramètres d'appli non marqués", "Le nom de domaine personnalisé", "Le contenu des WebJobs", "La version de la pile"], "a": [1], "e": "Domaines, échelle, Always On, restrictions IP restent sur l'emplacement.", "p": "app-service"}, {"d": "co", "t": "s", "q": "La chaîne de connexion de staging pointe vers la base de test et ne doit jamais partir en production. Que faire ?", "o": ["La mettre dans le code", "La cocher comme « Paramètre d'emplacement »", "Désactiver l'échange automatique", "Créer un autre plan"], "a": [1], "e": "Un paramètre d'emplacement (sticky) reste sur son emplacement au swap.", "p": "app-service"}, {"d": "co", "t": "s", "q": "Vous voulez que optifuel.ca (sans www) pointe vers une appli App Service. Quels enregistrements DNS ?", "o": ["Un CNAME", "Un A et un TXT de vérification", "Un MX", "Un NS"], "a": [1], "e": "À l'apex, un CNAME est souvent refusé : A vers l'IP + TXT asuid pour prouver la propriété.", "p": "app-service"}, {"d": "co", "t": "s", "q": "Où sont stockées les sauvegardes d'une appli App Service ?", "o": ["Coffre Recovery Services", "Conteneur d'un compte de stockage du même abonnement", "Disque de l'instance", "Log Analytics"], "a": [1], "e": "Compte de stockage + conteneur, sans pare-feu, 10 Go max.", "p": "app-service"}, {"d": "co", "t": "s", "q": "Deux conteneurs doivent partager un volume et la même IP dans Azure Container Instances. Quel OS choisir pour le groupe ?", "o": ["Windows", "Linux", "Les deux fonctionnent", "Aucun, c'est impossible"], "a": [1], "e": "➕ Les groupes à plusieurs conteneurs sont Linux seulement.", "p": "container-instances"}, {"d": "co", "t": "s", "q": "Un conteneur ACI fait un traitement de données puis doit s'arrêter définitivement. Quelle stratégie de redémarrage ?", "o": ["Always", "Never", "OnFailure en boucle", "Aucune"], "a": [1], "e": "Always (défaut) relance le conteneur sans fin.", "p": "container-instances"}, {"d": "co", "t": "s", "q": "Une API conteneurisée doit monter en charge selon le trafic HTTP et descendre à zéro instance, sans gérer Kubernetes. Quel service ?", "o": ["Azure Container Instances", "Azure Container Apps", "AKS", "VMSS"], "a": [1], "e": "Container Apps : serverless, KEDA, mise à l'échelle jusqu'à zéro.", "p": "container-instances"}, {"d": "co", "t": "s", "q": "Un modèle ARM déploie une VM dont le mot de passe vient d'un secret Key Vault. Le déploiement échoue avec une erreur d'accès. Quel réglage du Key Vault activer ?", "o": ["Suppression réversible", "Azure Resource Manager pour le déploiement de modèles", "Pare-feu en mode public", "Clé gérée par le client"], "a": [1], "e": "➕ Ce réglage permet à ARM de lire le secret pendant le déploiement.", "p": "arm-templates"}, {"d": "co", "t": "s", "q": "Quel type de disque managé ne peut PAS servir de disque OS ?", "o": ["Standard HDD", "Standard SSD", "Premium SSD", "Ultra Disk"], "a": [3], "e": "Ultra Disk et Premium SSD v2 : disques de données seulement.", "p": "machines-virtuelles"}, {"d": "co", "t": "s", "q": "Des VM de développement tournent toute la nuit pour rien. Solution la plus simple pour réduire les coûts ?", "o": ["Instances réservées", "Arrêt automatique", "Plus petits disques", "Groupe à haute disponibilité"], "a": [1], "e": "VM → Opérations → Arrêt automatique : heure + fuseau.", "p": "machines-virtuelles"}, {"d": "co", "t": "s", "q": "Un employé a éteint une VM depuis Windows. Que facture Azure ?", "o": ["Rien", "Le calcul et le stockage", "Seulement le stockage", "Seulement l'IP publique"], "a": [1], "e": "Éteinte depuis l'OS, la VM reste allouée. Il faut la désallouer.", "p": "machines-virtuelles"}, {"d": "co", "t": "y", "q": "Objectif : une appli web sur VM doit survivre à la perte complète d'un centre de données. Solution : 2 VM dans un groupe à haute disponibilité derrière un Load Balancer. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [1], "e": "Un groupe à haute dispo reste dans un seul centre de données.", "p": "disponibilite-vm"}, {"d": "co", "t": "y", "q": "Objectif : une appli web sur VM doit survivre à la perte complète d'un centre de données. Solution : 2 VM dans les zones 1 et 2 derrière un Load Balancer Standard. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [0], "e": "Zones = centres de données séparés.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Quel est le nombre maximum de caractères pour le nom d'une VM Windows ?", "o": ["15", "63", "64", "80"], "a": [0], "e": "15 pour Windows (nom NetBIOS), 64 pour Linux.", "p": "machines-virtuelles"}, {"d": "co", "t": "s", "q": "Vous passez un plan App Service de 2 à 4 instances. Quelles applis du plan sont concernées ?", "o": ["Seulement la plus chargée", "Toutes les applis du plan", "Seulement l'appli de production", "Aucune, il faut redéployer"], "a": [1], "e": "Toutes les applis d'un plan tournent sur toutes ses instances.", "p": "plans-app-service"}, {"d": "co", "t": "s", "q": "Quel mode d'orchestration VMSS permet de mélanger des tailles de VM différentes ?", "o": ["Uniforme", "Flexible", "Fixe", "Max"], "a": [1], "e": "Flexible (défaut recommandé) ; choisi à la création.", "p": "disponibilite-vm"}, {"d": "co", "t": "s", "q": "Une appli Basic B1 doit monter à 8 instances. Que faire ?", "o": ["Rien, Basic va jusqu'à 10", "Passer au moins en Standard", "Ajouter un emplacement", "Activer Always On"], "a": [1], "e": "Basic : 3 instances max ; Standard : 10 ; Premium v3 : 30.", "p": "plans-app-service"}, {"d": "ne", "t": "s", "q": "Combien d'adresses IP utilisables pour des VM dans un sous-réseau /24 ?", "o": ["256", "254", "251", "250"], "a": [2], "e": "Azure réserve 5 adresses par sous-réseau : 256 − 5 = 251.", "p": "reseaux-virtuels"}, {"d": "ne", "t": "s", "q": "VNetA est appairé à VNetB, et VNetB à VNetC. Une VM de VNetA ne joint pas VNetC. Solution la plus simple ?", "o": ["Activer le transfert IP", "Créer un peering entre VNetA et VNetC", "Redémarrer les VM", "Ajouter un NSG"], "a": [1], "e": "Le peering n'est pas transitif.", "p": "peering"}, {"d": "ne", "t": "s", "q": "Les réseaux spokes doivent utiliser la passerelle VPN du hub. Quels réglages de peering ?", "o": ["« Utiliser les passerelles distantes » sur le hub", "« Autoriser le transit par passerelle » sur le hub et « Utiliser les passerelles distantes » sur chaque spoke", "Aucun, c'est automatique", "Un deuxième VPN dans chaque spoke"], "a": [1], "e": "Le hub autorise le transit, les spokes utilisent la passerelle distante.", "p": "peering"}, {"d": "ne", "t": "s", "q": "VNet1 (10.0.0.0/16) et VNet2 (10.0.0.0/16) doivent être appairés. Que se passe-t-il ?", "o": ["Ça fonctionne", "Le peering est impossible : les plages se chevauchent", "Azure renumérote VNet2", "Il faut un Load Balancer"], "a": [1], "e": "Pas de chevauchement d'adresses entre réseaux appairés.", "p": "peering"}, {"d": "ne", "t": "s", "q": "Un NSG a une règle 100 Deny TCP 3389 et une règle 200 Allow TCP 3389 depuis votre IP. Votre RDP passe-t-il ?", "o": ["Oui, Allow l'emporte", "Non, la règle 100 est évaluée en premier", "Oui, la règle la plus précise gagne", "Seulement le week-end"], "a": [1], "e": "Le plus petit numéro gagne ; l'évaluation s'arrête à la première règle correspondante.", "p": "nsg"}, {"d": "ne", "t": "s", "q": "Un NSG est associé au sous-réseau ET à la carte réseau d'une VM. Pour que le trafic entrant passe :", "o": ["Le NSG du sous-réseau suffit", "Le NSG de la carte suffit", "Les deux NSG doivent l'autoriser", "Le plus récent s'applique"], "a": [2], "e": "En entrée : sous-réseau puis carte réseau ; les deux doivent autoriser.", "p": "nsg"}, {"d": "ne", "t": "s", "q": "Vous voulez écrire des règles NSG du type « serveurs web → serveurs SQL » sans lister d'IP. Quoi utiliser ?", "o": ["Des groupes de sécurité d'application (ASG)", "Des étiquettes de service", "Des tables de routage", "Des groupes d'administration"], "a": [0], "e": "Les ASG regroupent les cartes réseau par rôle.", "p": "nsg"}, {"d": "ne", "t": "m", "q": "Tout le trafic Internet d'un sous-réseau doit passer par une NVA (pare-feu sur VM). Que faut-il configurer ? (2 réponses)", "o": ["Une UDR 0.0.0.0/0 vers « Appliance virtuelle » à l'IP de la NVA", "Le transfert IP sur la carte réseau de la NVA", "Un peering global", "Un enregistrement CNAME"], "a": [0, 1], "e": "La route envoie le trafic à la NVA ; le transfert IP lui permet de faire suivre des paquets qui ne lui sont pas destinés.", "p": "routes"}, {"d": "ne", "t": "s", "q": "Une table a deux routes : 10.0.0.0/16 → Réseau virtuel et 10.0.1.0/24 → Appliance virtuelle. Un paquet va vers 10.0.1.5. Quel saut ?", "o": ["Réseau virtuel", "Appliance virtuelle", "Internet", "Aucun"], "a": [1], "e": "Le préfixe le plus long (le plus précis) l'emporte.", "p": "routes"}, {"d": "ne", "t": "s", "q": "Les VM d'un réseau doivent s'inscrire toutes seules dans une zone DNS privée. Que faire ?", "o": ["Créer des enregistrements A à la main", "Lier la zone au réseau avec l'inscription automatique activée", "Changer les serveurs NS chez le registraire", "Créer une zone publique"], "a": [1], "e": "Lien de réseau virtuel + inscription automatique.", "p": "azure-dns"}, {"d": "ne", "t": "s", "q": "Vous avez créé la zone contoso.com dans Azure DNS, mais Internet ne la voit pas. Que manque-t-il ?", "o": ["Un enregistrement MX", "Mettre les serveurs NS d'Azure chez le registraire du domaine", "Un lien de réseau virtuel", "Un Load Balancer"], "a": [1], "e": "La délégation se fait chez le registraire avec les 4 serveurs NS d'Azure.", "p": "azure-dns"}, {"d": "ne", "t": "s", "q": "L'apex contoso.com doit pointer vers l'IP publique d'un Load Balancer et suivre ses changements d'IP. Quel enregistrement ?", "o": ["CNAME", "Jeu d'enregistrements alias", "TXT", "PTR"], "a": [1], "e": "Un CNAME est interdit à l'apex ; l'alias pointe vers la ressource Azure elle-même.", "p": "azure-dns"}, {"d": "ne", "t": "s", "q": "Le niveau web doit répartir le trafic vers 3 VM d'application qui n'ont pas d'IP publique. Quel équilibreur ?", "o": ["Load Balancer public", "Load Balancer interne", "Front Door", "Traffic Manager"], "a": [1], "e": "Un LB interne a une IP frontale privée.", "p": "load-balancer"}, {"d": "ne", "t": "s", "q": "Un client doit toujours retomber sur la même VM derrière un Load Balancer. Quel réglage ?", "o": ["Sonde d'intégrité", "Persistance de session (IP client)", "Règle NAT entrante", "Ports HA"], "a": [1], "e": "L'affinité par IP client garde le client sur la même VM.", "p": "load-balancer"}, {"d": "ne", "t": "s", "q": "Vous devez router /images vers un pool et /api vers un autre, avec un pare-feu web (WAF), dans une seule région. Quel service ?", "o": ["Azure Load Balancer", "Application Gateway", "Traffic Manager", "Une UDR"], "a": [1], "e": "Application Gateway = couche 7 régionale, routage par chemin, WAF.", "p": "load-balancer"}, {"d": "ne", "t": "s", "q": "Une appli web mondiale a besoin d'un équilibrage HTTP global avec WAF et mise en cache. Quel service ?", "o": ["Application Gateway", "Azure Front Door", "Load Balancer interne", "NSG"], "a": [1], "e": "Front Door : global, couche 7, WAF, CDN.", "p": "load-balancer"}, {"d": "ne", "t": "s", "q": "Vos VM backend sont réparties sur 3 zones de disponibilité. Quel SKU de Load Balancer ?", "o": ["Basic", "Standard", "Gateway", "Aucun"], "a": [1], "e": "Standard supporte les zones (et est sécurisé par défaut).", "p": "load-balancer"}, {"d": "ne", "t": "s", "q": "Quel mode d'attribution utilise une IP publique de SKU Standard ?", "o": ["Dynamique", "Statique", "Les deux au choix", "Aucun"], "a": [1], "e": "Standard = toujours statique.", "p": "reseaux-virtuels"}, {"d": "ne", "t": "s", "q": "Deux réseaux virtuels dans deux régions doivent communiquer en privé, à faible latence, sans passerelle. Quelle solution ?", "o": ["VPN site à site", "Peering de réseaux virtuels global", "Point de terminaison de service", "IP publiques"], "a": [1], "e": "Le peering global relie des régions différentes sur le réseau Microsoft.", "p": "peering"}, {"d": "ne", "t": "y", "q": "Objectif : permettre le RDP vers VM1 seulement depuis l'IP de l'admin. Solution : une règle NSG entrante Allow TCP 3389, source = IP de l'admin, priorité 100, sans autre règle personnalisée. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [0], "e": "La règle par défaut DenyAllInbound (65500) bloque toutes les autres sources.", "p": "nsg"}, {"d": "ne", "t": "s", "q": "Vous voulez savoir quelle règle NSG bloque le trafic entre VM1 et un port précis. Quel outil ?", "o": ["Vérification du flux IP de Network Watcher", "Diagnostics de démarrage", "Metrics Explorer", "Azure Advisor"], "a": [0], "e": "➕ IP flow verify indique Autorisé/Refusé et la règle responsable.", "p": "nsg"}, {"d": "ne", "t": "s", "q": "Une passerelle VPN doit être déployée dans un sous-réseau portant quel nom ?", "o": ["VpnSubnet", "GatewaySubnet", "AzureGateway", "default"], "a": [1], "e": "➕ Le nom GatewaySubnet est obligatoire.", "p": "peering"}, {"d": "ne", "t": "s", "q": "Une VM sans IP publique doit pouvoir sortir sur Internet avec une IP sortante fixe. Quelle solution ?", "o": ["Un NSG", "Une passerelle NAT", "Un peering", "Une zone DNS privée"], "a": [1], "e": "➕ NAT Gateway donne une IP sortante statique au sous-réseau.", "p": "routes"}, {"d": "mo", "t": "s", "q": "Vous voulez suivre la mémoire utilisée dans une VM Linux. Que faut-il ?", "o": ["Rien, c'est une métrique de l'hôte", "L'agent Azure Monitor et une règle de collecte (VM Insights)", "Les diagnostics de démarrage", "Le journal d'activité"], "a": [1], "e": "La mémoire vient de l'invité : agent + DCR.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Qui a supprimé la VM web02 hier ? Où regarder ?", "o": ["Metrics Explorer", "Le journal d'activité", "La table Syslog", "Azure Advisor"], "a": [1], "e": "Le journal d'activité trace les opérations du plan de contrôle.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Une VM Linux ne démarre plus après une mise à jour. Quel outil montre sa console de démarrage ?", "o": ["Diagnostics de démarrage", "Application Insights", "Cost Management", "Network Watcher"], "a": [0], "e": "Capture d'écran + journal série.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Quelle ressource indique à l'agent Azure Monitor quelles données collecter et où les envoyer ?", "o": ["Un groupe d'actions", "Une règle de collecte de données (DCR)", "Un classeur", "Un paramètre de diagnostic"], "a": [1], "e": "DCR = sources + destinations.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Quand une alerte se déclenche, l'équipe doit recevoir un courriel et un SMS. Que configurer ?", "o": ["Un groupe d'actions", "Une DCR", "Une stratégie", "Un budget"], "a": [0], "e": "Le groupe d'actions définit qui prévenir et comment.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Un coffre Recovery Services est en Canada Central. Vous voulez sauvegarder une VM d'East US. Que faire ?", "o": ["L'ajouter au coffre existant", "Créer un coffre dans East US", "Déplacer le coffre", "Activer GRS"], "a": [1], "e": "➕ Le coffre doit être dans la même région que la VM.", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Vous devez sauvegarder des dossiers d'un serveur Windows local directement vers Azure, sans serveur de sauvegarde. Quoi installer ?", "o": ["L'agent MARS", "L'agent Azure Monitor", "Azure File Sync", "L'extension VMSnapshotLinux"], "a": [0], "e": "MARS : fichiers, dossiers, état système (Windows).", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Un utilisateur a effacé un seul fichier sur une VM sauvegardée. Méthode la plus rapide ?", "o": ["Restaurer toute la VM", "Récupération de fichiers depuis un point de restauration", "Azure Site Recovery", "Recréer la VM"], "a": [1], "e": "➕ Un script monte le point de restauration ; on copie le fichier.", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Combien de jours une sauvegarde supprimée reste-t-elle récupérable par défaut dans le coffre ?", "o": ["7", "14", "30", "90"], "a": [1], "e": "Suppression réversible : 14 jours (réglable jusqu'à 180).", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Les VM doivent pouvoir redémarrer dans une autre région en quelques minutes si la région principale tombe. Quel service ?", "o": ["Azure Backup", "Azure Site Recovery", "Arrêt automatique", "Log Analytics"], "a": [1], "e": "Site Recovery réplique en continu et bascule (failover).", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Quelle est la fréquence minimale d'une stratégie de sauvegarde de VM « Enhanced » ?", "o": ["Toutes les heures", "Toutes les 4 heures", "Toutes les 12 heures", "Une fois par jour"], "a": [1], "e": "4, 6, 8, 12 ou 24 h.", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Le journal d'activité doit être envoyé vers un SIEM hors Azure. Quelle destination du paramètre de diagnostic ?", "o": ["Compte de stockage", "Event Hubs", "Classeur", "Groupe d'actions"], "a": [1], "e": "Event Hubs diffuse les données vers des outils externes.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Une restauration « Remplacer l'existant » échoue. Quelle est la cause la plus probable ?", "o": ["La VM est encore en cours d'exécution", "Le coffre est en GRS", "La VM est sous Linux", "La stratégie est Standard"], "a": [0], "e": "Arrêter la VM et fournir un compte de stockage intermédiaire.", "p": "sauvegarde-azure"}, {"d": "mo", "t": "s", "q": "Dans Log Analytics, dans quelle table trouver les messages Syslog d'une VM Linux ?", "o": ["Perf", "Syslog", "AzureActivity", "Heartbeat"], "a": [1], "e": "Syslog. Heartbeat sert à vérifier que l'agent répond.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "y", "q": "Objectif : être alerté quand quelqu'un désalloue une VM. Solution : une alerte de métrique sur « Disponibilité de la VM » inférieure à 1. La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [1], "e": "VM arrêtée = aucune donnée (null), l'alerte ne se déclenche pas de façon fiable.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "y", "q": "Objectif : être alerté quand quelqu'un désalloue une VM. Solution : une alerte sur le journal d'activité pour l'opération « Désallouer la machine virtuelle ». La solution atteint-elle l'objectif ?", "o": ["Oui", "Non"], "a": [0], "e": "Les opérations du plan de contrôle se surveillent dans le journal d'activité.", "p": "azure-monitor-vm"}, {"d": "mo", "t": "s", "q": "Vous voulez pouvoir restaurer les sauvegardes de VM dans la région jumelée. Quelle redondance choisir pour le coffre, et quand ?", "o": ["LRS, à tout moment", "GRS avec restauration inter-régions, avant la première sauvegarde", "ZRS, après la première sauvegarde", "Aucune, c'est automatique"], "a": [1], "e": "GRS + Cross Region Restore ; la redondance se choisit avant de protéger un élément.", "p": "sauvegarde-azure"}];
+
+var DOM={id:'Identités et gouvernance',st:'Stockage',co:'Calcul',ne:'Réseaux virtuels',mo:'Supervision et sauvegarde'};
+var DOMW={id:'20–25 %',st:'15–20 %',co:'20–25 %',ne:'15–20 %',mo:'10–15 %'};
+var MODES={
+  full:{n:'Examen complet',q:50,min:100,mix:{id:12,st:9,co:12,ne:10,mo:7},desc:'50 questions · 100 min · comme le vrai'},
+  half:{n:'Demi-examen',q:25,min:50,mix:{id:6,st:5,co:6,ne:5,mo:3},desc:'25 questions · 50 min'},
+  quick:{n:'Rapide',q:10,min:20,mix:{id:2,st:2,co:2,ne:2,mo:2},desc:'10 questions · 20 min'}
+};
+var K={run:'exam-run',hist:'exam-hist',seen:'exam-seen'};
+function load(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function del(k){try{localStorage.removeItem(k);}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function fmt(s){s=Math.max(0,Math.round(s));var m=Math.floor(s/60),x=s%60;return m+':'+(x<10?'0':'')+x;}
+var $=function(id){return document.getElementById(id);};
+var run=null,cur=0,tick=null;
+
+function pick(mix){
+  var seen=load(K.seen,{}),ids=[];
+  Object.keys(mix).forEach(function(d){
+    var pool=[];Q.forEach(function(q,i){if(q.d===d)pool.push(i);});
+    shuffle(pool);pool.sort(function(a,b){return (seen[a]||0)-(seen[b]||0);});
+    ids=ids.concat(pool.slice(0,mix[d]));
+  });
+  return shuffle(ids);
+}
+function start(modeKey,dom){
+  var m=MODES[modeKey],mix=m?m.mix:{},name,mins;
+  if(dom){mix={};mix[dom]=15;name='Domaine : '+DOM[dom];mins=30;}else{name=m.n;mins=m.min;}
+  var ids=pick(mix);
+  run={name:name,ids:ids,ord:ids.map(function(i){var o=Q[i].o.map(function(_,k){return k;});return Q[i].t==='y'?o:shuffle(o);}),
+       ans:ids.map(function(){return [];}),flag:ids.map(function(){return false;}),start:Date.now(),end:Date.now()+mins*60000,mins:mins};
+  cur=0;save(K.run,run);show('exam');
+}
+function show(v){
+  ['home','exam','res'].forEach(function(x){$('v-'+x).hidden=x!==v;});
+  scrollTo(0,0);
+  clearInterval(tick);
+  if(v==='exam'){renderQ();tick=setInterval(time,1000);time();}
+  if(v==='home')home();
+}
+function time(){
+  var left=(run.end-Date.now())/1000;
+  $('timer').textContent='⏱ '+fmt(left);
+  $('timer').classList.toggle('low',left<300);
+  if(left<=0)finish(true);
+}
+function renderQ(){
+  var i=run.ids[cur],q=Q[i],multi=q.t==='m',answered=run.ans.filter(function(a){return a.length;}).length;
+  $('prog').textContent='Question '+(cur+1)+' / '+run.ids.length+' · '+answered+' répondue'+(answered>1?'s':'');
+  var h='<div class="qmeta"><span class="dom">'+DOM[q.d]+'</span>'+(q.t==='y'?'<span>Série : la solution atteint-elle l\'objectif ?</span>':'')+(run.flag[cur]?'<span>🚩 à revoir</span>':'')+'</div>'+
+    '<p class="qtext">'+esc(q.q)+'</p>'+(multi?'<p class="hint">Plusieurs réponses possibles : coche toutes les bonnes.</p>':'')+
+    '<div class="opts" role="'+(multi?'group':'radiogroup')+'">';
+  run.ord[cur].forEach(function(k,n){
+    var on=run.ans[cur].indexOf(k)>=0;
+    h+='<button type="button" class="opt'+(multi?' m':'')+'" role="'+(multi?'checkbox':'radio')+'" aria-checked="'+on+'" data-k="'+k+'"><span class="k">'+'ABCDEF'[n]+'</span><span>'+esc(q.o[k])+'</span></button>';
+  });
+  $('qcard').innerHTML=h+'</div>';
+  [].forEach.call($('qcard').querySelectorAll('.opt'),function(b){b.onclick=function(){
+    var k=+b.dataset.k,a=run.ans[cur];
+    if(multi){var p=a.indexOf(k);if(p>=0)a.splice(p,1);else a.push(k);}else run.ans[cur]=[k];
+    save(K.run,run);renderQ();};});
+  $('bPrev').disabled=cur===0;
+  $('bNext').textContent=cur===run.ids.length-1?'Fin':'Suiv. →';
+  $('bNext').disabled=cur===run.ids.length-1;
+  $('bFlag').textContent=run.flag[cur]?'🚩 Retirer':'🚩 Revoir';
+  var g=$('grid');g.innerHTML='';
+  run.ids.forEach(function(_,n){var c=document.createElement('button');c.type='button';
+    c.className='cell'+(run.ans[n].length?' done':'')+(run.flag[n]?' flag':'')+(n===cur?' cur':'');
+    c.textContent=n+1;c.setAttribute('aria-label','Question '+(n+1));c.onclick=function(){cur=n;renderQ();scrollTo(0,0);};g.appendChild(c);});
+  var left=run.ids.length-answered,fl=run.flag.filter(Boolean).length;
+  $('endTxt').textContent=(left?left+' question'+(left>1?'s':'')+' sans réponse. ':'Toutes les questions ont une réponse. ')+(fl?fl+' marquée'+(fl>1?'s':'')+' à revoir.':'');
+  confirmArm=false;$('bEnd').textContent='Terminer l\'examen';
+}
+var confirmArm=false;
+$('bPrev').onclick=function(){if(cur>0){cur--;renderQ();}};
+$('bNext').onclick=function(){if(cur<run.ids.length-1){cur++;renderQ();scrollTo(0,0);}};
+$('bFlag').onclick=function(){run.flag[cur]=!run.flag[cur];save(K.run,run);renderQ();};
+$('bGrid').onclick=function(){$('gridBox').hidden=!$('gridBox').hidden;};
+$('bEnd').onclick=function(){if(!confirmArm){confirmArm=true;$('bEnd').textContent='Confirmer : terminer et corriger';return;}finish(false);};
+document.addEventListener('keydown',function(e){
+  if($('v-exam').hidden||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight')$('bNext').click();else if(e.key==='ArrowLeft')$('bPrev').click();
+  else if(/^[a-fA-F]$/.test(e.key)){var b=$('qcard').querySelectorAll('.opt')['abcdef'.indexOf(e.key.toLowerCase())];if(b)b.click();}
+});
+
+function isRight(i,a){var g=Q[i].a;return a.length===g.length&&g.every(function(x){return a.indexOf(x)>=0;});}
+var last=null;
+function finish(timeout){
+  clearInterval(tick);
+  var dom={},ok=0,seen=load(K.seen,{});
+  run.ids.forEach(function(i,n){var d=Q[i].d;dom[d]=dom[d]||[0,0];dom[d][1]++;if(isRight(i,run.ans[n])){dom[d][0]++;ok++;}seen[i]=(seen[i]||0)+1;});
+  save(K.seen,seen);
+  var sec=Math.min((Date.now()-run.start)/1000,run.mins*60),score=Math.round(ok/run.ids.length*1000);
+  var rec={date:Date.now(),name:run.name,score:score,ok:ok,n:run.ids.length,sec:Math.round(sec),dom:dom,timeout:timeout};
+  var hist=load(K.hist,[]);hist.push(rec);save(K.hist,hist);
+  last={run:run,rec:rec};del(K.run);
+  results(timeout);
+}
+var revMode='all';
+function results(timeout){
+  show('res');
+  var r=last.rec;
+  $('rScore').textContent=r.score+' / 1000';
+  $('rPass').className='pass '+(r.score>=700?'ok':'ko');$('rPass').textContent=r.score>=700?'✅ Réussi (700 requis)':'❌ Pas encore (700 requis)';
+  $('rStats').innerHTML='<span><b>'+r.ok+'</b> / '+r.n+' bonnes réponses</span><span>Temps : <b>'+fmt(r.sec)+'</b></span><span>'+esc(r.name)+'</span>'+(timeout?'<span><b>⏰ Temps écoulé</b></span>':'');
+  var h='';Object.keys(DOM).forEach(function(d){if(!r.dom[d])return;var c=r.dom[d],p=Math.round(c[0]/c[1]*100);
+    h+='<div class="drow"><span>'+DOM[d]+' <span style="color:var(--muted);font-size:12.5px">('+DOMW[d]+' de l\'examen)</span></span><b style="text-align:right">'+c[0]+'/'+c[1]+'</b><div class="track"><i style="width:'+p+'%;'+(p<70?'background:var(--onprem)':'')+'"></i></div></div>';});
+  $('rDom').innerHTML=h+'<p style="font-size:13px;color:var(--muted);margin:10px 0 0">En orange : sous 70 %, à retravailler en priorité.</p>';
+  var fs=$('revFilter');fs.innerHTML='';
+  [['all','Toutes'],['bad','Erreurs seulement'],['flag','Marquées à revoir']].forEach(function(x){var b=document.createElement('button');b.type='button';b.className='f';b.textContent=x[1];
+    b.setAttribute('aria-pressed',revMode===x[0]);b.onclick=function(){revMode=x[0];results(timeout);};fs.appendChild(b);});
+  var rv='';
+  last.run.ids.forEach(function(i,n){
+    var q=Q[i],a=last.run.ans[n],good=isRight(i,a);
+    if(revMode==='bad'&&good)return;if(revMode==='flag'&&!last.run.flag[n])return;
+    rv+='<div class="card rev '+(good?'good':'bad')+'"><div class="qmeta"><b>'+(good?'✅':'❌')+' Question '+(n+1)+'</b><span class="dom">'+DOM[q.d]+'</span>'+(a.length?'':'<span>sans réponse</span>')+'</div>'+
+      '<p style="margin:0;font-size:15px">'+esc(q.q)+'</p><ul>';
+    last.run.ord[n].forEach(function(k){var right=q.a.indexOf(k)>=0,picked=a.indexOf(k)>=0;
+      rv+='<li class="'+(right?'right':(picked?'wrongpick':''))+'">'+esc(q.o[k])+(right?' ✓':'')+(picked&&right?' (ton choix)':'')+'</li>';});
+    rv+='</ul><p class="ex">💡 '+esc(q.e)+' <a href="'+q.p+'.html">Revoir la page</a></p></div>';
+  });
+  $('rRev').innerHTML=rv||'<p style="color:var(--muted)">Rien à afficher pour ce filtre.</p>';
+}
+$('bAgain').onclick=function(){show('home');};
+
+function home(){
+  var m=$('modes');m.innerHTML='';
+  Object.keys(MODES).forEach(function(k){var b=document.createElement('button');b.type='button';b.className='mode';
+    b.innerHTML='<b>'+MODES[k].n+'</b><span>'+MODES[k].desc+'</span>';b.onclick=function(){start(k);};m.appendChild(b);});
+  var ds=$('domsel');ds.innerHTML='';
+  Object.keys(DOM).forEach(function(d){var b=document.createElement('button');b.type='button';b.className='f';b.textContent=DOM[d];b.onclick=function(){start(null,d);};ds.appendChild(b);});
+  var r=load(K.run,null);
+  if(r&&r.end>Date.now()){$('resume').hidden=false;var n=r.ans.filter(function(a){return a.length;}).length;
+    $('resumeTxt').textContent=r.name+' · '+n+' / '+r.ids.length+' répondues · '+fmt((r.end-Date.now())/1000)+' restantes';
+    $('bResume').onclick=function(){run=r;cur=0;show('exam');};
+    $('bDrop').onclick=function(){del(K.run);home();};}
+  else{if(r){run=r;finish(true);return;}$('resume').hidden=true;}
+  hist();
+}
+var clearArm=false;
+function hist(){
+  var H=load(K.hist,[]),box=$('histBox');
+  if(!H.length){box.innerHTML='<p style="color:var(--muted);font-size:14px">Aucun examen pour l\'instant. Ton historique s\'affichera ici (gardé dans ce navigateur).</p>';return;}
+  var best=Math.max.apply(null,H.map(function(x){return x.score;})),avg=Math.round(H.reduce(function(s,x){return s+x.score;},0)/H.length),
+      pass=H.filter(function(x){return x.score>=700;}).length;
+  var dom={};H.forEach(function(x){Object.keys(x.dom).forEach(function(d){dom[d]=dom[d]||[0,0];dom[d][0]+=x.dom[d][0];dom[d][1]+=x.dom[d][1];});});
+  var weak=Object.keys(dom).sort(function(a,b){return dom[a][0]/dom[a][1]-dom[b][0]/dom[b][1];})[0];
+  var last20=H.slice(-20),h='<div class="card"><div class="stats"><span>Examens : <b>'+H.length+'</b></span><span>Moyenne : <b>'+avg+'</b></span><span>Meilleur : <b>'+best+'</b></span><span>Réussis : <b>'+pass+'</b></span>'+
+    (weak?'<span>Domaine le plus faible : <b>'+DOM[weak]+'</b> ('+Math.round(dom[weak][0]/dom[weak][1]*100)+' %)</span>':'')+'</div>'+
+    '<div class="spark" aria-label="Scores des 20 derniers examens"><span class="line" style="bottom:70%"></span>'+
+    last20.map(function(x){return '<i class="'+(x.score<700?'ko':'')+'" style="height:'+Math.max(4,x.score/10)+'%" title="'+x.score+'"></i>';}).join('')+
+    '</div><p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">20 derniers examens · ligne verte = 700</p></div>';
+  h+='<div class="tablewrap" style="margin-top:10px"><table class="hist"><thead><tr><th>Date</th><th>Examen</th><th>Score</th><th>Bonnes</th><th>Temps</th></tr></thead><tbody>';
+  H.slice().reverse().forEach(function(x){var d=new Date(x.date);
+    h+='<tr><td class="n">'+d.toLocaleDateString('fr-CA')+' '+d.toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit'})+'</td><td>'+esc(x.name)+'</td><td class="n"><b style="color:var('+(x.score>=700?'--ok':'--onprem')+')">'+x.score+'</b></td><td class="n">'+x.ok+'/'+x.n+'</td><td class="n">'+fmt(x.sec)+(x.timeout?' ⏰':'')+'</td></tr>';});
+  h+='</tbody></table></div><button class="btn sec" id="bClear" type="button" style="margin-top:10px">Effacer l\'historique</button>';
+  box.innerHTML=h;
+  $('bClear').onclick=function(){if(!clearArm){clearArm=true;this.textContent='Confirmer : tout effacer';return;}del(K.hist);del(K.seen);clearArm=false;hist();};
+}
+show('home');
+(function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
+</script>
+</body>
+</html>

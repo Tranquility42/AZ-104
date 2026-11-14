@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Disponibilité des VM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -27,20 +28,22 @@ pre.cmd{background:var(--surface);border:1px solid var(--line);border-radius:12p
 .sas .p1{background:var(--cloud-soft)}.sas .p2{background:var(--onprem-soft)}.sas .p3{background:var(--tf-soft)}.sas .p4{background:var(--ok-soft)}
 </style>
 </head>
-<body>
+<body data-dom="co">
 <header class="top"><div class="wrap">
   <a class="brand" href="../index.html"><img src="../favicon.svg" alt="" width="28" height="28">AZ-104 <span>en images</span></a>
   <div class="top-actions"><button class="icon-btn" id="theme" type="button" aria-label="Changer de thème">🌙</button><button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="drawer"><span aria-hidden="true">☰</span> Menu</button></div>
 </div></header>
 
 <main class="wrap">
+  <header class="page-hero" data-ico="🖥️">
+  <span class="dom-pill">🖥️ Calcul</span>
   <nav class="crumbs" aria-label="Fil d'Ariane"><a class="crumb-home" href="../index.html">🏠 Accueil</a><span class="sep">›</span><span>Calcul</span><span class="sep">›</span><span class="here">Disponibilité des VM</span></nav>
   <h1>Configurer la disponibilité des machines virtuelles</h1>
   <p class="lede">Maintenance et pannes, groupes à haute disponibilité (domaines d'erreur et de mise à jour), zones, mise à l'échelle verticale et horizontale, VMSS et mise à l'échelle automatique. Les notions marquées <b>➕ examen</b> complètent le module.</p>
   <div class="meta">
     <span class="chip">⏱ Lecture : 9 min · module complet</span>
     <span class="chip">🎯 FD/UD, zones vs groupes, SLA, VMSS : questions fréquentes</span>
-  </div>
+  </div></header>
 
   <div class="keyidea">
     <div class="ico">💡</div>

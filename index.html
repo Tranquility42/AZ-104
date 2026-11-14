@@ -2,18 +2,19 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>AZ-104 en images</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#ffffff">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-dom="home">
 <header class="top"><div class="wrap">
   <a class="brand" href="index.html"><img src="favicon.svg" alt="" width="28" height="28">AZ-104 <span>en images</span></a>
   <div class="top-actions"><button class="icon-btn" id="theme" type="button" aria-label="Changer de thème">🌙</button><button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="drawer"><span aria-hidden="true">☰</span> Menu</button></div>
@@ -107,10 +108,10 @@
   document.querySelectorAll('p.mod').forEach(function(p,i){
     var list=p.nextElementSibling;if(!list||!list.classList.contains('units'))return;
     var id='m'+i,n=list.querySelectorAll('a.unit').length;
-    var b=document.createElement('button');b.type='button';b.className='mod-toggle';
+    var b=document.createElement('button');b.type='button';b.className='mod-toggle';b.dataset.dom=['pre','id','ne','st','co','mo'][i]||'';
     list.id='units-'+id;b.setAttribute('aria-controls',list.id);
     p.parentNode.insertBefore(b,p);b.appendChild(p);
-    var c=document.createElement('span');c.className='cnt';c.textContent=n?n+(n>1?' résumés':' résumé'):'à venir';b.appendChild(c);
+    var c=document.createElement('span');c.className='cnt';var W=['','20–25 %','15–20 %','15–20 %','20–25 %','10–15 %'][i];c.textContent=(n?n+(n>1?' résumés':' résumé'):'à venir')+(W?' · '+W+' de l’examen':'');b.appendChild(c);
     var v=document.createElement('span');v.className='chev';v.setAttribute('aria-hidden','true');v.textContent='▾';b.appendChild(v);
     function set(o){b.setAttribute('aria-expanded',o);list.hidden=!o;}
     set(!!open[id]);

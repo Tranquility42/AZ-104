@@ -1,6 +1,7 @@
 import sys,json
 import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 from bank import Q
+from coach import H
 R=__import__('os').path.dirname(__import__('os').path.dirname(__import__('os').path.abspath(__file__)))+'/'
 cmd=open(R+'units/commandes.html').read()
 head=cmd[:cmd.index('<style>')].replace('<title>Mes commandes Azure</title>','<title>Examen blanc AZ-104</title>')
@@ -19,7 +20,7 @@ css=r'''<style>
 .btn.warn{background:var(--onprem)}
 .btn:focus-visible,.f:focus-visible,.opt:focus-visible{outline:2px solid var(--cloud);outline-offset:2px}
 .btn[disabled]{opacity:.45;cursor:default}
-.bar{position:sticky;top:0;z-index:6;background:var(--bg);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.bar{position:sticky;top:61px;z-index:6;background:var(--bg);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
 .timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px;padding:6px 12px;border-radius:10px;background:var(--cloud-soft)}
 .timer.low{background:var(--onprem-soft);color:var(--onprem)}
 .prog{flex:1;min-width:120px;font-size:14px;color:var(--muted)}
@@ -63,6 +64,25 @@ css=r'''<style>
 .spark .line{position:absolute;left:0;right:0;border-top:2px dashed var(--ok)}
 .stats{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted);margin-top:8px}
 .stats b{color:var(--text)}
+.mode.one{border-style:dashed;border-color:color-mix(in srgb,var(--tf) 45%,var(--line))}
+.mode.one b::before{content:'🧭 '}
+.setup{margin-top:12px;border-color:var(--tf)}
+.setup h3{margin:0 0 4px}
+.setup .lab{font-size:13px;font-weight:700;color:var(--muted);margin:12px 0 0}
+.tools2{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tools2 .btn{padding:9px 14px;font-size:14px}
+.coach{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:15px;line-height:1.5}
+.coach.hintbox{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.coach.ok{background:var(--ok-soft);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
+.coach.ko{background:var(--onprem-soft);border:1px solid color-mix(in srgb,var(--onprem) 35%,transparent)}
+.coach.tip{background:var(--tf-soft);border:1px solid color-mix(in srgb,var(--tf) 35%,transparent)}
+.coach b.t{display:block;font-size:13px;letter-spacing:.02em;text-transform:uppercase;margin-bottom:2px}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.right .k{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--onprem);background:var(--onprem-soft)}
+.opt.wrong .k{background:var(--onprem);border-color:var(--onprem);color:#fff}
+.opt[disabled]{cursor:default}
+.pscore{font-weight:700;font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 </style>
 '''
@@ -80,6 +100,13 @@ body=r'''<main class="wrap">
     </div>
     <h2>Choisir un examen</h2>
     <div class="modes" id="modes"></div>
+    <div class="card setup" id="setup" hidden>
+      <h3>🧭 Une question à la fois</h3>
+      <p style="font-size:14px;margin:0;color:var(--muted)">Sans pression : tu réponds, tu peux demander un indice ou ouvrir le résumé du cours, puis tu vois la correction et une astuce d'examen.</p>
+      <p class="lab">Domaine</p><div class="chipsel" id="pDom"></div>
+      <p class="lab">Chrono</p><div class="chipsel" id="pTime"></div>
+      <div class="nav"><button class="btn" id="bPGo" type="button">Commencer</button><button class="btn sec" id="bPCancel" type="button">Annuler</button></div>
+    </div>
     <div class="card" style="margin-top:12px">
       <b style="font-size:15px">🎯 Par domaine : 15 questions, 30 min</b>
       <div class="chipsel" id="domsel"></div>
@@ -113,6 +140,33 @@ body=r'''<main class="wrap">
     </div>
   </section>
 
+  <!-- UNE A LA FOIS -->
+  <section id="v-one" hidden>
+    <div class="bar">
+      <span class="timer" id="pTimer" hidden>--:--</span>
+      <span class="prog" id="pProg"></span>
+      <button class="btn sec" id="bPStop" type="button" style="padding:8px 12px;font-size:14px">Terminer</button>
+    </div>
+    <div class="card qcard" id="pCard"></div>
+    <div class="tools2" id="pTools">
+      <button class="btn sec" id="bHint" type="button">💡 Indice</button>
+      <a class="btn sec" id="bPage" target="_blank" rel="noopener">📖 Chercher dans le résumé</a>
+      <a class="btn sec" href="lexique.html" target="_blank" rel="noopener">🔤 Lexique</a>
+    </div>
+    <div id="pHint"></div>
+    <div id="pFeed"></div>
+    <div class="nav"><button class="btn" id="bCheck" type="button">Valider</button><button class="btn" id="bPNext" type="button" hidden>Question suivante →</button></div>
+  </section>
+
+  <!-- BILAN UNE A LA FOIS -->
+  <section id="v-onres" hidden>
+    <h1>Bilan de l'entraînement</h1>
+    <div class="card" style="margin-top:12px"><div class="score"><span class="big" id="oScore"></span></div><div class="stats" id="oStats"></div></div>
+    <h2>À retravailler</h2>
+    <div id="oRev"></div>
+    <div class="nav"><button class="btn" id="bOAgain" type="button">Continuer à s'entraîner</button><button class="btn sec" id="bOHome" type="button">Retour aux examens</button></div>
+  </section>
+
   <!-- RESULTATS -->
   <section id="v-res" hidden>
     <h1>Résultat</h1>
@@ -132,7 +186,8 @@ body=r'''<main class="wrap">
   <a class="fab-home" id="fab" href="../index.html" aria-label="Retour au sommaire">☰ Sommaire</a>
 </main>
 '''
-data=[{'d':d,'t':t,'q':q,'o':o,'a':a,'e':e,'p':p} for d,t,q,o,a,e,p in Q]
+assert len(H)==len(Q)
+data=[{'d':d,'t':t,'q':q,'o':o,'a':a,'e':e,'p':p,'h':H[i][0],'x':H[i][1]} for i,(d,t,q,o,a,e,p) in enumerate(Q)]
 js='var Q='+json.dumps(data,ensure_ascii=False)+';\n'+r'''
 var DOM={id:'Identités et gouvernance',st:'Stockage',co:'Calcul',ne:'Réseaux virtuels',mo:'Supervision et sauvegarde'};
 var DOMW={id:'20–25 %',st:'15–20 %',co:'20–25 %',ne:'15–20 %',mo:'10–15 %'};
@@ -141,7 +196,7 @@ var MODES={
   half:{n:'Demi-examen',q:25,min:50,mix:{id:6,st:5,co:6,ne:5,mo:3},desc:'25 questions · 50 min'},
   quick:{n:'Rapide',q:10,min:20,mix:{id:2,st:2,co:2,ne:2,mo:2},desc:'10 questions · 20 min'}
 };
-var K={run:'exam-run',hist:'exam-hist',seen:'exam-seen'};
+var K={run:'exam-run',hist:'exam-hist',seen:'exam-seen',one:'exam-one',pref:'exam-one-pref'};
 function load(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function del(k){try{localStorage.removeItem(k);}catch(e){}}
@@ -169,7 +224,7 @@ function start(modeKey,dom){
   cur=0;save(K.run,run);show('exam');
 }
 function show(v){
-  ['home','exam','res'].forEach(function(x){$('v-'+x).hidden=x!==v;});
+  ['home','exam','res','one','onres'].forEach(function(x){$('v-'+x).hidden=x!==v;});
   scrollTo(0,0);
   clearInterval(tick);
   if(v==='exam'){renderQ();tick=setInterval(time,1000);time();}
@@ -264,6 +319,11 @@ function home(){
   var m=$('modes');m.innerHTML='';
   Object.keys(MODES).forEach(function(k){var b=document.createElement('button');b.type='button';b.className='mode';
     b.innerHTML='<b>'+MODES[k].n+'</b><span>'+MODES[k].desc+'</span>';b.onclick=function(){start(k);};m.appendChild(b);});
+  var o=document.createElement('button');o.type='button';o.className='mode one';
+  o.innerHTML='<b>Une question à la fois</b><span>Chrono au choix · indice · résumé à portée de main · astuce d\'examen</span>';
+  o.onclick=function(){$('setup').hidden=false;setupUI();$('setup').scrollIntoView({behavior:'smooth',block:'center'});};m.appendChild(o);
+  var op=load(K.one,null);if(op&&op.done<op.ids.length&&op.done>0){o.querySelector('span').textContent='En cours : '+op.ok+' / '+op.done+' bonnes · clique pour continuer';
+    o.onclick=function(){one=op;show('one');renderOne();};}
   var ds=$('domsel');ds.innerHTML='';
   Object.keys(DOM).forEach(function(d){var b=document.createElement('button');b.type='button';b.className='f';b.textContent=DOM[d];b.onclick=function(){start(null,d);};ds.appendChild(b);});
   var r=load(K.run,null);
@@ -294,6 +354,67 @@ function hist(){
   box.innerHTML=h;
   $('bClear').onclick=function(){if(!clearArm){clearArm=true;this.textContent='Confirmer : tout effacer';return;}del(K.hist);del(K.seen);clearArm=false;hist();};
 }
+/* ---------- UNE QUESTION A LA FOIS ---------- */
+var one=null,pTick=null,pref=load(K.pref,{dom:'all',time:0});
+function chips(box,items,val,cb){box.innerHTML='';items.forEach(function(x){var b=document.createElement('button');b.type='button';b.className='f';b.textContent=x[1];
+  b.setAttribute('aria-pressed',String(x[0]===val));b.onclick=function(){cb(x[0]);};box.appendChild(b);});}
+function setupUI(){
+  chips($('pDom'),[['all','Tous les domaines']].concat(Object.keys(DOM).map(function(d){return [d,DOM[d]];})),pref.dom,function(v){pref.dom=v;save(K.pref,pref);setupUI();});
+  chips($('pTime'),[[0,'Sans chrono'],[90,'1 min 30 / question'],[120,'2 min / question (rythme du vrai)']],pref.time,function(v){pref.time=v;save(K.pref,pref);setupUI();});
+}
+$('bPCancel').onclick=function(){$('setup').hidden=true;};
+$('bPGo').onclick=function(){
+  var seen=load(K.seen,{}),pool=[];Q.forEach(function(q,i){if(pref.dom==='all'||q.d===pref.dom)pool.push(i);});
+  shuffle(pool);pool.sort(function(a,b){return (seen[a]||0)-(seen[b]||0);});
+  one={ids:pool,done:0,ok:0,miss:[],time:pref.time,dom:pref.dom};newQ();save(K.one,one);$('setup').hidden=true;show('one');renderOne();};
+function newQ(){var i=one.ids[one.done],q=Q[i],o=q.o.map(function(_,k){return k;});one.cur={ord:q.t==='y'?o:shuffle(o),ans:[],hint:false,checked:false,end:one.time?Date.now()+one.time*1000:0};}
+function renderOne(){
+  clearInterval(pTick);
+  var c=one.cur,i=one.ids[one.done],q=Q[i],multi=q.t==='m';
+  $('pProg').innerHTML='Question <b>'+(one.done+1)+'</b> / '+one.ids.length+(one.done?' · <span class="pscore">'+one.ok+' / '+one.done+' bonnes</span>':'');
+  var h='<div class="qmeta"><span class="dom">'+DOM[q.d]+'</span>'+(q.t==='y'?'<span>Série : la solution atteint-elle l\'objectif ?</span>':'')+'</div>'+
+    '<p class="qtext">'+esc(q.q)+'</p>'+(multi?'<p class="hint">Plusieurs réponses possibles : coche toutes les bonnes.</p>':'')+'<div class="opts">';
+  c.ord.forEach(function(k,n){var on=c.ans.indexOf(k)>=0,cls='';
+    if(c.checked){if(q.a.indexOf(k)>=0)cls=' right';else if(on)cls=' wrong';}
+    h+='<button type="button" class="opt'+(multi?' m':'')+cls+'" role="'+(multi?'checkbox':'radio')+'" aria-checked="'+on+'" data-k="'+k+'"'+(c.checked?' disabled':'')+'><span class="k">'+'ABCDEF'[n]+'</span><span>'+esc(q.o[k])+'</span></button>';});
+  $('pCard').innerHTML=h+'</div>';
+  if(!c.checked)[].forEach.call($('pCard').querySelectorAll('.opt'),function(b){b.onclick=function(){var k=+b.dataset.k;
+    if(multi){var p=c.ans.indexOf(k);if(p>=0)c.ans.splice(p,1);else c.ans.push(k);}else c.ans=[k];save(K.one,one);renderOne();};});
+  $('bPage').href=q.p+'.html';
+  $('bHint').hidden=c.checked||c.hint;
+  $('pHint').innerHTML=c.hint&&!c.checked?'<div class="coach hintbox"><b class="t">💡 Indice</b>'+esc(q.h)+'</div>':'';
+  if(c.checked){var good=isRight(i,c.ans);
+    $('pFeed').innerHTML='<div class="coach '+(good?'ok':'ko')+'"><b class="t">'+(good?'✅ Bonne réponse':(c.ans.length?'❌ Pas tout à fait':'⏰ Temps écoulé'))+'</b>'+esc(q.e)+' <a href="'+q.p+'.html" target="_blank" rel="noopener">Revoir la page</a></div>'+
+      '<div class="coach tip"><b class="t">🎯 Astuce d\'examen</b>'+esc(q.x)+'</div>';}
+  else $('pFeed').innerHTML='';
+  $('bCheck').hidden=c.checked;$('bCheck').disabled=!c.ans.length;
+  $('bPNext').hidden=!c.checked;$('bPNext').textContent=one.done+1>=one.ids.length?'Voir le bilan':'Question suivante →';
+  var t=$('pTimer');t.hidden=!c.end||c.checked;
+  if(c.end&&!c.checked){pTime();pTick=setInterval(pTime,1000);}
+}
+function pTime(){var left=(one.cur.end-Date.now())/1000;$('pTimer').textContent='⏱ '+fmt(left);$('pTimer').classList.toggle('low',left<30);if(left<=0)check();}
+function check(){var c=one.cur;if(c.checked)return;clearInterval(pTick);c.checked=true;var i=one.ids[one.done];
+  var seen=load(K.seen,{});seen[i]=(seen[i]||0)+1;save(K.seen,seen);
+  if(isRight(i,c.ans))one.ok++;else one.miss.push(i);save(K.one,one);renderOne();
+  $('pFeed').scrollIntoView({behavior:'smooth',block:'nearest'});}
+$('bCheck').onclick=check;
+$('bHint').onclick=function(){one.cur.hint=true;save(K.one,one);renderOne();};
+$('bPNext').onclick=function(){one.done++;if(one.done>=one.ids.length){oneEnd();return;}newQ();save(K.one,one);renderOne();scrollTo(0,0);};
+$('bPStop').onclick=function(){if(one.cur.checked)one.done++;oneEnd();};
+function oneEnd(){clearInterval(pTick);var o=one;del(K.one);show('onres');
+  var n=o.done,p=n?Math.round(o.ok/n*100):0;
+  $('oScore').textContent=n?p+' %':'—';
+  $('oStats').innerHTML='<span><b>'+o.ok+'</b> / '+n+' bonnes réponses</span><span>'+(o.dom==='all'?'Tous les domaines':esc(DOM[o.dom]))+'</span>'+(o.time?'<span>Chrono : '+o.time+' s / question</span>':'<span>Sans chrono</span>');
+  $('oRev').innerHTML=o.miss.length?o.miss.map(function(i){var q=Q[i];return '<div class="card rev bad"><div class="qmeta"><span class="dom">'+DOM[q.d]+'</span></div><p style="margin:0;font-size:15px">'+esc(q.q)+'</p>'+
+    '<p class="ex">✓ <b>'+q.a.map(function(k){return esc(q.o[k]);}).join(' + ')+'</b></p><p class="ex">🎯 '+esc(q.x)+' <a href="'+q.p+'.html">Revoir la page</a></p></div>';}).join(''):'<p style="color:var(--muted)">Aucune erreur. Bravo !</p>';}
+$('bOAgain').onclick=function(){show('home');$('setup').hidden=false;setupUI();};
+$('bOHome').onclick=function(){show('home');};
+document.addEventListener('keydown',function(e){
+  if($('v-one').hidden||e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.key==='Enter'){e.preventDefault();if(!$('bCheck').hidden&&!$('bCheck').disabled)check();else if(!$('bPNext').hidden)$('bPNext').click();}
+  else if(/^[a-fA-F]$/.test(e.key)&&!one.cur.checked){var b=$('pCard').querySelectorAll('.opt')['abcdef'.indexOf(e.key.toLowerCase())];if(b)b.click();}
+  else if(e.key==='h'||e.key==='H'){if(!$('bHint').hidden)$('bHint').click();}
+});
 show('home');
 (function(){var f=document.getElementById('fab');if(!f)return;function u(){f.classList.toggle('show',window.scrollY>600);}addEventListener('scroll',u,{passive:true});u();})();
 </script>
